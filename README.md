@@ -33,15 +33,15 @@ Minimum requirements:
 If you only want to use the desktop app and do not want to run the source code directly:
 
 1. Open [desktop-app/windows/win-x64/README.md](desktop-app/windows/win-x64/README.md).
-2. Go to `desktop-app/windows/win-x64/app` after the project has been published.
-3. Run `PrivacyMask.App.exe`.
+2. Go to `desktop-app/windows/win-x64/single-file` after the project has been published.
+3. Double-click `PrivacyMask.App.exe`.
 4. Complete onboarding and choose whether the app should launch at sign in.
 5. Open WhatsApp Desktop or Telegram Desktop and confirm the overlay appears.
 
 Optional local install with shortcuts:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\install-local-desktop-app.ps1
+.\desktop-app\windows\win-x64\Install-PrivacyMask.cmd
 ```
 
 ## Developer setup
@@ -82,6 +82,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64.ps1
 Published output:
 
 - `desktop-app/windows/win-x64/app`
+
+Use the single-file publish script to create a double-clickable standalone executable:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64-single-file.ps1
+```
+
+Published output:
+
+- `desktop-app/windows/win-x64/single-file`
 
 ## Repository layout
 
