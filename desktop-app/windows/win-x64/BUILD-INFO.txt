@@ -1,0 +1,4 @@
+PrivacyMask Windows build
+Version: 1.0.0
+Built: 2026-04-09 14:46:27 +02:00
+Runtime: win-x64 self-contained
