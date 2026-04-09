@@ -1,0 +1,119 @@
+<Window x:Class="PrivacyMask.App.Windows.OnboardingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Welcome to PrivacyMask"
+        Width="760"
+        Height="560"
+        MinWidth="720"
+        MinHeight="520"
+        FontFamily="Segoe UI Variable Text"
+        Background="#F2ECE3"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Grid Margin="18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.2*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Padding="28"
+                Background="#17313D"
+                CornerRadius="26">
+            <StackPanel>
+                <Border Width="72"
+                        Height="72"
+                        Background="#1F6E6C"
+                        CornerRadius="22">
+                    <TextBlock HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Foreground="#F8F4ED"
+                               Text="PM" />
+                </Border>
+
+                <TextBlock Margin="0,22,0,0"
+                           FontSize="30"
+                           FontWeight="Bold"
+                           Foreground="#F8F4ED"
+                           Text="Desktop privacy without touching your chats" />
+                <TextBlock Margin="0,14,0,0"
+                           TextWrapping="Wrap"
+                           Foreground="#D4E3E3"
+                           Text="PrivacyMask sits beside WhatsApp Desktop and Telegram Desktop, then places click-through masks over sensitive regions. It does not inject into the apps, scrape messages, or send telemetry anywhere." />
+
+                <Border Margin="0,26,0,0"
+                        Padding="16"
+                        Background="#244554"
+                        CornerRadius="18">
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold"
+                                   Foreground="#F8F4ED"
+                                   Text="Important limitation" />
+                        <TextBlock Margin="0,8,0,0"
+                                   TextWrapping="Wrap"
+                                   Foreground="#D4E3E3"
+                                   Text="The overlay is designed for local privacy first. Full-screen sharing usually works well, but window-only sharing of WhatsApp or Telegram may not include the mask." />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Column="1"
+                Padding="26"
+                Margin="18,0,0,0"
+                Background="#FCFAF6"
+                CornerRadius="26">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel>
+                    <TextBlock FontSize="26"
+                               FontWeight="Bold"
+                               Text="Choose your defaults" />
+                    <TextBlock Margin="0,10,0,0"
+                               Foreground="#51656E"
+                               TextWrapping="Wrap"
+                               Text="You can fine-tune every preset later from the tray settings window." />
+                </StackPanel>
+
+                <StackPanel Grid.Row="1"
+                            Margin="0,24,0,0">
+                    <CheckBox x:Name="LaunchAtLoginCheckBox"
+                              Content="Launch PrivacyMask when I sign in" />
+                    <CheckBox x:Name="StartMinimizedCheckBox"
+                              IsChecked="True"
+                              Content="Start minimized to tray" />
+
+                    <Border Margin="0,18,0,0"
+                            Padding="16"
+                            Background="#F7F1E7"
+                            CornerRadius="16">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold"
+                                       Text="What happens next" />
+                            <TextBlock Margin="0,8,0,0"
+                                       Foreground="#51656E"
+                                       TextWrapping="Wrap"
+                                       Text="The tray utility starts polling for supported windows immediately. Use Ctrl+Shift+P to toggle shielding, Ctrl+Shift+H for panic hide, and hold Alt to reveal while you interact." />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right">
+                    <Button Width="160"
+                            Background="#CC7A21"
+                            BorderBrush="#CC7A21"
+                            Click="Continue_Click"
+                            Content="Use these defaults" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
