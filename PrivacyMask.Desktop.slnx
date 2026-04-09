@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PrivacyMask.App/PrivacyMask.App.csproj" />
+    <Project Path="src/PrivacyMask.Core/PrivacyMask.Core.csproj" />
+    <Project Path="src/PrivacyMask.Windows/PrivacyMask.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PrivacyMask.Core.Tests/PrivacyMask.Core.Tests.csproj" />
+  </Folder>
+</Solution>
