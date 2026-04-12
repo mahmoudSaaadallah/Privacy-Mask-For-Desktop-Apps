@@ -15,10 +15,12 @@ public sealed class DesktopWindowInspector
     {
         var foregroundHandle = NativeMethods.GetForegroundWindow();
         var windows = new List<WindowSnapshot>();
+        var zOrderIndex = 0;
 
         NativeMethods.EnumWindows((handle, _) =>
         {
-            var snapshot = TryCreateSnapshot(handle, foregroundHandle);
+            var snapshot = TryCreateSnapshot(handle, foregroundHandle, zOrderIndex);
+            zOrderIndex++;
             if (snapshot is not null)
             {
                 windows.Add(snapshot);
@@ -41,7 +43,7 @@ public sealed class DesktopWindowInspector
             return null;
         }
 
-        return TryCreateSnapshot(handle, NativeMethods.GetForegroundWindow());
+        return TryCreateSnapshot(handle, NativeMethods.GetForegroundWindow(), int.MaxValue);
     }
 
     public bool IsKeyDown(int virtualKey)
@@ -49,7 +51,7 @@ public sealed class DesktopWindowInspector
         return (NativeMethods.GetAsyncKeyState(virtualKey) & 0x8000) != 0;
     }
 
-    private static WindowSnapshot? TryCreateSnapshot(nint handle, nint foregroundHandle)
+    private static WindowSnapshot? TryCreateSnapshot(nint handle, nint foregroundHandle, int zOrderIndex)
     {
         if (handle == nint.Zero || !NativeMethods.IsWindowVisible(handle))
         {
@@ -86,6 +88,7 @@ public sealed class DesktopWindowInspector
             Title = GetWindowText(handle),
             ClassName = GetClassName(handle),
             Bounds = screenRect,
+            ZOrderIndex = zOrderIndex,
             IsVisible = true,
             IsForeground = handle == foregroundHandle,
             IsMinimized = NativeMethods.IsIconic(handle),

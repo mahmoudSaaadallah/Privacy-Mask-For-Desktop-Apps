@@ -180,6 +180,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
                     continue;
                 }
 
+                trackedWindow.OccludingBounds = ResolveOccludingBounds(snapshot, discovery.Windows);
                 trackedWindows.Add(trackedWindow);
             }
 
@@ -348,6 +349,20 @@ public sealed class ShellCoordinator : IAsyncDisposable
         return NativeMethods.GetCursorPos(out var point)
             ? new Point(point.X, point.Y)
             : new Point();
+    }
+
+    private static IReadOnlyList<ScreenRect> ResolveOccludingBounds(WindowSnapshot target, IReadOnlyList<WindowSnapshot> windows)
+    {
+        return windows
+            .Where(candidate =>
+                candidate.Handle != target.Handle
+                && candidate.IsVisible
+                && !candidate.IsMinimized
+                && candidate.ZOrderIndex < target.ZOrderIndex
+                && candidate.Bounds.IntersectsWith(target.Bounds))
+            .Select(candidate => candidate.Bounds.Intersect(target.Bounds))
+            .Where(intersection => !intersection.IsEmpty)
+            .ToList();
     }
 
     private async Task ShutdownAsync()

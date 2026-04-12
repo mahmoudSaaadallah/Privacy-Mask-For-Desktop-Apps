@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,7 +11,6 @@ using Brush = System.Windows.Media.Brush;
 using MediaBrushes = System.Windows.Media.Brushes;
 using MediaColor = System.Windows.Media.Color;
 using Point = System.Windows.Point;
-using ShapeRectangle = System.Windows.Shapes.Rectangle;
 
 namespace PrivacyMask.App.Windows;
 
@@ -144,7 +144,8 @@ public sealed class PrivacyOverlayWindow : Window
                     trackedWindow.Profile.HoverRevealHeightPixels)
                 : null;
 
-            AddMaskedRegion(zoneRect, zone.Style, trackedWindow.Profile.MaskColor, zone.Strength, revealCutout);
+            var occludingCutouts = CreateOcclusionCutouts(zoneRect, trackedWindow.OccludingBounds);
+            AddMaskedRegion(zoneRect, zone.Style, trackedWindow.Profile.MaskColor, zone.Strength, revealCutout, occludingCutouts);
         }
     }
 
@@ -184,6 +185,37 @@ public sealed class PrivacyOverlayWindow : Window
 
         var intersected = Rect.Intersect(zoneRect, requestedRect);
         return intersected.Width > 0 && intersected.Height > 0 ? intersected : null;
+    }
+
+    private IReadOnlyList<Rect> CreateOcclusionCutouts(Rect zoneRect, IReadOnlyList<ScreenRect> occludingBounds)
+    {
+        if (occludingBounds.Count == 0)
+        {
+            return [];
+        }
+
+        var source = PresentationSource.FromVisual(this);
+        var fromDevice = source?.CompositionTarget?.TransformFromDevice ?? Matrix.Identity;
+        var cutouts = new List<Rect>();
+
+        foreach (var occludingBoundsRect in occludingBounds)
+        {
+            var topLeft = fromDevice.Transform(new Point(occludingBoundsRect.Left, occludingBoundsRect.Top));
+            var bottomRight = fromDevice.Transform(new Point(occludingBoundsRect.Right, occludingBoundsRect.Bottom));
+            var localRect = new Rect(
+                topLeft.X - Left,
+                topLeft.Y - Top,
+                bottomRight.X - topLeft.X,
+                bottomRight.Y - topLeft.Y);
+
+            var intersected = Rect.Intersect(zoneRect, localRect);
+            if (intersected.Width > 0 && intersected.Height > 0)
+            {
+                cutouts.Add(intersected);
+            }
+        }
+
+        return cutouts;
     }
 
     private static Brush BuildBackground(MaskStyle style, MaskColorOption maskColor, double strength)
@@ -265,45 +297,31 @@ public sealed class PrivacyOverlayWindow : Window
         MaskStyle style,
         MaskColorOption maskColor,
         double strength,
-        Rect? revealCutout)
+        Rect? revealCutout,
+        IReadOnlyList<Rect> occludingCutouts)
     {
         var fill = BuildBackground(style, maskColor, strength);
         var opacity = ComputeOverlayOpacity(style, strength);
+        Geometry geometry = new RectangleGeometry(zoneRect, 14, 14);
 
-        if (revealCutout is null)
+        if (revealCutout is not null)
         {
-            AddRectangle(zoneRect, fill, opacity);
-            return;
+            geometry = new CombinedGeometry(GeometryCombineMode.Exclude, geometry, new RectangleGeometry(revealCutout.Value));
         }
 
-        var hole = revealCutout.Value;
-
-        AddRectangle(new Rect(zoneRect.Left, zoneRect.Top, zoneRect.Width, hole.Top - zoneRect.Top), fill, opacity);
-        AddRectangle(new Rect(zoneRect.Left, hole.Bottom, zoneRect.Width, zoneRect.Bottom - hole.Bottom), fill, opacity);
-        AddRectangle(new Rect(zoneRect.Left, hole.Top, hole.Left - zoneRect.Left, hole.Height), fill, opacity);
-        AddRectangle(new Rect(hole.Right, hole.Top, zoneRect.Right - hole.Right, hole.Height), fill, opacity);
-    }
-
-    private void AddRectangle(Rect rect, Brush fill, double opacity)
-    {
-        if (rect.Width <= 0 || rect.Height <= 0)
+        foreach (var cutout in occludingCutouts)
         {
-            return;
+            geometry = new CombinedGeometry(GeometryCombineMode.Exclude, geometry, new RectangleGeometry(cutout));
         }
 
-        var shape = new ShapeRectangle
+        var shape = new Path
         {
-            Width = rect.Width,
-            Height = rect.Height,
+            Data = geometry,
             Fill = fill,
             Opacity = opacity,
-            RadiusX = 14,
-            RadiusY = 14,
             IsHitTestVisible = false,
         };
 
-        Canvas.SetLeft(shape, rect.X);
-        Canvas.SetTop(shape, rect.Y);
         _canvas.Children.Add(shape);
     }
 

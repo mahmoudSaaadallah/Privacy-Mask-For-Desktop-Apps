@@ -11,4 +11,6 @@ public sealed class TrackedWindow
     public required WindowSnapshot Snapshot { get; init; }
 
     public required IReadOnlyList<PrivacyZone> EffectiveZones { get; init; }
+
+    public IReadOnlyList<ScreenRect> OccludingBounds { get; set; } = [];
 }

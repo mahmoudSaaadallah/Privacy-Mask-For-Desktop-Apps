@@ -12,6 +12,8 @@ public sealed class WindowSnapshot
 
     public ScreenRect Bounds { get; init; }
 
+    public int ZOrderIndex { get; init; }
+
     public bool IsVisible { get; init; }
 
     public bool IsForeground { get; init; }
