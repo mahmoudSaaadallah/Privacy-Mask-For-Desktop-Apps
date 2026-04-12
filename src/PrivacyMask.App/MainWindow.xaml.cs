@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using PrivacyMask.App.ViewModels;
+using PrivacyMask.App.Windows;
 using PrivacyMask.Core.Models;
 
 namespace PrivacyMask.App;
@@ -111,6 +112,16 @@ public partial class MainWindow : Window
     private void NumericTextBox_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
     {
         e.Handled = !Regex.IsMatch(e.Text, "^[0-9]+$");
+    }
+
+    private void OpenAbout_Click(object sender, RoutedEventArgs e)
+    {
+        var aboutWindow = new AboutWindow
+        {
+            Owner = this,
+        };
+
+        aboutWindow.ShowDialog();
     }
 
     protected override void OnClosing(CancelEventArgs e)

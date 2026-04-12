@@ -124,6 +124,28 @@
                         </StackPanel>
                     </Border>
 
+                    <Border Margin="0,0,0,18"
+                            Padding="18"
+                            Background="#F8F4ED"
+                            CornerRadius="20">
+                        <StackPanel>
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Text="About" />
+                            <TextBlock Margin="0,6,0,14"
+                                       Foreground="#51656E"
+                                       TextWrapping="Wrap"
+                                       Text="Read the privacy commitment, app purpose, and direct contact details for the developer." />
+                            <Button Width="142"
+                                    Padding="12,10"
+                                    HorizontalAlignment="Left"
+                                    Background="#1F6E6C"
+                                    BorderBrush="#1F6E6C"
+                                    Click="OpenAbout_Click"
+                                    Content="About PrivacyMask" />
+                        </StackPanel>
+                    </Border>
+
                     <Border Padding="18"
                             Background="#F8F4ED"
                             CornerRadius="20">
