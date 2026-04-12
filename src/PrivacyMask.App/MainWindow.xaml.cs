@@ -12,6 +12,7 @@ namespace PrivacyMask.App;
 public partial class MainWindow : Window
 {
     public static readonly Array MaskStyles = Enum.GetValues<MaskStyle>();
+    public static readonly Array MaskColors = Enum.GetValues<MaskColorOption>();
     public static readonly Array ActivationModes = Enum.GetValues<AppActivationMode>();
 
     private bool _allowClose;
@@ -29,6 +30,8 @@ public partial class MainWindow : Window
     public SettingsViewModel ViewModel => (SettingsViewModel)DataContext;
 
     public Array MaskStylesSource => MaskStyles;
+
+    public Array MaskColorsSource => MaskColors;
 
     public Array ActivationModesSource => ActivationModes;
 
@@ -88,6 +91,16 @@ public partial class MainWindow : Window
     private void HoverRevealDimension_LostFocus(object sender, RoutedEventArgs e)
     {
         if (!IsLoaded || sender is not System.Windows.Controls.TextBox)
+        {
+            return;
+        }
+
+        PreviewRequested?.Invoke(ViewModel.ToModel());
+    }
+
+    private void MaskColorSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded || sender is not System.Windows.Controls.ComboBox)
         {
             return;
         }

@@ -70,6 +70,7 @@ public sealed class DefaultSettingsFactory
         var migrateLegacyFocusAwareProfiles = persisted.Version < 2;
         var migrateLegacyMaskIntensity = persisted.Version < 3;
         var migrateLegacyHoverReveal = persisted.Version < 4;
+        var migrateLegacyMaskColor = persisted.Version < 5;
 
         foreach (var defaultProfile in defaults.AppProfiles)
         {
@@ -86,6 +87,9 @@ public sealed class DefaultSettingsFactory
             defaultProfile.MaskIntensity = migrateLegacyMaskIntensity && persistedProfile.MaskIntensity <= 1.01d
                 ? 1.35d
                 : double.Clamp(persistedProfile.MaskIntensity, 0.60d, 2.40d);
+            defaultProfile.MaskColor = migrateLegacyMaskColor
+                ? defaultProfile.MaskColor
+                : NormalizeMaskColor(persistedProfile.MaskColor, defaultProfile.MaskColor);
             defaultProfile.HoverRevealWidthPixels = migrateLegacyHoverReveal && persistedProfile.HoverRevealWidthPixels <= 0
                 ? defaultProfile.HoverRevealWidthPixels
                 : int.Clamp(persistedProfile.HoverRevealWidthPixels, 80, 1400);
@@ -113,6 +117,7 @@ public sealed class DefaultSettingsFactory
             Enabled = true,
             StartupMode = AppActivationMode.Manual,
             MaskIntensity = 1.35d,
+            MaskColor = MaskColorOption.Black,
             HoverRevealWidthPixels = 394,
             HoverRevealHeightPixels = 42,
             WindowMatchers =
@@ -221,5 +226,12 @@ public sealed class DefaultSettingsFactory
             Enabled = binding.Enabled,
             IsHoldGesture = binding.IsHoldGesture,
         };
+    }
+
+    private static MaskColorOption NormalizeMaskColor(MaskColorOption persistedColor, MaskColorOption fallback)
+    {
+        return Enum.IsDefined(typeof(MaskColorOption), persistedColor)
+            ? persistedColor
+            : fallback;
     }
 }

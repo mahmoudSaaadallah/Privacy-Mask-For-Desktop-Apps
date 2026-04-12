@@ -144,7 +144,7 @@ public sealed class PrivacyOverlayWindow : Window
                     trackedWindow.Profile.HoverRevealHeightPixels)
                 : null;
 
-            AddMaskedRegion(zoneRect, zone.Style, zone.Strength, revealCutout);
+            AddMaskedRegion(zoneRect, zone.Style, trackedWindow.Profile.MaskColor, zone.Strength, revealCutout);
         }
     }
 
@@ -186,39 +186,40 @@ public sealed class PrivacyOverlayWindow : Window
         return intersected.Width > 0 && intersected.Height > 0 ? intersected : null;
     }
 
-    private static Brush BuildBackground(MaskStyle style, double strength)
+    private static Brush BuildBackground(MaskStyle style, MaskColorOption maskColor, double strength)
     {
         var normalized = NormalizeStrength(strength);
+        var baseColor = GetMaskBaseColor(maskColor);
         if (normalized >= 0.999d)
         {
-            return new SolidColorBrush(MediaColor.FromRgb(0, 0, 0));
+            return new SolidColorBrush(baseColor);
         }
 
         return style switch
         {
-            MaskStyle.Pixelate => CreatePixelBrush(normalized),
-            MaskStyle.SolidRedact => new SolidColorBrush(MediaColor.FromArgb((byte)(190 + (60 * normalized)), 9, 13, 18)),
-            _ => CreateBlurBrush(normalized),
+            MaskStyle.Pixelate => CreatePixelBrush(baseColor, normalized),
+            MaskStyle.SolidRedact => CreateSolidRedactBrush(baseColor, normalized),
+            _ => CreateBlurBrush(baseColor, normalized),
         };
     }
 
-    private static Brush CreateBlurBrush(double normalized)
+    private static Brush CreateBlurBrush(MediaColor baseColor, double normalized)
     {
         var brush = new LinearGradientBrush
         {
             StartPoint = new Point(0, 0),
             EndPoint = new Point(1, 1),
         };
-        brush.GradientStops.Add(new GradientStop(MediaColor.FromArgb((byte)(145 + (80 * normalized)), 233, 224, 210), 0.0));
-        brush.GradientStops.Add(new GradientStop(MediaColor.FromArgb((byte)(185 + (60 * normalized)), 173, 97, 35), 0.45));
-        brush.GradientStops.Add(new GradientStop(MediaColor.FromArgb((byte)(205 + (50 * normalized)), 16, 31, 39), 1.0));
+        brush.GradientStops.Add(new GradientStop(Blend(baseColor, MediaColor.FromRgb(255, 255, 255), 0.62d - (0.20d * normalized)), 0.0));
+        brush.GradientStops.Add(new GradientStop(Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.22d + (0.12d * normalized)), 0.45));
+        brush.GradientStops.Add(new GradientStop(Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.42d + (0.24d * normalized)), 1.0));
         return brush;
     }
 
-    private static Brush CreatePixelBrush(double normalized)
+    private static Brush CreatePixelBrush(MediaColor baseColor, double normalized)
     {
-        var dark = MediaColor.FromArgb((byte)(170 + (65 * normalized)), 18, 53, 52);
-        var light = MediaColor.FromArgb((byte)(125 + (50 * normalized)), 205, 187, 158);
+        var dark = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.34d + (0.24d * normalized));
+        var light = Blend(baseColor, MediaColor.FromRgb(255, 255, 255), 0.52d - (0.18d * normalized));
 
         var drawingBrush = new DrawingBrush
         {
@@ -238,6 +239,12 @@ public sealed class PrivacyOverlayWindow : Window
         return drawingBrush;
     }
 
+    private static Brush CreateSolidRedactBrush(MediaColor baseColor, double normalized)
+    {
+        var toned = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.12d + (0.10d * normalized));
+        return new SolidColorBrush(toned);
+    }
+
     private static double ComputeOverlayOpacity(MaskStyle style, double strength)
     {
         var normalized = NormalizeStrength(strength);
@@ -253,9 +260,14 @@ public sealed class PrivacyOverlayWindow : Window
         };
     }
 
-    private void AddMaskedRegion(Rect zoneRect, MaskStyle style, double strength, Rect? revealCutout)
+    private void AddMaskedRegion(
+        Rect zoneRect,
+        MaskStyle style,
+        MaskColorOption maskColor,
+        double strength,
+        Rect? revealCutout)
     {
-        var fill = BuildBackground(style, strength);
+        var fill = BuildBackground(style, maskColor, strength);
         var opacity = ComputeOverlayOpacity(style, strength);
 
         if (revealCutout is null)
@@ -298,5 +310,27 @@ public sealed class PrivacyOverlayWindow : Window
     private static double NormalizeStrength(double strength)
     {
         return double.Clamp((strength - 0.15d) / 2.25d, 0d, 1d);
+    }
+
+    private static MediaColor GetMaskBaseColor(MaskColorOption maskColor)
+    {
+        return maskColor switch
+        {
+            MaskColorOption.Red => MediaColor.FromRgb(201, 52, 52),
+            MaskColorOption.Green => MediaColor.FromRgb(35, 129, 74),
+            MaskColorOption.Blue => MediaColor.FromRgb(43, 99, 204),
+            MaskColorOption.Gray => MediaColor.FromRgb(98, 104, 112),
+            MaskColorOption.White => MediaColor.FromRgb(250, 249, 245),
+            _ => MediaColor.FromRgb(0, 0, 0),
+        };
+    }
+
+    private static MediaColor Blend(MediaColor source, MediaColor target, double amount)
+    {
+        var normalized = double.Clamp(amount, 0d, 1d);
+        return MediaColor.FromRgb(
+            (byte)Math.Round(source.R + ((target.R - source.R) * normalized)),
+            (byte)Math.Round(source.G + ((target.G - source.G) * normalized)),
+            (byte)Math.Round(source.B + ((target.B - source.B) * normalized)));
     }
 }

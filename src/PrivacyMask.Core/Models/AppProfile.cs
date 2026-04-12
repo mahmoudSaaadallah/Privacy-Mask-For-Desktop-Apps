@@ -14,6 +14,8 @@ public sealed class AppProfile
 
     public double MaskIntensity { get; set; } = 1.35d;
 
+    public MaskColorOption MaskColor { get; set; } = MaskColorOption.Black;
+
     public int HoverRevealWidthPixels { get; set; } = 394;
 
     public int HoverRevealHeightPixels { get; set; } = 42;

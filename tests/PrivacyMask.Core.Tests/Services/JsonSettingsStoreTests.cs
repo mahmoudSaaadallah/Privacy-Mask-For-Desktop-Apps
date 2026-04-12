@@ -43,13 +43,16 @@ public sealed class JsonSettingsStoreTests
             var store = new JsonSettingsStore(factory, settingsPath);
             var settings = await store.LoadAsync();
             settings.LaunchAtLogin = true;
-            settings.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).Enabled = false;
+            var telegramProfile = settings.AppProfiles.Single(profile => profile.AppId == AppId.Telegram);
+            telegramProfile.Enabled = false;
+            telegramProfile.MaskColor = MaskColorOption.Red;
 
             await store.SaveAsync(settings);
             var reloaded = await store.LoadAsync();
 
             Assert.True(reloaded.LaunchAtLogin);
             Assert.False(reloaded.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).Enabled);
+            Assert.Equal(MaskColorOption.Red, reloaded.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).MaskColor);
         }
         finally
         {

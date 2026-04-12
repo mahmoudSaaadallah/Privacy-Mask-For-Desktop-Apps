@@ -12,6 +12,7 @@ public sealed class AppProfileViewModel : ObservableObject
     private AppActivationMode _startupMode;
     private string _selectedPresetId;
     private double _maskIntensity;
+    private MaskColorOption _maskColor;
     private int _hoverRevealWidthPixels;
     private int _hoverRevealHeightPixels;
     private ObservableCollection<PrivacyZoneViewModel> _zones;
@@ -24,6 +25,7 @@ public sealed class AppProfileViewModel : ObservableObject
         _startupMode = profile.StartupMode;
         _selectedPresetId = profile.SelectedPresetId;
         _maskIntensity = profile.MaskIntensity;
+        _maskColor = profile.MaskColor;
         _hoverRevealWidthPixels = profile.HoverRevealWidthPixels;
         _hoverRevealHeightPixels = profile.HoverRevealHeightPixels;
         Presets = new ObservableCollection<LayoutPreset>(profile.Presets.Select(PresetCatalog.ClonePreset));
@@ -47,6 +49,8 @@ public sealed class AppProfileViewModel : ObservableObject
         : "Covers the whole app window even when it is visible but inactive.";
 
     public string MaskIntensitySummary => $"Mask darkness: {MaskIntensityPercent:0}%";
+
+    public string MaskColorSummary => $"Mask color: {MaskColor}";
 
     public string HoverRevealSummary => $"Hover reveal window: {HoverRevealWidthPixels} x {HoverRevealHeightPixels} px";
 
@@ -99,6 +103,18 @@ public sealed class AppProfileViewModel : ObservableObject
         {
             MaskIntensity = value / 100d;
             RaisePropertyChanged(nameof(MaskIntensityPercent));
+        }
+    }
+
+    public MaskColorOption MaskColor
+    {
+        get => _maskColor;
+        set
+        {
+            if (SetProperty(ref _maskColor, value))
+            {
+                RaisePropertyChanged(nameof(MaskColorSummary));
+            }
         }
     }
 
@@ -156,6 +172,7 @@ public sealed class AppProfileViewModel : ObservableObject
             Enabled = Enabled,
             StartupMode = StartupMode,
             MaskIntensity = MaskIntensity,
+            MaskColor = MaskColor,
             HoverRevealWidthPixels = HoverRevealWidthPixels,
             HoverRevealHeightPixels = HoverRevealHeightPixels,
             WindowMatchers = WindowMatchers

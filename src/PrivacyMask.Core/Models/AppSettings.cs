@@ -4,7 +4,7 @@ namespace PrivacyMask.Core.Models;
 
 public sealed class AppSettings
 {
-    public const int CurrentVersion = 4;
+    public const int CurrentVersion = 5;
 
     public int Version { get; init; } = CurrentVersion;
 

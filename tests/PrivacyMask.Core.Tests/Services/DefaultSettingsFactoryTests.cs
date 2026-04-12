@@ -101,4 +101,16 @@ public sealed class DefaultSettingsFactoryTests
         Assert.Equal(394, mergedProfile.HoverRevealWidthPixels);
         Assert.Equal(42, mergedProfile.HoverRevealHeightPixels);
     }
+
+    [Fact]
+    public void MergeWithDefaults_PreservesPersistedMaskColor()
+    {
+        var factory = new DefaultSettingsFactory();
+        var persisted = factory.Create();
+        persisted.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).MaskColor = MaskColorOption.Blue;
+
+        var merged = factory.MergeWithDefaults(persisted);
+
+        Assert.Equal(MaskColorOption.Blue, merged.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).MaskColor);
+    }
 }
