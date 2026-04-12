@@ -1,4 +1,4 @@
 PrivacyMask Windows single-file build
 Version: 1.0.0
-Built: 2026-04-09 15:09:15 +02:00
+Built: 2026-04-12 12:31:27 +02:00
 Runtime: win-x64 self-contained single-file
