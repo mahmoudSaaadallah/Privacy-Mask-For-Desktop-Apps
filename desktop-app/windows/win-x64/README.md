@@ -27,7 +27,10 @@ launch at sign in.
 
 ## Build and install from source
 
-From the repository root, publish the standalone executable:
+With the .NET 10 SDK installed, double-click `Install-PrivacyMask.bat` in the
+repository root. It publishes and installs the application in one operation.
+
+To perform the same steps manually, first publish the standalone executable:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64-single-file.ps1

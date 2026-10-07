@@ -60,6 +60,19 @@ The matching `.sha256` release asset can be used to verify the downloaded ZIP:
 
 Compare the output with the hash in `PrivacyMask-win-x64.zip.sha256`.
 
+## One-click install from source
+
+If you cloned the repository and have the .NET 10 SDK installed, double-click
+`Install-PrivacyMask.bat` in the repository root. It will:
+
+1. Build the self-contained Windows executable.
+2. Copy it to `%LocalAppData%\PrivacyMask.Desktop`.
+3. Create Desktop and Start Menu shortcuts.
+
+No administrator access is required. The first build can take a few minutes
+while .NET restores the required packages. The same installer can be run again
+to rebuild and update the local installation.
+
 ## Developer setup
 
 1. Install the tools listed in [requirements.md](requirements.md).
