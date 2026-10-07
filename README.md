@@ -109,6 +109,24 @@ Published output:
 powershell -ExecutionPolicy Bypass -File .\scripts\verify.ps1
 ```
 
+## Performance measurements
+
+Measure the resource usage of a running PrivacyMask process:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\measure-runtime.ps1
+```
+
+Compare the current published distributions with a temporary
+framework-dependent publish:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\measure-publish-size.ps1
+```
+
+See [docs/performance-baseline.md](docs/performance-baseline.md) for the reference
+environment, initial measurements, performance budgets, and required scenarios.
+
 ## Normal user guide
 
 1. Start PrivacyMask.
@@ -122,6 +140,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\verify.ps1
 - Review [docs/architecture.md](docs/architecture.md) for the project structure.
 - Review [docs/release-process.md](docs/release-process.md) for the local release flow.
 - Review [docs/troubleshooting.md](docs/troubleshooting.md) if builds or overlays are not behaving as expected.
+- Review [docs/performance-baseline.md](docs/performance-baseline.md) before and after performance-sensitive changes.
 - Keep tests updated whenever profile matching, settings migration, or overlay behavior changes.
 
 ## Known limitations
