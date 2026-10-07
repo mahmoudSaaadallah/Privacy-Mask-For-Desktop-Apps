@@ -130,10 +130,70 @@ public sealed class JsonSettingsStoreTests
 
             var recovered = await store.LoadAsync();
             var persistedText = await File.ReadAllTextAsync(settingsPath);
+            var corruptPath = Assert.Single(Directory.EnumerateFiles(tempDirectory.FullName, "*.corrupt-*.json"));
 
             Assert.Equal(AppSettings.CurrentVersion, recovered.Version);
             Assert.Contains(recovered.AppProfiles, profile => profile.AppId == AppId.WhatsApp);
             Assert.Contains($"\"version\": {AppSettings.CurrentVersion}", persistedText);
+            Assert.Equal("{ not-valid-json", await File.ReadAllTextAsync(corruptPath));
+        }
+        finally
+        {
+            tempDirectory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task LoadAsync_RecoversLastKnownGoodBackupAndPreservesMalformedPrimary()
+    {
+        var factory = new DefaultSettingsFactory();
+        var tempDirectory = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            var settingsPath = Path.Combine(tempDirectory.FullName, "settings.v1.json");
+            var store = new JsonSettingsStore(factory, settingsPath);
+            var lastKnownGood = factory.Create();
+            lastKnownGood.LaunchAtLogin = true;
+            lastKnownGood.StartMinimized = false;
+            await store.SaveAsync(lastKnownGood);
+            var newer = factory.Create();
+            newer.StartMinimized = true;
+            await store.SaveAsync(newer);
+            await File.WriteAllTextAsync(settingsPath, "{ truncated");
+
+            var recovered = await store.LoadAsync();
+
+            Assert.True(recovered.LaunchAtLogin);
+            Assert.False(recovered.StartMinimized);
+            Assert.Equal("{ truncated", await File.ReadAllTextAsync(
+                Assert.Single(Directory.EnumerateFiles(tempDirectory.FullName, "*.corrupt-*.json"))));
+            Assert.True(File.Exists($"{settingsPath}.bak"));
+        }
+        finally
+        {
+            tempDirectory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task LoadAsync_DoesNotRewriteAlreadyNormalizedSettings()
+    {
+        var factory = new DefaultSettingsFactory();
+        var tempDirectory = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            var settingsPath = Path.Combine(tempDirectory.FullName, "settings.v1.json");
+            var store = new JsonSettingsStore(factory, settingsPath);
+            await store.SaveAsync(factory.Create());
+            var expectedWriteTime = new DateTime(2025, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+            File.SetLastWriteTimeUtc(settingsPath, expectedWriteTime);
+
+            await store.LoadAsync();
+
+            Assert.Equal(expectedWriteTime, File.GetLastWriteTimeUtc(settingsPath));
+            Assert.False(File.Exists($"{settingsPath}.bak"));
         }
         finally
         {
