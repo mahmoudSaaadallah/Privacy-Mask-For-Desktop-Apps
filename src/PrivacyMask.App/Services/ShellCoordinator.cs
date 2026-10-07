@@ -163,6 +163,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
         if (_mainWindow is not null)
         {
+            _mainWindow.AllowClose();
             _mainWindow.Close();
         }
 
@@ -256,7 +257,6 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _mainWindow = new MainWindow(viewModel);
             _mainWindow.SaveRequested += SaveSettingsAsync;
             _mainWindow.PreviewRequested += PreviewSettings;
-            _mainWindow.Closed += MainWindowOnClosed;
         }
         else
         {
@@ -266,24 +266,6 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _mainWindow.Show();
         _mainWindow.WindowState = WindowState.Normal;
         _mainWindow.Activate();
-    }
-
-    private void MainWindowOnClosed(object? sender, EventArgs e)
-    {
-        if (sender is not MainWindow window)
-        {
-            return;
-        }
-
-        window.SaveRequested -= SaveSettingsAsync;
-        window.PreviewRequested -= PreviewSettings;
-        window.Closed -= MainWindowOnClosed;
-        window.DataContext = null;
-
-        if (ReferenceEquals(_mainWindow, window))
-        {
-            _mainWindow = null;
-        }
     }
 
     private async Task SaveSettingsAsync(AppSettings updatedSettings)
