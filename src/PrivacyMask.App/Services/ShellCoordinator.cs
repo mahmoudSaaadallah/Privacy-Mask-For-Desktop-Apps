@@ -38,6 +38,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly ToolStripMenuItem _panicItem;
 
     private AppSettings _settings = new();
+    private IReadOnlySet<HotkeyAction> _unavailableHotkeyActions = new HashSet<HotkeyAction>();
     private MainWindow? _mainWindow;
     private bool _isShuttingDown;
     private bool _isDisposed;
@@ -225,7 +226,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
         var viewModel = SettingsViewModel.FromModel(
             _settings,
             _protectionStateMachine.CurrentMode,
-            _settingsStore.SettingsPath);
+            _settingsStore.SettingsPath,
+            _unavailableHotkeyActions);
         if (_mainWindow is null)
         {
             _mainWindow = new MainWindow(viewModel);
@@ -263,6 +265,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private void RegisterHotkeys()
     {
         var result = _hotkeyManager.RegisterBindings(_settings.GlobalHotkeys);
+        _unavailableHotkeyActions = result.Failures
+            .Select(failure => failure.Action)
+            .ToHashSet();
         if (!result.HasFailures)
         {
             return;

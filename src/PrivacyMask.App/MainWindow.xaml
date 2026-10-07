@@ -111,6 +111,21 @@
                                                     <TextBlock Margin="0,4,0,0"
                                                                Foreground="#51656E"
                                                                Text="{Binding GestureText}" />
+                                                    <TextBlock Margin="0,4,0,0"
+                                                               Foreground="#A33A2B"
+                                                               Text="{Binding RegistrationStatus}"
+                                                               TextWrapping="Wrap">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HasRegistrationFailure}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </StackPanel>
                                                 <CheckBox Grid.Column="1"
                                                           VerticalAlignment="Center"

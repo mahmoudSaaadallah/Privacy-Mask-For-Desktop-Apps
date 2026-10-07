@@ -7,7 +7,7 @@ public sealed class HotkeyBindingViewModel : ObservableObject
 {
     private bool _enabled;
 
-    public HotkeyBindingViewModel(HotkeyBinding binding)
+    public HotkeyBindingViewModel(HotkeyBinding binding, bool hasRegistrationFailure)
     {
         Action = binding.Action;
         DisplayName = binding.DisplayName;
@@ -16,6 +16,7 @@ public sealed class HotkeyBindingViewModel : ObservableObject
         IsHoldGesture = binding.IsHoldGesture;
         _enabled = binding.Enabled;
         GestureText = HotkeyDisplayFormatter.Format(binding);
+        HasRegistrationFailure = hasRegistrationFailure;
     }
 
     public HotkeyAction Action { get; }
@@ -29,6 +30,12 @@ public sealed class HotkeyBindingViewModel : ObservableObject
     public bool IsHoldGesture { get; }
 
     public string GestureText { get; }
+
+    public bool HasRegistrationFailure { get; }
+
+    public string RegistrationStatus => HasRegistrationFailure
+        ? "Unavailable because another app may be using this shortcut."
+        : string.Empty;
 
     public bool Enabled
     {
