@@ -51,10 +51,6 @@ hotkey registration returns per-binding failures so a conflict can be shown in
 the tray and settings UI without disabling shortcuts that registered
 successfully.
 
-The settings window is closed and dereferenced instead of remaining hidden.
-Because application shutdown is explicit, the tray process remains active and
-creates a fresh settings window only when the user opens it again.
-
 ## Design boundaries
 
 - No OCR

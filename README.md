@@ -146,10 +146,6 @@ If another program has already reserved a configured global shortcut,
 PrivacyMask shows a tray warning and marks that shortcut as unavailable in the
 settings window. Other registered shortcuts continue to work normally.
 
-Closing the settings window releases its WPF controls and view models while the
-tray process keeps running. Reopen settings from the tray icon or the configured
-global shortcut.
-
 ## Developer guide
 
 - Review [docs/architecture.md](docs/architecture.md) for the project structure.

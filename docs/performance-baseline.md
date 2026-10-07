@@ -76,22 +76,46 @@ Pass `-NoRestore` after the solution has already been restored. Use
 
 ## Runtime-efficiency update
 
-The runtime-efficiency implementation was measured at product commit
-`c930427` on 2026-10-07. The framework-dependent application payload was
-0.309 MB across 6 files, below the 1 MB budget. The change adds no package or
-runtime dependencies.
+The runtime-efficiency implementation was measured on 2026-10-07 by comparing
+baseline commit `ebf85e8` with candidate commit `2322fa6`. Both were Release,
+framework-dependent `win-x64` builds with isolated singleton names, isolated
+settings, disabled app profiles, and the settings UI closed. Each build received
+a 10-second warm-up followed by two 30-second passes sampled every 500 ms on the
+same Windows 11 machine with 20 logical processors. The table averages the two
+per-pass summaries.
 
-A comparable runtime sample was not captured during this change because a
-different, previously published PrivacyMask executable was already running and
-owned the single-instance mutex. Its counters do not represent this branch, so
-they were deliberately excluded. A fresh packaged build must be measured in
-the required scenarios before claiming a numeric CPU or memory improvement.
+| Metric | Baseline | Candidate | Change |
+| --- | ---: | ---: | ---: |
+| Working set average | 139.64 MB | 132.82 MB | -6.82 MB (-4.9%) |
+| Working set P95 | 140.84 MB | 133.59 MB | -7.25 MB (-5.1%) |
+| Private memory average | 81.72 MB | 76.16 MB | -5.56 MB (-6.8%) |
+| Private memory P95 | 82.89 MB | 76.76 MB | -6.13 MB (-7.4%) |
+| Whole-machine CPU average | 0.144% | 0.051% | -64.5% |
+| Whole-machine CPU P95 | 0.530% | 0.153% | -71.2% |
+| Handles average | 882 | 885.5 | +3.5 (+0.4%) |
+| Threads average | 40 | 39.5 | -0.5 |
 
-The implementation reduces work through mechanisms that can be verified in
-code and tests: candidate-only detailed window inspection, cached process
-identity, reusable discovery and overlay collections, cached effective zones,
-render invalidation for unchanged overlays, adaptive polling, and releasing the
-settings visual tree when it closes.
+These absolute memory values are not directly comparable with the earlier
+single-file sample because the distribution model differs. The controlled pair
+is suitable for evaluating the change itself. A protected-window run, movement
+run, reveal run, and long-duration stability run are still required before a
+stable release.
+
+The candidate's framework-dependent application payload was 0.309 MB across 6
+files, below the 1 MB budget, with no new package or runtime dependencies.
+
+An additional close-to-tray experiment tested destroying and recreating the WPF
+settings window. One 30-second pass measured 168.20 MB working set and 111.85 MB
+private memory for the reusable baseline window, versus 181.92 MB and 121.88 MB
+when the candidate window was destroyed. Because immediate tray memory regressed
+by 13.72 MB working set and 10.03 MB private memory, that change was reverted in
+commit `6115549`. The final implementation retains the reusable hidden settings
+window.
+
+The retained implementation reduces work through candidate-only detailed
+window inspection, cached process identity, reusable discovery and overlay
+collections, cached effective zones, render invalidation for unchanged
+overlays, and adaptive polling.
 
 ## Performance budgets
 

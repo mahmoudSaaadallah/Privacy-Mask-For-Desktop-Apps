@@ -16,7 +16,6 @@
 - Skip rebuilding overlay brushes and geometry when the rendered state is unchanged
 - Use a slower idle refresh cadence with immediate pause and panic updates
 - Reuse hot-path collections and lightweight desktop-window snapshots to reduce allocations
-- Release the WPF settings visual tree when the window closes to tray
 
 ## 1.0.0
 
