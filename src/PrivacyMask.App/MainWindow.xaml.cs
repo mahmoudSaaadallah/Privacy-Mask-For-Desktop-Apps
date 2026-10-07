@@ -57,6 +57,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        CommitFocusedEditor();
         _isSaving = true;
         IsEnabled = false;
         try
@@ -170,5 +171,13 @@ public partial class MainWindow : Window
     {
         DiscardRequested?.Invoke();
         Hide();
+    }
+
+    private static void CommitFocusedEditor()
+    {
+        if (Keyboard.FocusedElement is System.Windows.Controls.TextBox textBox)
+        {
+            textBox.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.UpdateSource();
+        }
     }
 }
