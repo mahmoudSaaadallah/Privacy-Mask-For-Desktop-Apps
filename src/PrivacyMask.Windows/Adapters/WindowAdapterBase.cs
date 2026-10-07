@@ -23,6 +23,11 @@ public abstract class WindowAdapterBase : IWindowAdapter
 
     public LayoutPreset SelectPreset(WindowSnapshot snapshot, AppProfile profile, IReadOnlyList<LayoutPreset> presets)
     {
+        if (presets.Count > 0 && presets.All(preset => preset.AppId == AppId))
+        {
+            return SelectPresetCore(snapshot, presets);
+        }
+
         var supportedPresets = presets.Where(preset => preset.AppId == AppId).ToList();
         if (supportedPresets.Count == 0)
         {
