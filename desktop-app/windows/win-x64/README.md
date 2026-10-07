@@ -1,27 +1,43 @@
-# PrivacyMask Windows Build
+# PrivacyMask Windows Distribution
 
-This folder contains the published Windows desktop application.
+This folder contains the installer, uninstaller, and packaging notes. Generated
+application files are intentionally not stored in Git.
 
-## Quick start
+## Install a GitHub release
 
-Option 1: single-file desktop app
+1. Open the [latest PrivacyMask release](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases/latest).
+2. Download `PrivacyMask-win-x64.zip`.
+3. Extract the whole ZIP; do not run the installer from inside the archive.
+4. Double-click `Install-PrivacyMask.cmd`.
+5. Start PrivacyMask from the Desktop or Start Menu shortcut.
 
-1. Open the `single-file` folder.
-2. Double-click `PrivacyMask.App.exe`.
-3. Complete the onboarding flow.
-4. Open WhatsApp Desktop or Telegram Desktop.
+No administrator access is required. The installer copies the executable to
+`%LocalAppData%\PrivacyMask.Desktop` and creates shortcuts for the current user.
 
-Option 2: portable folder build
+## Portable use
 
-1. Open the `app` folder.
-2. Run `PrivacyMask.App.exe`.
-3. Complete the onboarding flow.
-4. Open WhatsApp Desktop or Telegram Desktop.
+After extracting the release ZIP, open `single-file` and double-click
+`PrivacyMask.App.exe`. Keep the executable in a permanent location if you enable
+launch at sign in.
 
-## Optional local install
+## Update or uninstall
 
-Double-click the script below to copy the build into your user profile and create shortcuts:
+- To update, extract the newer release and run `Install-PrivacyMask.cmd` again.
+- To uninstall, run `Uninstall-PrivacyMask.cmd` from an extracted release package.
+
+## Build and install from source
+
+From the repository root, publish the standalone executable:
 
 ```powershell
-.\Install-PrivacyMask.cmd
+powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64-single-file.ps1
 ```
+
+Then run the local installer:
+
+```powershell
+.\desktop-app\windows\win-x64\Install-PrivacyMask.cmd
+```
+
+The generated `single-file` and `app` directories are local build output and
+are ignored by Git.

@@ -32,19 +32,33 @@ Minimum requirements:
 
 ## End-user quick start
 
-If you only want to use the desktop app and do not want to run the source code directly:
+You do not need the source code or the .NET SDK to install a published release.
 
-1. Open [desktop-app/windows/win-x64/README.md](desktop-app/windows/win-x64/README.md).
-2. Go to `desktop-app/windows/win-x64/single-file` after the project has been published.
-3. Double-click `PrivacyMask.App.exe`.
-4. Complete onboarding and choose whether the app should launch at sign in.
-5. Open WhatsApp Desktop or Telegram Desktop and confirm the overlay appears.
+1. Open the [latest GitHub release](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases/latest).
+2. Download `PrivacyMask-win-x64.zip` and extract the whole archive.
+3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
+4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
+5. Complete onboarding, then open WhatsApp Desktop or Telegram Desktop.
 
-Optional local install with shortcuts:
+The installer does not require administrator access. It copies the standalone app
+to `%LocalAppData%\PrivacyMask.Desktop` and creates Desktop and Start Menu
+shortcuts. To update, download the newer release and run
+`Install-PrivacyMask.cmd` again.
+
+To run the release without installing it, open `single-file` in the extracted
+archive and double-click `PrivacyMask.App.exe`.
+
+To uninstall, run `Uninstall-PrivacyMask.cmd` from the extracted release folder.
+It removes the installed app, its shortcuts, and the settings stored with the
+installation in `%LocalAppData%\PrivacyMask.Desktop`.
+
+The matching `.sha256` release asset can be used to verify the downloaded ZIP:
 
 ```powershell
-.\desktop-app\windows\win-x64\Install-PrivacyMask.cmd
+(Get-FileHash .\PrivacyMask-win-x64.zip -Algorithm SHA256).Hash
 ```
+
+Compare the output with the hash in `PrivacyMask-win-x64.zip.sha256`.
 
 ## Developer setup
 
@@ -85,6 +99,8 @@ Published output:
 
 - `desktop-app/windows/win-x64/app`
 
+Published output is generated locally and intentionally ignored by Git.
+
 Use the single-file publish script to create a double-clickable standalone executable:
 
 ```powershell
@@ -95,6 +111,17 @@ Published output:
 
 - `desktop-app/windows/win-x64/single-file`
 
+Create the same installable ZIP and checksum used by GitHub Releases:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-win-x64-release.ps1
+```
+
+Release package output:
+
+- `artifacts/release/PrivacyMask-win-x64.zip`
+- `artifacts/release/PrivacyMask-win-x64.zip.sha256`
+
 ## Repository layout
 
 - `src/PrivacyMask.Core`: core models, settings, presets, and profile resolution
@@ -103,7 +130,7 @@ Published output:
 - `tests/PrivacyMask.Core.Tests`: unit tests
 - `docs`: architecture and release notes
 - `scripts`: verification, publish, and local install scripts
-- `desktop-app/windows/win-x64`: published desktop app output and end-user notes
+- `desktop-app/windows/win-x64`: installer scripts and Windows distribution notes; generated app output is ignored
 
 ## Verification commands
 
