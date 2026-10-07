@@ -38,6 +38,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly ToolStripMenuItem _panicItem;
 
     private AppSettings _settings = new();
+    private WindowProcessFilter _windowProcessFilter = new([]);
     private IReadOnlySet<HotkeyAction> _unavailableHotkeyActions = new HashSet<HotkeyAction>();
     private MainWindow? _mainWindow;
     private bool _isShuttingDown;
@@ -105,6 +106,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     public async Task StartAsync()
     {
         _settings = await _settingsStore.LoadAsync();
+        RebuildWindowProcessFilter();
         var registrationState = _startupRegistrationService.GetState();
         if (registrationState.Enabled)
         {
@@ -173,10 +175,10 @@ public sealed class ShellCoordinator : IAsyncDisposable
                 return;
             }
 
-            var discovery = _windowInspector.Capture();
+            var discovery = _windowInspector.Capture(_windowProcessFilter);
             var trackedWindows = new List<TrackedWindow>();
 
-            foreach (var snapshot in discovery.Windows)
+            foreach (var snapshot in discovery.CandidateWindows)
             {
                 var trackedWindow = _windowProfileResolver.Resolve(snapshot, _settings.AppProfiles);
                 if (trackedWindow is null)
@@ -261,6 +263,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         }
 
         _settings = nextSettings;
+        RebuildWindowProcessFilter();
         RegisterHotkeys();
         UpdateTrayState();
     }
@@ -270,6 +273,12 @@ public sealed class ShellCoordinator : IAsyncDisposable
         previewSettings.CurrentMode = RuntimeMode.Standard;
         previewSettings.OnboardingCompleted = true;
         _settings = _defaultSettingsFactory.MergeWithDefaults(previewSettings);
+        RebuildWindowProcessFilter();
+    }
+
+    private void RebuildWindowProcessFilter()
+    {
+        _windowProcessFilter = new WindowProcessFilter(_settings.AppProfiles);
     }
 
     private void RegisterHotkeys()
