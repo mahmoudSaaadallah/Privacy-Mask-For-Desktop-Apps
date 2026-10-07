@@ -61,6 +61,62 @@ public sealed class JsonSettingsStoreTests
     }
 
     [Fact]
+    public async Task SaveAsync_SerializesConcurrentWritesWithoutLeavingTemporaryFiles()
+    {
+        var factory = new DefaultSettingsFactory();
+        var tempDirectory = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            var settingsPath = Path.Combine(tempDirectory.FullName, "settings.v1.json");
+            var store = new JsonSettingsStore(factory, settingsPath);
+            var first = factory.Create();
+            first.LaunchAtLogin = true;
+            var second = factory.Create();
+            second.StartMinimized = true;
+
+            await Task.WhenAll(store.SaveAsync(first), store.SaveAsync(second));
+
+            var persisted = await store.LoadAsync();
+            Assert.True(persisted.LaunchAtLogin || persisted.StartMinimized);
+            Assert.Empty(Directory.EnumerateFiles(tempDirectory.FullName, "*.tmp"));
+        }
+        finally
+        {
+            tempDirectory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task SaveAsync_LeavesExistingFileUntouchedWhenCancelledBeforeWriting()
+    {
+        var factory = new DefaultSettingsFactory();
+        var tempDirectory = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            var settingsPath = Path.Combine(tempDirectory.FullName, "settings.v1.json");
+            var store = new JsonSettingsStore(factory, settingsPath);
+            var original = factory.Create();
+            await store.SaveAsync(original);
+            var originalText = await File.ReadAllTextAsync(settingsPath);
+            var updated = factory.Create();
+            updated.LaunchAtLogin = true;
+            using var cancellation = new CancellationTokenSource();
+            cancellation.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => store.SaveAsync(updated, cancellation.Token));
+
+            Assert.Equal(originalText, await File.ReadAllTextAsync(settingsPath));
+            Assert.Empty(Directory.EnumerateFiles(tempDirectory.FullName, "*.tmp"));
+        }
+        finally
+        {
+            tempDirectory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task LoadAsync_RecoversDefaultsFromMalformedJson()
     {
         var factory = new DefaultSettingsFactory();
