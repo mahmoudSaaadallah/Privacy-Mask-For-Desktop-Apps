@@ -26,7 +26,7 @@ public sealed class DefaultSettingsFactory
                 new HotkeyBinding
                 {
                     Action = HotkeyAction.PanicHideAll,
-                    DisplayName = "Panic hide all",
+                    DisplayName = "Panic mask all",
                     Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Shift,
                     VirtualKey = 0x48,
                 },
@@ -65,7 +65,7 @@ public sealed class DefaultSettingsFactory
         defaults.OnboardingCompleted = persisted.OnboardingCompleted;
         defaults.LaunchAtLogin = persisted.LaunchAtLogin;
         defaults.StartMinimized = persisted.StartMinimized;
-        defaults.CurrentMode = persisted.CurrentMode;
+        defaults.CurrentMode = RuntimeMode.Standard;
         defaults.GlobalHotkeys = MergeHotkeys(defaults.GlobalHotkeys, persisted.GlobalHotkeys);
         var migrateLegacyFocusAwareProfiles = persisted.Version < 2;
         var migrateLegacyMaskIntensity = persisted.Version < 3;

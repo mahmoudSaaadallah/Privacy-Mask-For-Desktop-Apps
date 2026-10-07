@@ -99,7 +99,7 @@
                             <TextBlock Margin="0,8,0,0"
                                        Foreground="#51656E"
                                        TextWrapping="Wrap"
-                                       Text="The tray utility starts polling for supported windows immediately. Use Ctrl+Shift+P to toggle shielding, Ctrl+Shift+H for panic hide, and hold Alt to reveal while you interact." />
+                                       Text="The tray utility watches for supported windows immediately. Use Ctrl+Shift+P to pause or resume protection, Ctrl+Shift+H for a full panic mask, and hold Alt to reveal while you interact." />
                         </StackPanel>
                     </Border>
                 </StackPanel>

@@ -131,6 +131,9 @@ public sealed class DefaultSettingsFactoryTests
             settings.GlobalHotkeys.Select(binding => binding.Action));
         Assert.All(settings.AppProfiles, profile => Assert.Single(profile.Zones));
         Assert.All(settings.AppProfiles, profile => Assert.Equal("full-window", profile.Zones.Single().ZoneId));
+        Assert.Equal(
+            "Panic mask all",
+            settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.PanicHideAll).DisplayName);
     }
 
     [Fact]
@@ -149,5 +152,21 @@ public sealed class DefaultSettingsFactoryTests
         Assert.Equal(2.40d, mergedProfile.MaskIntensity);
         Assert.Equal(80, mergedProfile.HoverRevealWidthPixels);
         Assert.Equal(420, mergedProfile.HoverRevealHeightPixels);
+    }
+
+    [Theory]
+    [InlineData(RuntimeMode.Off)]
+    [InlineData(RuntimeMode.Panic)]
+    [InlineData(RuntimeMode.TemporaryReveal)]
+    public void MergeWithDefaults_DoesNotRestoreTransientRuntimeMode(RuntimeMode persistedMode)
+    {
+        var factory = new DefaultSettingsFactory();
+        var persisted = factory.Create();
+        persisted.CurrentMode = persistedMode;
+
+        var merged = factory.MergeWithDefaults(persisted);
+
+        Assert.Equal(RuntimeMode.Standard, merged.CurrentMode);
+        Assert.Equal(AppSettings.CurrentVersion, merged.Version);
     }
 }

@@ -133,7 +133,12 @@ environment, initial measurements, performance budgets, and required scenarios.
 2. Keep WhatsApp Desktop or Telegram Desktop open.
 3. Move the mask darkness slider to your preferred level.
 4. Hover over the masked app to reveal a small reading window around the pointer.
-5. Use the tray icon to pause protection, reopen settings, or exit the app.
+5. Use the tray icon to pause protection, apply an opaque panic mask, reopen settings, or exit the app.
+
+Protection always starts enabled when PrivacyMask launches. Pausing protection
+is a runtime-only action and is not restored after an app restart. The panic
+mask covers every detected protected window in opaque black and disables reveal
+gestures until panic mode is turned off.
 
 ## Developer guide
 
@@ -141,6 +146,7 @@ environment, initial measurements, performance budgets, and required scenarios.
 - Review [docs/release-process.md](docs/release-process.md) for the local release flow.
 - Review [docs/troubleshooting.md](docs/troubleshooting.md) if builds or overlays are not behaving as expected.
 - Review [docs/performance-baseline.md](docs/performance-baseline.md) before and after performance-sensitive changes.
+- Review [docs/runtime-protection.md](docs/runtime-protection.md) for pause, panic-mask, and startup behavior.
 - Keep tests updated whenever profile matching, settings migration, or overlay behavior changes.
 
 ## Known limitations
