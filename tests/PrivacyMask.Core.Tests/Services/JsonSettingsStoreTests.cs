@@ -77,7 +77,31 @@ public sealed class JsonSettingsStoreTests
 
             Assert.Equal(AppSettings.CurrentVersion, recovered.Version);
             Assert.Contains(recovered.AppProfiles, profile => profile.AppId == AppId.WhatsApp);
-            Assert.Contains("\"version\": 5", persistedText);
+            Assert.Contains($"\"version\": {AppSettings.CurrentVersion}", persistedText);
+        }
+        finally
+        {
+            tempDirectory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task LoadAsync_NormalizesPersistedRuntimeModeToProtected()
+    {
+        var factory = new DefaultSettingsFactory();
+        var tempDirectory = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            var settingsPath = Path.Combine(tempDirectory.FullName, "settings.v1.json");
+            var store = new JsonSettingsStore(factory, settingsPath);
+            await File.WriteAllTextAsync(settingsPath, "{\"version\":5,\"currentMode\":0}");
+
+            var reloaded = await store.LoadAsync();
+            var persistedText = await File.ReadAllTextAsync(settingsPath);
+
+            Assert.Equal(RuntimeMode.Standard, reloaded.CurrentMode);
+            Assert.Contains("\"currentMode\": 1", persistedText);
         }
         finally
         {
