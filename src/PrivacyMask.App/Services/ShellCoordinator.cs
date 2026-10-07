@@ -43,6 +43,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly List<nint> _staleOcclusionHandles = [];
 
     private AppSettings _settings = new();
+    private AppSettings _savedSettings = new();
     private WindowProcessFilter _windowProcessFilter = new([]);
     private IReadOnlySet<HotkeyAction> _unavailableHotkeyActions = new HashSet<HotkeyAction>();
     private MainWindow? _mainWindow;
@@ -119,6 +120,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _settings.StartMinimized = registrationState.StartMinimized;
         }
 
+        _savedSettings = AppSettingsCloner.Clone(_settings);
         _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
 
         RegisterHotkeys();
@@ -163,6 +165,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
         if (_mainWindow is not null)
         {
+            _mainWindow.SaveRequested -= SaveSettingsAsync;
+            _mainWindow.PreviewRequested -= PreviewSettings;
+            _mainWindow.DiscardRequested -= DiscardPreview;
             _mainWindow.AllowClose();
             _mainWindow.Close();
         }
@@ -240,6 +245,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _settings.StartMinimized = onboarding.StartMinimized;
             _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
             await _settingsStore.SaveAsync(_settings);
+            _savedSettings = AppSettingsCloner.Clone(_settings);
             UpdateTrayState();
             ShowSettingsWindow();
         }
@@ -247,20 +253,17 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void ShowSettingsWindow()
     {
-        var viewModel = SettingsViewModel.FromModel(
-            _settings,
-            _protectionStateMachine.CurrentMode,
-            _settingsStore.SettingsPath,
-            _unavailableHotkeyActions);
         if (_mainWindow is null)
         {
+            var viewModel = CreateSettingsViewModel();
             _mainWindow = new MainWindow(viewModel);
             _mainWindow.SaveRequested += SaveSettingsAsync;
             _mainWindow.PreviewRequested += PreviewSettings;
+            _mainWindow.DiscardRequested += DiscardPreview;
         }
-        else
+        else if (!_mainWindow.IsVisible)
         {
-            _mainWindow.ReplaceViewModel(viewModel);
+            _mainWindow.ReplaceViewModel(CreateSettingsViewModel());
         }
 
         _mainWindow.Show();
@@ -285,6 +288,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         }
 
         _settings = nextSettings;
+        _savedSettings = AppSettingsCloner.Clone(nextSettings);
         RebuildWindowProcessFilter();
         RegisterHotkeys();
         UpdateTrayState();
@@ -296,6 +300,22 @@ public sealed class ShellCoordinator : IAsyncDisposable
         previewSettings.OnboardingCompleted = true;
         _settings = _defaultSettingsFactory.MergeWithDefaults(previewSettings);
         RebuildWindowProcessFilter();
+    }
+
+    private void DiscardPreview()
+    {
+        _settings = AppSettingsCloner.Clone(_savedSettings);
+        RebuildWindowProcessFilter();
+        RefreshOverlays();
+    }
+
+    private SettingsViewModel CreateSettingsViewModel()
+    {
+        return SettingsViewModel.FromModel(
+            _settings,
+            _protectionStateMachine.CurrentMode,
+            _settingsStore.SettingsPath,
+            _unavailableHotkeyActions);
     }
 
     private void RebuildWindowProcessFilter()
@@ -354,16 +374,22 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task ToggleLaunchAtLoginAsync()
     {
-        var previousValue = _settings.LaunchAtLogin;
-        _settings.LaunchAtLogin = !previousValue;
+        var nextSettings = AppSettingsCloner.Clone(_savedSettings);
+        nextSettings.LaunchAtLogin = !_savedSettings.LaunchAtLogin;
         try
         {
-            _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
-            await _settingsStore.SaveAsync(_settings);
+            _startupRegistrationService.SetEnabled(nextSettings.LaunchAtLogin, nextSettings.StartMinimized);
+            await _settingsStore.SaveAsync(nextSettings);
+            _savedSettings = AppSettingsCloner.Clone(nextSettings);
+            _settings.LaunchAtLogin = nextSettings.LaunchAtLogin;
+            _settings.StartMinimized = nextSettings.StartMinimized;
+            if (_mainWindow?.IsVisible == true)
+            {
+                _mainWindow.ViewModel.LaunchAtLogin = nextSettings.LaunchAtLogin;
+            }
         }
         catch (Exception exception)
         {
-            _settings.LaunchAtLogin = previousValue;
             TryRestoreStartupRegistration();
             _notifyIcon.ShowBalloonTip(
                 timeout: 5000,
@@ -379,7 +405,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     {
         try
         {
-            _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
+            _startupRegistrationService.SetEnabled(_savedSettings.LaunchAtLogin, _savedSettings.StartMinimized);
         }
         catch
         {
@@ -397,7 +423,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             RuntimeMode.Panic => "Protection: Panic mask",
             _ => "Protection: Active",
         };
-        _launchAtLoginItem.Checked = _settings.LaunchAtLogin;
+        _launchAtLoginItem.Checked = _savedSettings.LaunchAtLogin;
         _toggleProtectionItem.Text = currentMode == RuntimeMode.Off ? "Resume protection" : "Pause protection";
         _toggleProtectionItem.Enabled = currentMode != RuntimeMode.Panic;
         _panicItem.Checked = currentMode == RuntimeMode.Panic;

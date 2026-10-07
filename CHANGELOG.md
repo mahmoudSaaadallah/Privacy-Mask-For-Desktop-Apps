@@ -21,6 +21,8 @@
 - Document release installation, portable use, updates, and uninstallation
 - Add a one-click batch installer that builds and installs directly from a source checkout
 - Create Windows shortcuts correctly when the user profile path contains non-ASCII characters
+- Roll back live mask previews when settings are discarded and preserve in-progress edits on reactivation
+- Add keyboard shortcuts, access keys, and screen-reader metadata to the primary setup flows
 
 ## 1.0.0
 
