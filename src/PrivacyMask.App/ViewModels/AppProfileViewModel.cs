@@ -129,8 +129,7 @@ public sealed class AppProfileViewModel : ObservableObject
         get => _hoverRevealWidthPixels;
         set
         {
-            var normalized = int.Clamp(value, 80, 1400);
-            if (SetProperty(ref _hoverRevealWidthPixels, normalized))
+            if (SetProperty(ref _hoverRevealWidthPixels, value))
             {
                 RaisePropertyChanged(nameof(HoverRevealSummary));
             }
@@ -142,8 +141,7 @@ public sealed class AppProfileViewModel : ObservableObject
         get => _hoverRevealHeightPixels;
         set
         {
-            var normalized = int.Clamp(value, 20, 420);
-            if (SetProperty(ref _hoverRevealHeightPixels, normalized))
+            if (SetProperty(ref _hoverRevealHeightPixels, value))
             {
                 RaisePropertyChanged(nameof(HoverRevealSummary));
             }

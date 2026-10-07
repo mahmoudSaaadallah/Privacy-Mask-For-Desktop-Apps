@@ -111,9 +111,9 @@ public sealed class PrivacyZoneViewModel : ObservableObject
             ZoneId = _zoneId,
             DisplayName = DisplayName,
             Anchor = _anchor,
-            RelativeRect = new RelativeRect(X, Y, Width, Height).Clamp(),
+            RelativeRect = new RelativeRect(X, Y, Width, Height),
             Style = Style,
-            Strength = double.Clamp(Strength, 0.15d, 1d),
+            Strength = Strength,
             Behavior = behavior,
             Enabled = Enabled,
         };

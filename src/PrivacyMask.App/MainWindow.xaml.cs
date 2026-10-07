@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -9,6 +11,7 @@ using PrivacyMask.App.Services;
 using PrivacyMask.App.ViewModels;
 using PrivacyMask.App.Windows;
 using PrivacyMask.Core.Models;
+using PrivacyMask.Core.Services;
 
 namespace PrivacyMask.App;
 
@@ -59,12 +62,30 @@ public partial class MainWindow : Window
             return;
         }
 
-        CommitFocusedEditor();
+        if (!CommitFocusedEditor() || HasBindingErrors(this))
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                "One or more fields contain text that cannot be converted to a number. Correct the highlighted value, then save again.",
+                "Check these settings",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        var settings = ViewModel.ToModel();
+        var validationErrors = AppSettingsValidator.Validate(settings);
+        if (validationErrors.Count > 0)
+        {
+            ShowValidationErrors(validationErrors);
+            return;
+        }
+
         _isSaving = true;
         IsEnabled = false;
         try
         {
-            await SaveRequested.Invoke(ViewModel.ToModel());
+            await SaveRequested.Invoke(settings);
             Hide();
         }
         catch (Exception exception)
@@ -175,11 +196,53 @@ public partial class MainWindow : Window
         Hide();
     }
 
-    private static void CommitFocusedEditor()
+    private static bool CommitFocusedEditor()
     {
         if (Keyboard.FocusedElement is System.Windows.Controls.TextBox textBox)
         {
             textBox.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.UpdateSource();
+            return !Validation.GetHasError(textBox);
         }
+
+        return true;
+    }
+
+    private static bool HasBindingErrors(DependencyObject element)
+    {
+        if (Validation.GetHasError(element))
+        {
+            return true;
+        }
+
+        for (var index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(element); index++)
+        {
+            if (HasBindingErrors(System.Windows.Media.VisualTreeHelper.GetChild(element, index)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void ShowValidationErrors(IReadOnlyList<SettingsValidationError> errors)
+    {
+        const int maximumVisibleErrors = 8;
+        var lines = errors
+            .Take(maximumVisibleErrors)
+            .Select(error => $"• {error.Location}: {error.Message}")
+            .ToList();
+
+        if (errors.Count > maximumVisibleErrors)
+        {
+            lines.Add($"• And {errors.Count - maximumVisibleErrors} more issue(s).");
+        }
+
+        System.Windows.MessageBox.Show(
+            this,
+            $"Correct the following values before saving:\n\n{string.Join("\n", lines)}",
+            "Check these settings",
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
     }
 }

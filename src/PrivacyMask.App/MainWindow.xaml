@@ -359,9 +359,11 @@
                                                               Margin="8,0,14,0"
                                                               HorizontalContentAlignment="Center"
                                                               AutomationProperties.Name="Hover reveal width in pixels"
+                                                              AutomationProperties.HelpText="Enter a width from 80 to 1400 pixels."
                                                               LostFocus="HoverRevealDimension_LostFocus"
-                                                             PreviewTextInput="NumericTextBox_PreviewTextInput"
-                                                             Text="{Binding HoverRevealWidthPixels, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                              PreviewTextInput="NumericTextBox_PreviewTextInput"
+                                                              Text="{Binding HoverRevealWidthPixels, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                              ToolTip="80–1400 pixels" />
                                                     <TextBlock VerticalAlignment="Center"
                                                                Foreground="#51656E"
                                                                Text="H" />
@@ -369,9 +371,11 @@
                                                               Margin="8,0,0,0"
                                                               HorizontalContentAlignment="Center"
                                                               AutomationProperties.Name="Hover reveal height in pixels"
+                                                              AutomationProperties.HelpText="Enter a height from 20 to 420 pixels."
                                                               LostFocus="HoverRevealDimension_LostFocus"
-                                                             PreviewTextInput="NumericTextBox_PreviewTextInput"
-                                                             Text="{Binding HoverRevealHeightPixels, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                              PreviewTextInput="NumericTextBox_PreviewTextInput"
+                                                              Text="{Binding HoverRevealHeightPixels, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                              ToolTip="20–420 pixels" />
                                                 </StackPanel>
 
                                                 <TextBlock Grid.Row="2"
@@ -384,9 +388,14 @@
                                             </Grid>
                                         </Border>
 
+                                        <TextBlock Margin="0,0,0,8"
+                                                   Foreground="#51656E"
+                                                   TextWrapping="Wrap"
+                                                   Text="Advanced zones: X, Y, width, and height use 0.00–1.00 coordinates and must stay inside the app. Strength supports 0.15–2.40." />
+
                                         <DataGrid AutoGenerateColumns="False"
                                                   AutomationProperties.Name="Privacy zones"
-                                                  AutomationProperties.HelpText="Edit which normalized regions of the selected app are masked."
+                                                  AutomationProperties.HelpText="Advanced settings. Edit normalized regions from zero to one and a strength from 0.15 to 2.40."
                                                   CanUserAddRows="False"
                                                   HeadersVisibility="Column"
                                                   ItemsSource="{Binding Zones}"
