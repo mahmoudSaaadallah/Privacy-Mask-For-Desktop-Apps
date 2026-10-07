@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using PrivacyMask.Core.Contracts;
 using PrivacyMask.Core.Models;
+using PrivacyMask.Core.Services;
 
 namespace PrivacyMask.Windows.Adapters;
 
@@ -37,7 +37,7 @@ public abstract class WindowAdapterBase : IWindowAdapter
     private static bool Matches(WindowMatcher matcher, WindowSnapshot snapshot)
     {
         var processMatch = matcher.ProcessNames.Count == 0
-            || matcher.ProcessNames.Any(candidate => MatchesProcessName(candidate, snapshot.ProcessName));
+            || matcher.ProcessNames.Any(candidate => ProcessNameMatcher.Matches(candidate, snapshot.ProcessName));
 
         if (!processMatch)
         {
@@ -56,33 +56,5 @@ public abstract class WindowAdapterBase : IWindowAdapter
             || snapshot.ClassName.Contains(matcher.ClassNameContains, StringComparison.OrdinalIgnoreCase);
 
         return classMatch;
-    }
-
-    private static bool MatchesProcessName(string candidate, string actual)
-    {
-        if (string.Equals(candidate, actual, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        var normalizedCandidate = NormalizeProcessName(candidate);
-        var normalizedActual = NormalizeProcessName(actual);
-
-        return normalizedActual.StartsWith(normalizedCandidate, StringComparison.OrdinalIgnoreCase)
-            || normalizedCandidate.StartsWith(normalizedActual, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string NormalizeProcessName(string processName)
-    {
-        var builder = new StringBuilder(processName.Length);
-        foreach (var character in processName)
-        {
-            if (char.IsLetterOrDigit(character))
-            {
-                builder.Append(char.ToUpperInvariant(character));
-            }
-        }
-
-        return builder.ToString();
     }
 }
