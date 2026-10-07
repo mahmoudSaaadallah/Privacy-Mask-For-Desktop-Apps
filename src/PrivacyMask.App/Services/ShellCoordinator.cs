@@ -40,6 +40,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private AppSettings _settings = new();
     private MainWindow? _mainWindow;
     private bool _isShuttingDown;
+    private bool _isDisposed;
 
     public ShellCoordinator(Dispatcher dispatcher, string[] args)
     {
@@ -136,12 +137,16 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
-        if (_isShuttingDown)
+        if (_isDisposed)
         {
             return ValueTask.CompletedTask;
         }
 
+        _isDisposed = true;
+        _isShuttingDown = true;
         _refreshTimer.Stop();
+        _refreshTimer.Tick -= RefreshTimerOnTick;
+        _hotkeyManager.HotkeyPressed -= HandleHotkeyPressed;
         _hotkeyManager.Dispose();
         _overlayManager.Dispose();
         _notifyIcon.Visible = false;
