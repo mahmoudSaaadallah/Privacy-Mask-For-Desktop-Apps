@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using PrivacyMask.Core.Models;
@@ -9,7 +10,11 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _launchAtLogin;
     private bool _startMinimized;
 
-    public static SettingsViewModel FromModel(AppSettings settings, RuntimeMode currentMode, string configPath)
+    public static SettingsViewModel FromModel(
+        AppSettings settings,
+        RuntimeMode currentMode,
+        string configPath,
+        IReadOnlySet<HotkeyAction> unavailableHotkeyActions)
     {
         return new SettingsViewModel
         {
@@ -24,7 +29,8 @@ public sealed class SettingsViewModel : ObservableObject
                 _ => "Standard masking is active when a supported app is detected.",
             },
             ConfigPath = $"Config file: {configPath}",
-            Hotkeys = new ObservableCollection<HotkeyBindingViewModel>(settings.GlobalHotkeys.Select(binding => new HotkeyBindingViewModel(binding))),
+            Hotkeys = new ObservableCollection<HotkeyBindingViewModel>(settings.GlobalHotkeys.Select(
+                binding => new HotkeyBindingViewModel(binding, unavailableHotkeyActions.Contains(binding.Action)))),
             AppProfiles = new ObservableCollection<AppProfileViewModel>(settings.AppProfiles.Select(profile => new AppProfileViewModel(profile))),
         };
     }

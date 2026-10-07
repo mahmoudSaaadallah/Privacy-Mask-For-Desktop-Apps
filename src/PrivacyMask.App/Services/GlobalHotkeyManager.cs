@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Windows.Interop;
@@ -30,18 +31,29 @@ public sealed class GlobalHotkeyManager : IDisposable
 
     public event Action<HotkeyAction>? HotkeyPressed;
 
-    public void RegisterBindings(IEnumerable<HotkeyBinding> bindings)
+    public HotkeyRegistrationResult RegisterBindings(IEnumerable<HotkeyBinding> bindings)
     {
         ClearRegistrations();
+        var failures = new List<HotkeyRegistrationFailure>();
+        var attemptedCount = 0;
 
         foreach (var binding in bindings.Where(binding => binding.Enabled && !binding.IsHoldGesture))
         {
+            attemptedCount++;
             var id = _nextId++;
             if (NativeMethods.RegisterHotKey(_source.Handle, id, ConvertModifiers(binding.Modifiers), (uint)binding.VirtualKey))
             {
                 _registrations[id] = binding.Action;
+                continue;
             }
+
+            failures.Add(new HotkeyRegistrationFailure(
+                binding.Action,
+                binding.DisplayName,
+                Marshal.GetLastWin32Error()));
         }
+
+        return new HotkeyRegistrationResult(attemptedCount, _registrations.Count, failures);
     }
 
     public void Dispose()

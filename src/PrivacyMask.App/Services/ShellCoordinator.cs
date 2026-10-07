@@ -38,8 +38,10 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly ToolStripMenuItem _panicItem;
 
     private AppSettings _settings = new();
+    private IReadOnlySet<HotkeyAction> _unavailableHotkeyActions = new HashSet<HotkeyAction>();
     private MainWindow? _mainWindow;
     private bool _isShuttingDown;
+    private bool _isDisposed;
 
     public ShellCoordinator(Dispatcher dispatcher, string[] args)
     {
@@ -136,12 +138,16 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
-        if (_isShuttingDown)
+        if (_isDisposed)
         {
             return ValueTask.CompletedTask;
         }
 
+        _isDisposed = true;
+        _isShuttingDown = true;
         _refreshTimer.Stop();
+        _refreshTimer.Tick -= RefreshTimerOnTick;
+        _hotkeyManager.HotkeyPressed -= HandleHotkeyPressed;
         _hotkeyManager.Dispose();
         _overlayManager.Dispose();
         _notifyIcon.Visible = false;
@@ -220,7 +226,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
         var viewModel = SettingsViewModel.FromModel(
             _settings,
             _protectionStateMachine.CurrentMode,
-            _settingsStore.SettingsPath);
+            _settingsStore.SettingsPath,
+            _unavailableHotkeyActions);
         if (_mainWindow is null)
         {
             _mainWindow = new MainWindow(viewModel);
@@ -241,9 +248,19 @@ public sealed class ShellCoordinator : IAsyncDisposable
     {
         updatedSettings.CurrentMode = RuntimeMode.Standard;
         updatedSettings.OnboardingCompleted = true;
-        _settings = _defaultSettingsFactory.MergeWithDefaults(updatedSettings);
-        _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
-        await _settingsStore.SaveAsync(_settings);
+        var nextSettings = _defaultSettingsFactory.MergeWithDefaults(updatedSettings);
+        try
+        {
+            _startupRegistrationService.SetEnabled(nextSettings.LaunchAtLogin, nextSettings.StartMinimized);
+            await _settingsStore.SaveAsync(nextSettings);
+        }
+        catch
+        {
+            TryRestoreStartupRegistration();
+            throw;
+        }
+
+        _settings = nextSettings;
         RegisterHotkeys();
         UpdateTrayState();
     }
@@ -257,7 +274,21 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void RegisterHotkeys()
     {
-        _hotkeyManager.RegisterBindings(_settings.GlobalHotkeys);
+        var result = _hotkeyManager.RegisterBindings(_settings.GlobalHotkeys);
+        _unavailableHotkeyActions = result.Failures
+            .Select(failure => failure.Action)
+            .ToHashSet();
+        if (!result.HasFailures)
+        {
+            return;
+        }
+
+        var unavailableNames = string.Join(", ", result.Failures.Select(failure => failure.DisplayName));
+        _notifyIcon.ShowBalloonTip(
+            timeout: 5000,
+            tipTitle: "PrivacyMask shortcut unavailable",
+            tipText: $"Could not register: {unavailableNames}. Another app may already be using the shortcut.",
+            tipIcon: ToolTipIcon.Warning);
     }
 
     private void HandleHotkeyPressed(HotkeyAction action)
@@ -290,10 +321,37 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task ToggleLaunchAtLoginAsync()
     {
-        _settings.LaunchAtLogin = !_settings.LaunchAtLogin;
-        _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
-        await _settingsStore.SaveAsync(_settings);
+        var previousValue = _settings.LaunchAtLogin;
+        _settings.LaunchAtLogin = !previousValue;
+        try
+        {
+            _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
+            await _settingsStore.SaveAsync(_settings);
+        }
+        catch (Exception exception)
+        {
+            _settings.LaunchAtLogin = previousValue;
+            TryRestoreStartupRegistration();
+            _notifyIcon.ShowBalloonTip(
+                timeout: 5000,
+                tipTitle: "PrivacyMask could not update startup",
+                tipText: exception.Message,
+                tipIcon: ToolTipIcon.Error);
+        }
+
         UpdateTrayState();
+    }
+
+    private void TryRestoreStartupRegistration()
+    {
+        try
+        {
+            _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
+        }
+        catch
+        {
+            // Preserve the original operation error; the next startup will reconcile this state again.
+        }
     }
 
     private void UpdateTrayState()
