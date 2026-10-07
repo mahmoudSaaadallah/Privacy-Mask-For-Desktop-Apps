@@ -12,7 +12,11 @@
         AutomationProperties.HelpText="Choose startup defaults before PrivacyMask begins protecting supported applications."
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
-    <Grid Margin="18">
+    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto">
+    <Grid MinWidth="680"
+          MinHeight="480"
+          Margin="18">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1.2*" />
             <ColumnDefinition Width="*" />
@@ -121,4 +125,5 @@
             </Grid>
         </Border>
     </Grid>
+    </ScrollViewer>
 </Window>

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using PrivacyMask.App.Services;
 using PrivacyMask.App.ViewModels;
 using PrivacyMask.App.Windows;
 using PrivacyMask.Core.Models;
@@ -23,6 +24,7 @@ public partial class MainWindow : Window
     public MainWindow(SettingsViewModel viewModel)
     {
         InitializeComponent();
+        WindowWorkAreaSizer.Fit(this);
         ReplaceViewModel(viewModel);
     }
 

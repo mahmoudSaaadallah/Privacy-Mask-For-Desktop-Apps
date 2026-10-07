@@ -16,7 +16,10 @@
         AutomationProperties.Name="PrivacyMask settings"
         AutomationProperties.HelpText="Configure startup, hotkeys, application profiles, masks, and privacy zones."
         WindowStartupLocation="CenterScreen">
-    <Grid Margin="18">
+    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Disabled">
+    <Grid MinWidth="1120"
+          Margin="18">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="320" />
             <ColumnDefinition Width="18" />
@@ -453,4 +456,5 @@
             </Grid>
         </Border>
     </Grid>
+    </ScrollViewer>
 </Window>
