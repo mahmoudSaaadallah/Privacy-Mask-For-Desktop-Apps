@@ -8,6 +8,8 @@
         MinHeight="520"
         FontFamily="Segoe UI Variable Text"
         Background="#F2ECE3"
+        AutomationProperties.Name="Welcome to PrivacyMask"
+        AutomationProperties.HelpText="Choose startup defaults before PrivacyMask begins protecting supported applications."
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
     <Grid Margin="18">
@@ -84,10 +86,12 @@
                 <StackPanel Grid.Row="1"
                             Margin="0,24,0,0">
                     <CheckBox x:Name="LaunchAtLoginCheckBox"
-                              Content="Launch PrivacyMask when I sign in" />
+                              AutomationProperties.HelpText="Starts PrivacyMask automatically for the current Windows user."
+                              Content="_Launch PrivacyMask when I sign in" />
                     <CheckBox x:Name="StartMinimizedCheckBox"
                               IsChecked="True"
-                              Content="Start minimized to tray" />
+                              AutomationProperties.HelpText="Starts without opening the settings window."
+                              Content="Start _minimized to tray" />
 
                     <Border Margin="0,18,0,0"
                             Padding="16"
@@ -111,7 +115,8 @@
                             Background="#CC7A21"
                             BorderBrush="#CC7A21"
                             Click="Continue_Click"
-                            Content="Use these defaults" />
+                            Content="_Use these defaults"
+                            IsDefault="True" />
                 </StackPanel>
             </Grid>
         </Border>

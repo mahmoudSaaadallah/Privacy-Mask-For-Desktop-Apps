@@ -13,6 +13,8 @@
         MinHeight="760"
         FontFamily="Segoe UI Variable Text"
         Background="#F2ECE3"
+        AutomationProperties.Name="PrivacyMask settings"
+        AutomationProperties.HelpText="Configure startup, hotkeys, application profiles, masks, and privacy zones."
         WindowStartupLocation="CenterScreen">
     <Grid Margin="18">
         <Grid.ColumnDefinitions>
@@ -61,9 +63,11 @@
                                        Foreground="#51656E"
                                        Text="Keep the utility lightweight and predictable." />
 
-                            <CheckBox Content="Launch when I sign in"
+                            <CheckBox Content="_Launch when I sign in"
+                                      AutomationProperties.HelpText="Starts PrivacyMask automatically for the current Windows user."
                                       IsChecked="{Binding LaunchAtLogin, Mode=TwoWay}" />
-                            <CheckBox Content="Start minimized to tray"
+                            <CheckBox Content="Start _minimized to tray"
+                                      AutomationProperties.HelpText="Keeps the settings window hidden when PrivacyMask starts automatically."
                                       IsChecked="{Binding StartMinimized, Mode=TwoWay}" />
 
                             <Border Margin="0,8,0,0"
@@ -129,6 +133,8 @@
                                                 </StackPanel>
                                                 <CheckBox Grid.Column="1"
                                                           VerticalAlignment="Center"
+                                                          AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0}}"
+                                                          AutomationProperties.HelpText="Enable or disable this global shortcut."
                                                           Content="Enabled"
                                                           IsChecked="{Binding Enabled, Mode=TwoWay}" />
                                             </Grid>
@@ -157,7 +163,7 @@
                                     Background="#1F6E6C"
                                     BorderBrush="#1F6E6C"
                                     Click="OpenAbout_Click"
-                                    Content="About PrivacyMask" />
+                                    Content="_About PrivacyMask" />
                         </StackPanel>
                     </Border>
 
@@ -228,6 +234,7 @@
                                             </StackPanel>
                                             <CheckBox Grid.Column="1"
                                                       VerticalAlignment="Top"
+                                                      AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0} masking}"
                                                       Content="Enabled"
                                                       IsChecked="{Binding Enabled, Mode=TwoWay}" />
                                         </Grid>
@@ -243,6 +250,8 @@
                                                 <TextBlock FontWeight="SemiBold"
                                                            Text="Activation mode" />
                                                 <ComboBox Margin="0,8,0,0"
+                                                          AutomationProperties.Name="Activation mode"
+                                                          AutomationProperties.HelpText="Choose whether masking follows focus or remains active while the app window is visible."
                                                           ItemsSource="{Binding ActivationModesSource, ElementName=SettingsWindow}"
                                                           SelectedItem="{Binding StartupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                             </StackPanel>
@@ -252,6 +261,8 @@
                                                 <TextBlock FontWeight="SemiBold"
                                                            Text="Preset" />
                                                 <ComboBox Margin="0,8,0,0"
+                                                          AutomationProperties.Name="Layout preset"
+                                                          AutomationProperties.HelpText="Choose a built-in mask layout before applying it."
                                                           DisplayMemberPath="DisplayName"
                                                           ItemsSource="{Binding Presets}"
                                                           SelectedValue="{Binding SelectedPresetId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -265,7 +276,7 @@
                                                     Background="#1F6E6C"
                                                     BorderBrush="#1F6E6C"
                                                     Click="ApplyPreset_Click"
-                                                    Content="Apply preset"
+                                                    Content="_Apply preset"
                                                     Tag="{Binding}" />
                                         </Grid>
 
@@ -291,6 +302,8 @@
 
                                                 <Slider Grid.Column="1"
                                                         Margin="18,0,18,0"
+                                                        AutomationProperties.Name="Mask darkness"
+                                                        AutomationProperties.HelpText="Adjust mask darkness between 60 and 240 percent."
                                                         Minimum="60"
                                                         Maximum="240"
                                                         TickFrequency="5"
@@ -313,6 +326,7 @@
                                                 <ComboBox Grid.Row="1"
                                                           Grid.Column="1"
                                                           Margin="18,18,18,0"
+                                                          AutomationProperties.Name="Mask color"
                                                           ItemsSource="{Binding MaskColorsSource, ElementName=SettingsWindow}"
                                                           SelectedItem="{Binding MaskColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                           SelectionChanged="MaskColorSelectionChanged" />
@@ -339,18 +353,20 @@
                                                                Foreground="#51656E"
                                                                Text="W" />
                                                     <TextBox Width="86"
-                                                             Margin="8,0,14,0"
-                                                             HorizontalContentAlignment="Center"
-                                                             LostFocus="HoverRevealDimension_LostFocus"
+                                                              Margin="8,0,14,0"
+                                                              HorizontalContentAlignment="Center"
+                                                              AutomationProperties.Name="Hover reveal width in pixels"
+                                                              LostFocus="HoverRevealDimension_LostFocus"
                                                              PreviewTextInput="NumericTextBox_PreviewTextInput"
                                                              Text="{Binding HoverRevealWidthPixels, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                                                     <TextBlock VerticalAlignment="Center"
                                                                Foreground="#51656E"
                                                                Text="H" />
                                                     <TextBox Width="86"
-                                                             Margin="8,0,0,0"
-                                                             HorizontalContentAlignment="Center"
-                                                             LostFocus="HoverRevealDimension_LostFocus"
+                                                              Margin="8,0,0,0"
+                                                              HorizontalContentAlignment="Center"
+                                                              AutomationProperties.Name="Hover reveal height in pixels"
+                                                              LostFocus="HoverRevealDimension_LostFocus"
                                                              PreviewTextInput="NumericTextBox_PreviewTextInput"
                                                              Text="{Binding HoverRevealHeightPixels, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                                                 </StackPanel>
@@ -366,6 +382,8 @@
                                         </Border>
 
                                         <DataGrid AutoGenerateColumns="False"
+                                                  AutomationProperties.Name="Privacy zones"
+                                                  AutomationProperties.HelpText="Edit which normalized regions of the selected app are masked."
                                                   CanUserAddRows="False"
                                                   HeadersVisibility="Column"
                                                   ItemsSource="{Binding Zones}"
@@ -410,22 +428,26 @@
                            Margin="0,18,0,0">
                     <TextBlock VerticalAlignment="Center"
                                Foreground="#51656E"
-                               Text="Changes are local-only and saved as JSON under your user profile." />
+                               Text="Live previews are temporary. Save to keep them, or discard to restore the saved settings." />
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 DockPanel.Dock="Right">
-                        <Button Width="126"
-                                Margin="0,0,12,0"
-                                Background="#C3B6A2"
-                                BorderBrush="#C3B6A2"
-                                Click="CloseToTray_Click"
-                                Content="Close to tray"
-                                Foreground="#17313D" />
+                        <Button Width="160"
+                                 Margin="0,0,12,0"
+                                 Background="#C3B6A2"
+                                 BorderBrush="#C3B6A2"
+                                 AutomationProperties.HelpText="Discard temporary previews and hide the settings window."
+                                 Click="CloseToTray_Click"
+                                 Content="_Discard and close"
+                                 ToolTip="Discard preview changes and hide the window (Esc)"
+                                 Foreground="#17313D" />
                         <Button Width="148"
-                                Background="#CC7A21"
-                                BorderBrush="#CC7A21"
-                                Click="Save_Click"
-                                Content="Save changes" />
+                                 Background="#CC7A21"
+                                 BorderBrush="#CC7A21"
+                                 AutomationProperties.HelpText="Save all settings for future app launches and hide the window."
+                                 Click="Save_Click"
+                                 Content="_Save changes"
+                                 ToolTip="Save changes and hide the window (Ctrl+S)" />
                     </StackPanel>
                 </DockPanel>
             </Grid>
