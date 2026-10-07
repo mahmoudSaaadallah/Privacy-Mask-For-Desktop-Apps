@@ -5,6 +5,12 @@ obj/
 .vscode/
 TestResults/
 artifacts/
+
+# Generated Windows publish output
+desktop-app/windows/win-x64/app/
+desktop-app/windows/win-x64/single-file/
+desktop-app/windows/win-x64/*BUILD-INFO.txt
+
 *.user
 *.suo
 *.cache
