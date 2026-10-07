@@ -12,6 +12,7 @@ using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
 using PrivacyMask.Windows.Adapters;
 using PrivacyMask.Windows.Interop;
+using PrivacyMask.Windows.Models;
 using PrivacyMask.Windows.Services;
 using Application = System.Windows.Application;
 using Point = System.Windows.Point;
@@ -518,7 +519,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private static void ResolveOccludingBounds(
         WindowSnapshot target,
-        IReadOnlyList<WindowSnapshot> windows,
+        IReadOnlyList<DesktopWindowSnapshot> windows,
         List<ScreenRect> destination)
     {
         foreach (var candidate in windows)
