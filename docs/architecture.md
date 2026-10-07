@@ -31,6 +31,12 @@ panic-mask behavior, and persistence compatibility.
 
 ## Settings durability
 
+- Opening the settings window starts an edit session from a deep snapshot of
+  the last saved configuration. Visual mask changes can be previewed live, but
+  dismissing the window restores that snapshot and refreshes overlays.
+- Saving atomically promotes the edited configuration to the new snapshot.
+  Re-activating an already visible settings window preserves in-progress edits
+  instead of rebuilding its view model.
 - Settings operations are serialized so overlapping UI and tray saves cannot
   write the same file concurrently.
 - A save is written to a temporary file in the settings directory and then
