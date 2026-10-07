@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -15,8 +14,6 @@ public partial class MainWindow : Window
     public static readonly Array MaskStyles = Enum.GetValues<MaskStyle>();
     public static readonly Array MaskColors = Enum.GetValues<MaskColorOption>();
     public static readonly Array ActivationModes = Enum.GetValues<AppActivationMode>();
-
-    private bool _allowClose;
 
     public MainWindow(SettingsViewModel viewModel)
     {
@@ -41,11 +38,6 @@ public partial class MainWindow : Window
         DataContext = viewModel;
     }
 
-    public void AllowClose()
-    {
-        _allowClose = true;
-    }
-
     private async void Save_Click(object sender, RoutedEventArgs e)
     {
         if (SaveRequested is null)
@@ -57,7 +49,7 @@ public partial class MainWindow : Window
         try
         {
             await SaveRequested.Invoke(ViewModel.ToModel());
-            Hide();
+            Close();
         }
         catch (Exception exception)
         {
@@ -76,7 +68,7 @@ public partial class MainWindow : Window
 
     private void CloseToTray_Click(object sender, RoutedEventArgs e)
     {
-        Hide();
+        Close();
     }
 
     private void ApplyPreset_Click(object sender, RoutedEventArgs e)
@@ -131,16 +123,5 @@ public partial class MainWindow : Window
         };
 
         aboutWindow.ShowDialog();
-    }
-
-    protected override void OnClosing(CancelEventArgs e)
-    {
-        if (!_allowClose)
-        {
-            e.Cancel = true;
-            Hide();
-        }
-
-        base.OnClosing(e);
     }
 }
