@@ -20,6 +20,7 @@
 - Package installable Windows ZIPs with SHA-256 checksums for tagged GitHub Releases
 - Document release installation, portable use, updates, and uninstallation
 - Add a one-click batch installer that builds and installs directly from a source checkout
+- Create Windows shortcuts correctly when the user profile path contains non-ASCII characters
 
 ## 1.0.0
 
