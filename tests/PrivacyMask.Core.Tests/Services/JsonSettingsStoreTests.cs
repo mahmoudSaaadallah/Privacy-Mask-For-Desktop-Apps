@@ -59,4 +59,29 @@ public sealed class JsonSettingsStoreTests
             tempDirectory.Delete(recursive: true);
         }
     }
+
+    [Fact]
+    public async Task LoadAsync_RecoversDefaultsFromMalformedJson()
+    {
+        var factory = new DefaultSettingsFactory();
+        var tempDirectory = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            var settingsPath = Path.Combine(tempDirectory.FullName, "settings.v1.json");
+            await File.WriteAllTextAsync(settingsPath, "{ not-valid-json");
+            var store = new JsonSettingsStore(factory, settingsPath);
+
+            var recovered = await store.LoadAsync();
+            var persistedText = await File.ReadAllTextAsync(settingsPath);
+
+            Assert.Equal(AppSettings.CurrentVersion, recovered.Version);
+            Assert.Contains(recovered.AppProfiles, profile => profile.AppId == AppId.WhatsApp);
+            Assert.Contains("\"version\": 5", persistedText);
+        }
+        finally
+        {
+            tempDirectory.Delete(recursive: true);
+        }
+    }
 }
