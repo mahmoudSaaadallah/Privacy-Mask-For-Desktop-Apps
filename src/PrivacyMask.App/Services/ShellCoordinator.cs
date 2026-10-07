@@ -262,7 +262,18 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void RegisterHotkeys()
     {
-        _hotkeyManager.RegisterBindings(_settings.GlobalHotkeys);
+        var result = _hotkeyManager.RegisterBindings(_settings.GlobalHotkeys);
+        if (!result.HasFailures)
+        {
+            return;
+        }
+
+        var unavailableNames = string.Join(", ", result.Failures.Select(failure => failure.DisplayName));
+        _notifyIcon.ShowBalloonTip(
+            timeout: 5000,
+            tipTitle: "PrivacyMask shortcut unavailable",
+            tipText: $"Could not register: {unavailableNames}. Another app may already be using the shortcut.",
+            tipIcon: ToolTipIcon.Warning);
     }
 
     private void HandleHotkeyPressed(HotkeyAction action)
