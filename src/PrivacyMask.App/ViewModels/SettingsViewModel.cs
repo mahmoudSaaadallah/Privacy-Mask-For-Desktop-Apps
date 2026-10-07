@@ -19,7 +19,7 @@ public sealed class SettingsViewModel : ObservableObject
             {
                 RuntimeMode.Standard => "Standard masking is active when a supported app is detected.",
                 RuntimeMode.Off => "Protection is paused until you toggle it back on.",
-                RuntimeMode.Panic => "Panic mode is hiding every overlay right now.",
+                RuntimeMode.Panic => "Panic mode is fully masking every protected window.",
                 RuntimeMode.TemporaryReveal => "Temporary reveal is active while the reveal key is held.",
                 _ => "Standard masking is active when a supported app is detected.",
             },

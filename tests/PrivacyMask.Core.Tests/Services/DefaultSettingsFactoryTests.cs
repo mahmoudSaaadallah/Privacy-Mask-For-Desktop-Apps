@@ -131,6 +131,9 @@ public sealed class DefaultSettingsFactoryTests
             settings.GlobalHotkeys.Select(binding => binding.Action));
         Assert.All(settings.AppProfiles, profile => Assert.Single(profile.Zones));
         Assert.All(settings.AppProfiles, profile => Assert.Equal("full-window", profile.Zones.Single().ZoneId));
+        Assert.Equal(
+            "Panic mask all",
+            settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.PanicHideAll).DisplayName);
     }
 
     [Fact]

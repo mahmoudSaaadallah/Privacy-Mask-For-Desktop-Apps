@@ -75,12 +75,12 @@ public sealed class ShellCoordinator : IAsyncDisposable
         };
         _notifyIcon.DoubleClick += (_, _) => ShowSettingsWindow();
 
-        _modeItem = new ToolStripMenuItem("Mode: Standard")
+        _modeItem = new ToolStripMenuItem("Protection: Active")
         {
             Enabled = false,
         };
         _toggleProtectionItem = new ToolStripMenuItem("Toggle protection", null, (_, _) => ToggleProtection());
-        _panicItem = new ToolStripMenuItem("Panic hide all", null, (_, _) => TogglePanicMode());
+        _panicItem = new ToolStripMenuItem("Panic mask all", null, (_, _) => TogglePanicMode());
         _launchAtLoginItem = new ToolStripMenuItem("Launch at sign in", null, async (_, _) => await ToggleLaunchAtLoginAsync())
         {
             CheckOnClick = true,
@@ -299,16 +299,23 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private void UpdateTrayState()
     {
         var currentMode = _protectionStateMachine.CurrentMode;
-        _modeItem.Text = $"Mode: {currentMode}";
+        _modeItem.Text = currentMode switch
+        {
+            RuntimeMode.Standard => "Protection: Active",
+            RuntimeMode.Off => "Protection: Paused",
+            RuntimeMode.Panic => "Protection: Panic mask",
+            _ => "Protection: Active",
+        };
         _launchAtLoginItem.Checked = _settings.LaunchAtLogin;
         _toggleProtectionItem.Text = currentMode == RuntimeMode.Off ? "Resume protection" : "Pause protection";
         _toggleProtectionItem.Enabled = currentMode != RuntimeMode.Panic;
         _panicItem.Checked = currentMode == RuntimeMode.Panic;
+        _panicItem.Text = currentMode == RuntimeMode.Panic ? "Disable panic mask" : "Panic mask all";
         _notifyIcon.Text = currentMode switch
         {
             RuntimeMode.Standard => "PrivacyMask - protecting supported windows",
             RuntimeMode.Off => "PrivacyMask - protection paused",
-            RuntimeMode.Panic => "PrivacyMask - panic hide active",
+            RuntimeMode.Panic => "PrivacyMask - panic mask active",
             RuntimeMode.TemporaryReveal => "PrivacyMask - temporary reveal",
             _ => "PrivacyMask",
         };
