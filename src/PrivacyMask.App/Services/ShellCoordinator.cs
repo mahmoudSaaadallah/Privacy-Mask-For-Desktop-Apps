@@ -248,9 +248,19 @@ public sealed class ShellCoordinator : IAsyncDisposable
     {
         updatedSettings.CurrentMode = RuntimeMode.Standard;
         updatedSettings.OnboardingCompleted = true;
-        _settings = _defaultSettingsFactory.MergeWithDefaults(updatedSettings);
-        _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
-        await _settingsStore.SaveAsync(_settings);
+        var nextSettings = _defaultSettingsFactory.MergeWithDefaults(updatedSettings);
+        try
+        {
+            _startupRegistrationService.SetEnabled(nextSettings.LaunchAtLogin, nextSettings.StartMinimized);
+            await _settingsStore.SaveAsync(nextSettings);
+        }
+        catch
+        {
+            TryRestoreStartupRegistration();
+            throw;
+        }
+
+        _settings = nextSettings;
         RegisterHotkeys();
         UpdateTrayState();
     }
@@ -311,10 +321,37 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task ToggleLaunchAtLoginAsync()
     {
-        _settings.LaunchAtLogin = !_settings.LaunchAtLogin;
-        _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
-        await _settingsStore.SaveAsync(_settings);
+        var previousValue = _settings.LaunchAtLogin;
+        _settings.LaunchAtLogin = !previousValue;
+        try
+        {
+            _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
+            await _settingsStore.SaveAsync(_settings);
+        }
+        catch (Exception exception)
+        {
+            _settings.LaunchAtLogin = previousValue;
+            TryRestoreStartupRegistration();
+            _notifyIcon.ShowBalloonTip(
+                timeout: 5000,
+                tipTitle: "PrivacyMask could not update startup",
+                tipText: exception.Message,
+                tipIcon: ToolTipIcon.Error);
+        }
+
         UpdateTrayState();
+    }
+
+    private void TryRestoreStartupRegistration()
+    {
+        try
+        {
+            _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
+        }
+        catch
+        {
+            // Preserve the original operation error; the next startup will reconcile this state again.
+        }
     }
 
     private void UpdateTrayState()

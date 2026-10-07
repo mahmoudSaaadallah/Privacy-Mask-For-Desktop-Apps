@@ -59,6 +59,15 @@ public partial class MainWindow : Window
             await SaveRequested.Invoke(ViewModel.ToModel());
             Hide();
         }
+        catch (Exception exception)
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                $"PrivacyMask could not save these changes.\n\n{exception.Message}",
+                "Settings were not saved",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
         finally
         {
             IsEnabled = true;
