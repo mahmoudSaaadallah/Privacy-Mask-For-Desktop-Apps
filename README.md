@@ -18,6 +18,7 @@ PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Tele
 - PrivacyMask does not inject into WhatsApp or Telegram.
 - PrivacyMask does not send data to a server.
 - All settings are stored locally in `%LocalAppData%\PrivacyMask.Desktop\settings.v1.json`.
+- Settings saves are atomic and keep a local `.bak` recovery copy after the first update.
 
 ## End-user requirements
 
@@ -139,6 +140,10 @@ Protection always starts enabled when PrivacyMask launches. Pausing protection
 is a runtime-only action and is not restored after an app restart. The panic
 mask covers every detected protected window in opaque black and disables reveal
 gestures until panic mode is turned off.
+
+If another program has already reserved a configured global shortcut,
+PrivacyMask shows a tray warning and marks that shortcut as unavailable in the
+settings window. Other registered shortcuts continue to work normally.
 
 ## Developer guide
 
