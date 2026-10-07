@@ -16,6 +16,9 @@
 - Skip rebuilding overlay brushes and geometry when the rendered state is unchanged
 - Use a slower idle refresh cadence with immediate pause and panic updates
 - Reuse hot-path collections and lightweight desktop-window snapshots to reduce allocations
+- Remove generated Windows executables and runtime files from source control
+- Package installable Windows ZIPs with SHA-256 checksums for tagged GitHub Releases
+- Document release installation, portable use, updates, and uninstallation
 
 ## 1.0.0
 
