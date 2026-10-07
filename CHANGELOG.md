@@ -19,6 +19,7 @@
 - Remove generated Windows executables and runtime files from source control
 - Package installable Windows ZIPs with SHA-256 checksums for tagged GitHub Releases
 - Document release installation, portable use, updates, and uninstallation
+- Add a one-click batch installer that builds and installs directly from a source checkout
 
 ## 1.0.0
 
