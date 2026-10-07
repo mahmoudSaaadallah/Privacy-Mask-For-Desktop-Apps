@@ -18,6 +18,10 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Validate PowerShell syntax
+        shell: powershell
+        run: .\scripts\verify-powershell-syntax.ps1
+
       - name: Restore
         run: dotnet restore PrivacyMask.Desktop.slnx
 

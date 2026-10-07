@@ -62,6 +62,67 @@ public sealed class WindowProfileResolverTests
         Assert.Equal(0.60d, zone.Strength, 2);
     }
 
+    [Fact]
+    public void Resolve_ReturnsNull_WhenMatchingProfileIsDisabled()
+    {
+        var factory = new DefaultSettingsFactory();
+        var settings = factory.Create();
+        settings.AppProfiles.Single(profile => profile.AppId == AppId.WhatsApp).Enabled = false;
+        var resolver = new WindowProfileResolver([new FakeWhatsAppAdapter()]);
+
+        var tracked = resolver.Resolve(CreateWhatsAppSnapshot(width: 1200), settings.AppProfiles);
+
+        Assert.Null(tracked);
+    }
+
+    [Fact]
+    public void Resolve_UsesProfileZones_WhenAutomaticallySelectedPresetMatchesUserSelection()
+    {
+        var factory = new DefaultSettingsFactory();
+        var settings = factory.Create();
+        var profile = settings.AppProfiles.Single(candidate => candidate.AppId == AppId.WhatsApp);
+        profile.SelectedPresetId = "whatsapp-wide";
+        profile.Zones.Single().DisplayName = "Customized full-window zone";
+        var resolver = new WindowProfileResolver([new FakeWhatsAppAdapter()]);
+
+        var tracked = resolver.Resolve(CreateWhatsAppSnapshot(width: 1200), settings.AppProfiles);
+
+        Assert.NotNull(tracked);
+        Assert.Equal("Customized full-window zone", tracked!.EffectiveZones.Single().DisplayName);
+    }
+
+    [Fact]
+    public void Resolve_UsesAutomaticPresetZones_WhenSelectedPresetDoesNotMatchWindowWidth()
+    {
+        var factory = new DefaultSettingsFactory();
+        var settings = factory.Create();
+        var profile = settings.AppProfiles.Single(candidate => candidate.AppId == AppId.WhatsApp);
+        profile.SelectedPresetId = "whatsapp-wide";
+        profile.Zones.Single().DisplayName = "Wide-only customization";
+        var resolver = new WindowProfileResolver([new FakeWhatsAppAdapter()]);
+
+        var tracked = resolver.Resolve(CreateWhatsAppSnapshot(width: 840), settings.AppProfiles);
+
+        Assert.NotNull(tracked);
+        Assert.Equal("whatsapp-compact", tracked!.Preset.PresetId);
+        Assert.DoesNotContain(tracked.EffectiveZones, zone => zone.DisplayName == "Wide-only customization");
+    }
+
+    private static WindowSnapshot CreateWhatsAppSnapshot(int width)
+    {
+        return new WindowSnapshot
+        {
+            Handle = 99,
+            ProcessName = "WhatsApp",
+            Title = "Chat window",
+            ClassName = "ApplicationFrameWindow",
+            Bounds = new ScreenRect(0, 0, width, 900),
+            IsVisible = true,
+            IsForeground = true,
+            IsMinimized = false,
+        };
+    }
+
     private sealed class FakeWhatsAppAdapter : IWindowAdapter
     {
         public AppId AppId => AppId.WhatsApp;

@@ -113,4 +113,41 @@ public sealed class DefaultSettingsFactoryTests
 
         Assert.Equal(MaskColorOption.Blue, merged.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).MaskColor);
     }
+
+    [Fact]
+    public void Create_ProvidesCompleteSupportedAppAndHotkeyDefaults()
+    {
+        var settings = new DefaultSettingsFactory().Create();
+
+        Assert.Equal(AppSettings.CurrentVersion, settings.Version);
+        Assert.Equal([AppId.WhatsApp, AppId.Telegram], settings.AppProfiles.Select(profile => profile.AppId));
+        Assert.Equal(
+            [
+                HotkeyAction.ToggleProtection,
+                HotkeyAction.PanicHideAll,
+                HotkeyAction.OpenSettings,
+                HotkeyAction.TemporaryRevealHold,
+            ],
+            settings.GlobalHotkeys.Select(binding => binding.Action));
+        Assert.All(settings.AppProfiles, profile => Assert.Single(profile.Zones));
+        Assert.All(settings.AppProfiles, profile => Assert.Equal("full-window", profile.Zones.Single().ZoneId));
+    }
+
+    [Fact]
+    public void MergeWithDefaults_ClampsPersistedRuntimeValues()
+    {
+        var factory = new DefaultSettingsFactory();
+        var persisted = factory.Create();
+        var profile = persisted.AppProfiles.Single(candidate => candidate.AppId == AppId.Telegram);
+        profile.MaskIntensity = 9.0d;
+        profile.HoverRevealWidthPixels = 20;
+        profile.HoverRevealHeightPixels = 900;
+
+        var merged = factory.MergeWithDefaults(persisted);
+        var mergedProfile = merged.AppProfiles.Single(candidate => candidate.AppId == AppId.Telegram);
+
+        Assert.Equal(2.40d, mergedProfile.MaskIntensity);
+        Assert.Equal(80, mergedProfile.HoverRevealWidthPixels);
+        Assert.Equal(420, mergedProfile.HoverRevealHeightPixels);
+    }
 }
