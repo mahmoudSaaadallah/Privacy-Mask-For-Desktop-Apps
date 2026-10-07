@@ -6,6 +6,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using PrivacyMask.Core.Models;
+using PrivacyMask.Core.Services;
 using PrivacyMask.Windows.Interop;
 using Brush = System.Windows.Media.Brush;
 using MediaBrushes = System.Windows.Media.Brushes;
@@ -42,7 +43,8 @@ public sealed class PrivacyOverlayWindow : Window
 
     public void UpdateOverlay(TrackedWindow trackedWindow, RuntimeMode mode, bool temporaryRevealHeld, Point cursorScreenPoint)
     {
-        if (mode is RuntimeMode.Off or RuntimeMode.Panic || trackedWindow.Snapshot.IsMinimized || trackedWindow.Snapshot.Bounds.IsEmpty)
+        var renderPolicy = ProtectionRenderPolicy.ForMode(mode);
+        if (!renderPolicy.ShouldRender || trackedWindow.Snapshot.IsMinimized || trackedWindow.Snapshot.Bounds.IsEmpty)
         {
             if (IsVisible)
             {
@@ -58,7 +60,7 @@ public sealed class PrivacyOverlayWindow : Window
         }
 
         ApplyWindowBounds(trackedWindow.Snapshot.Bounds);
-        RenderZones(trackedWindow, temporaryRevealHeld, cursorScreenPoint);
+        RenderZones(trackedWindow, renderPolicy, temporaryRevealHeld, cursorScreenPoint);
     }
 
     public void HideOverlay()
@@ -106,13 +108,32 @@ public sealed class PrivacyOverlayWindow : Window
         }
     }
 
-    private void RenderZones(TrackedWindow trackedWindow, bool temporaryRevealHeld, Point cursorScreenPoint)
+    private void RenderZones(
+        TrackedWindow trackedWindow,
+        ProtectionRenderPolicy renderPolicy,
+        bool temporaryRevealHeld,
+        Point cursorScreenPoint)
     {
         _canvas.Children.Clear();
         var width = ActualWidth <= 0 ? Width : ActualWidth;
         var height = ActualHeight <= 0 ? Height : ActualHeight;
         if (width <= 0 || height <= 0)
         {
+            return;
+        }
+
+        if (renderPolicy.ForceFullWindowMask)
+        {
+            var fullWindowRect = new Rect(0d, 0d, width, height);
+            var occludingCutouts = CreateOcclusionCutouts(fullWindowRect, trackedWindow.OccludingBounds);
+            AddMaskedRegion(
+                fullWindowRect,
+                renderPolicy.ForcedStyle,
+                renderPolicy.ForcedColor,
+                renderPolicy.ForcedStrength,
+                revealCutout: null,
+                occludingCutouts: occludingCutouts,
+                cornerRadius: 0d);
             return;
         }
 
@@ -136,7 +157,7 @@ public sealed class PrivacyOverlayWindow : Window
                 continue;
             }
 
-            var revealCutout = zone.Behavior.HasFlag(ZoneBehavior.RevealOnHover)
+            var revealCutout = renderPolicy.AllowHoverReveal && zone.Behavior.HasFlag(ZoneBehavior.RevealOnHover)
                 ? CreateHoverRevealCutout(
                     zoneRect,
                     cursorScreenPoint,
@@ -298,11 +319,12 @@ public sealed class PrivacyOverlayWindow : Window
         MaskColorOption maskColor,
         double strength,
         Rect? revealCutout,
-        IReadOnlyList<Rect> occludingCutouts)
+        IReadOnlyList<Rect> occludingCutouts,
+        double cornerRadius = 14d)
     {
         var fill = BuildBackground(style, maskColor, strength);
         var opacity = ComputeOverlayOpacity(style, strength);
-        Geometry geometry = new RectangleGeometry(zoneRect, 14, 14);
+        Geometry geometry = new RectangleGeometry(zoneRect, cornerRadius, cornerRadius);
 
         if (revealCutout is not null)
         {
