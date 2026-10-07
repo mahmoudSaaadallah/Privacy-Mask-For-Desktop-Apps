@@ -11,6 +11,7 @@ PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Tele
 - Hover reveal window around the mouse pointer
 - Adjustable mask darkness
 - Global hotkeys, tray controls, onboarding, and launch-at-sign-in support
+- Adaptive window inspection and cached overlay rendering to reduce idle work
 
 ## Privacy model
 

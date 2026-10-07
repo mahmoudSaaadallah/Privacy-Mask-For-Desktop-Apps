@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using PrivacyMask.Core.Models;
+using PrivacyMask.Core.Services;
 using PrivacyMask.Windows.Interop;
 using PrivacyMask.Windows.Models;
 
@@ -11,28 +11,49 @@ namespace PrivacyMask.Windows.Services;
 
 public sealed class DesktopWindowInspector
 {
-    public WindowDiscoveryResult Capture()
+    private readonly Dictionary<nint, CachedProcessIdentity> _processIdentityCache = [];
+    private readonly HashSet<nint> _observedHandles = [];
+    private readonly List<nint> _staleHandles = [];
+    private readonly List<DesktopWindowSnapshot> _windows = [];
+    private readonly List<WindowSnapshot> _candidateWindows = [];
+
+    public WindowDiscoveryResult Capture(WindowProcessFilter? processFilter = null)
     {
         var foregroundHandle = NativeMethods.GetForegroundWindow();
-        var windows = new List<WindowSnapshot>();
         var zOrderIndex = 0;
+        _observedHandles.Clear();
+        _windows.Clear();
+        _candidateWindows.Clear();
 
         NativeMethods.EnumWindows((handle, _) =>
         {
-            var snapshot = TryCreateSnapshot(handle, foregroundHandle, zOrderIndex);
+            var wasCaptured = TryCreateSnapshot(
+                handle,
+                foregroundHandle,
+                zOrderIndex,
+                processFilter,
+                out var desktopSnapshot,
+                out var candidateSnapshot);
             zOrderIndex++;
-            if (snapshot is not null)
+            if (wasCaptured)
             {
-                windows.Add(snapshot);
+                _windows.Add(desktopSnapshot);
+                if (candidateSnapshot is not null)
+                {
+                    _candidateWindows.Add(candidateSnapshot);
+                }
             }
 
             return true;
         }, nint.Zero);
 
+        PruneProcessIdentityCache();
+
         return new WindowDiscoveryResult
         {
             ForegroundHandle = foregroundHandle,
-            Windows = windows,
+            Windows = _windows,
+            CandidateWindows = _candidateWindows,
         };
     }
 
@@ -43,7 +64,15 @@ public sealed class DesktopWindowInspector
             return null;
         }
 
-        return TryCreateSnapshot(handle, NativeMethods.GetForegroundWindow(), int.MaxValue);
+        return TryCreateSnapshot(
+            handle,
+            NativeMethods.GetForegroundWindow(),
+            int.MaxValue,
+            processFilter: null,
+            out _,
+            out var candidateSnapshot)
+            ? candidateSnapshot
+            : null;
     }
 
     public bool IsKeyDown(int virtualKey)
@@ -51,37 +80,59 @@ public sealed class DesktopWindowInspector
         return (NativeMethods.GetAsyncKeyState(virtualKey) & 0x8000) != 0;
     }
 
-    private static WindowSnapshot? TryCreateSnapshot(nint handle, nint foregroundHandle, int zOrderIndex)
+    private bool TryCreateSnapshot(
+        nint handle,
+        nint foregroundHandle,
+        int zOrderIndex,
+        WindowProcessFilter? processFilter,
+        out DesktopWindowSnapshot desktopSnapshot,
+        out WindowSnapshot? candidateSnapshot)
     {
+        desktopSnapshot = default;
+        candidateSnapshot = null;
         if (handle == nint.Zero || !NativeMethods.IsWindowVisible(handle))
         {
-            return null;
+            return false;
         }
 
         var exStyle = NativeMethods.GetWindowLong(handle, NativeMethods.GwlExStyle);
         if ((exStyle & NativeMethods.WsExToolWindow) == NativeMethods.WsExToolWindow)
         {
-            return null;
+            return false;
         }
 
         if (!NativeMethods.GetWindowRect(handle, out var rect))
         {
-            return null;
+            return false;
         }
 
         var screenRect = new ScreenRect(rect.Left, rect.Top, rect.Right, rect.Bottom);
         if (screenRect.IsEmpty)
         {
-            return null;
+            return false;
         }
+
+        var isMinimized = NativeMethods.IsIconic(handle);
+        desktopSnapshot = new DesktopWindowSnapshot(
+            handle,
+            screenRect,
+            zOrderIndex,
+            IsVisible: true,
+            isMinimized);
 
         var processName = TryGetProcessName(handle);
         if (string.IsNullOrWhiteSpace(processName))
         {
-            return null;
+            return true;
         }
 
-        return new WindowSnapshot
+        var isCandidate = processFilter is null || processFilter.IsMatch(processName);
+        if (!isCandidate)
+        {
+            return true;
+        }
+
+        candidateSnapshot = new WindowSnapshot
         {
             Handle = handle,
             ProcessName = processName,
@@ -91,11 +142,12 @@ public sealed class DesktopWindowInspector
             ZOrderIndex = zOrderIndex,
             IsVisible = true,
             IsForeground = handle == foregroundHandle,
-            IsMinimized = NativeMethods.IsIconic(handle),
+            IsMinimized = isMinimized,
         };
+        return true;
     }
 
-    private static string TryGetProcessName(nint handle)
+    private string TryGetProcessName(nint handle)
     {
         NativeMethods.GetWindowThreadProcessId(handle, out var processId);
         if (processId == 0)
@@ -103,14 +155,39 @@ public sealed class DesktopWindowInspector
             return string.Empty;
         }
 
+        _observedHandles.Add(handle);
+        if (_processIdentityCache.TryGetValue(handle, out var cached) && cached.ProcessId == processId)
+        {
+            return cached.ProcessName;
+        }
+
         try
         {
             using var process = Process.GetProcessById((int)processId);
-            return process.ProcessName;
+            var processName = process.ProcessName;
+            _processIdentityCache[handle] = new CachedProcessIdentity(processId, processName);
+            return processName;
         }
         catch
         {
             return string.Empty;
+        }
+    }
+
+    private void PruneProcessIdentityCache()
+    {
+        _staleHandles.Clear();
+        foreach (var handle in _processIdentityCache.Keys)
+        {
+            if (!_observedHandles.Contains(handle))
+            {
+                _staleHandles.Add(handle);
+            }
+        }
+
+        foreach (var handle in _staleHandles)
+        {
+            _processIdentityCache.Remove(handle);
         }
     }
 
@@ -128,4 +205,6 @@ public sealed class DesktopWindowInspector
         _ = NativeMethods.GetClassName(handle, builder, builder.Capacity);
         return builder.ToString().Trim();
     }
+
+    private readonly record struct CachedProcessIdentity(uint ProcessId, string ProcessName);
 }

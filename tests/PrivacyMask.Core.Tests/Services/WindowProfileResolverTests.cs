@@ -63,6 +63,41 @@ public sealed class WindowProfileResolverTests
     }
 
     [Fact]
+    public void Resolve_ReusesEffectiveZonesWhileProfileConfigurationIsUnchanged()
+    {
+        var settings = new DefaultSettingsFactory().Create();
+        var resolver = new WindowProfileResolver([new FakeWhatsAppAdapter()]);
+        var snapshot = CreateWhatsAppSnapshot(width: 1200);
+
+        var first = resolver.Resolve(snapshot, settings.AppProfiles);
+        var second = resolver.Resolve(snapshot, settings.AppProfiles);
+
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+        Assert.Same(first!.EffectiveZones, second!.EffectiveZones);
+    }
+
+    [Fact]
+    public void Resolve_RefreshesEffectiveZonesAfterProfileConfigurationChanges()
+    {
+        var settings = new DefaultSettingsFactory().Create();
+        var profile = settings.AppProfiles.Single(candidate => candidate.AppId == AppId.WhatsApp);
+        var resolver = new WindowProfileResolver([new FakeWhatsAppAdapter()]);
+        var snapshot = CreateWhatsAppSnapshot(width: 1200);
+        var first = resolver.Resolve(snapshot, settings.AppProfiles);
+
+        profile.MaskIntensity = 2.1d;
+        profile.Zones.Single().Enabled = false;
+        var second = resolver.Resolve(snapshot, settings.AppProfiles);
+
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+        Assert.NotSame(first!.EffectiveZones, second!.EffectiveZones);
+        Assert.Equal(2.1d, second.EffectiveZones.Single().Strength, 2);
+        Assert.False(second.EffectiveZones.Single().Enabled);
+    }
+
+    [Fact]
     public void Resolve_ReturnsNull_WhenMatchingProfileIsDisabled()
     {
         var factory = new DefaultSettingsFactory();

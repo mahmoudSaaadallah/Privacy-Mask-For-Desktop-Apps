@@ -14,6 +14,18 @@ PrivacyMask is split into three projects:
 4. The profile resolver selects a matching preset and effective mask settings.
 5. The overlay manager positions click-through windows over the supported app windows.
 
+The discovery pass keeps lightweight bounds and z-order records for every
+visible desktop window so occlusion remains correct. Process names are cached,
+and title/class metadata plus full window models are created only for processes
+that can match an enabled profile. Effective mask zones are reused until their
+source configuration changes.
+
+The refresh cadence is 500 ms while idle or paused and 100 ms while candidate
+windows exist. Pause and panic transitions request an immediate refresh, so the
+idle cadence does not delay protection state changes. Each overlay compares its
+last rendered bounds, profile, zones, occlusion list, reveal state, and relevant
+cursor position; unchanged frames do not rebuild WPF brushes or geometry.
+
 See [runtime-protection.md](runtime-protection.md) for runtime state transitions,
 panic-mask behavior, and persistence compatibility.
 

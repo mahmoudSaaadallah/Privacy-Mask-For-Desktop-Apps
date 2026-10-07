@@ -18,6 +18,19 @@ namespace PrivacyMask.App.Windows;
 public sealed class PrivacyOverlayWindow : Window
 {
     private readonly Canvas _canvas;
+    private ScreenRect[] _lastOccludingBounds = [];
+    private AppProfile? _lastProfile;
+    private IReadOnlyList<PrivacyZone>? _lastEffectiveZones;
+    private RuntimeMode _lastMode;
+    private ScreenRect _lastBounds;
+    private MaskColorOption _lastMaskColor;
+    private double _lastMaskIntensity;
+    private int _lastHoverRevealWidthPixels;
+    private int _lastHoverRevealHeightPixels;
+    private bool _lastTemporaryRevealHeld;
+    private bool _lastCursorAffectsRender;
+    private Point _lastCursorScreenPoint;
+    private bool _hasRenderState;
 
     public PrivacyOverlayWindow()
     {
@@ -46,21 +59,39 @@ public sealed class PrivacyOverlayWindow : Window
         var renderPolicy = ProtectionRenderPolicy.ForMode(mode);
         if (!renderPolicy.ShouldRender || trackedWindow.Snapshot.IsMinimized || trackedWindow.Snapshot.Bounds.IsEmpty)
         {
-            if (IsVisible)
-            {
-                Hide();
-            }
-
+            HideOverlay();
             return;
         }
 
-        if (!IsVisible)
+        var wasVisible = IsVisible;
+        if (!wasVisible)
         {
             Show();
         }
 
+        var cursorAffectsRender = DoesCursorAffectRender(
+            trackedWindow,
+            renderPolicy,
+            temporaryRevealHeld,
+            cursorScreenPoint);
+        if (wasVisible && IsRenderStateCurrent(
+                trackedWindow,
+                mode,
+                temporaryRevealHeld,
+                cursorAffectsRender,
+                cursorScreenPoint))
+        {
+            return;
+        }
+
         ApplyWindowBounds(trackedWindow.Snapshot.Bounds);
         RenderZones(trackedWindow, renderPolicy, temporaryRevealHeld, cursorScreenPoint);
+        CaptureRenderState(
+            trackedWindow,
+            mode,
+            temporaryRevealHeld,
+            cursorAffectsRender,
+            cursorScreenPoint);
     }
 
     public void HideOverlay()
@@ -71,6 +102,7 @@ public sealed class PrivacyOverlayWindow : Window
         }
 
         _canvas.Children.Clear();
+        _hasRenderState = false;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -183,6 +215,112 @@ public sealed class PrivacyOverlayWindow : Window
             && cursorScreenPoint.Y <= top + height;
     }
 
+    private static bool DoesCursorAffectRender(
+        TrackedWindow trackedWindow,
+        ProtectionRenderPolicy renderPolicy,
+        bool temporaryRevealHeld,
+        Point cursorScreenPoint)
+    {
+        if (!renderPolicy.AllowHoverReveal)
+        {
+            return false;
+        }
+
+        foreach (var zone in trackedWindow.EffectiveZones)
+        {
+            if (!zone.Enabled
+                || !zone.Behavior.HasFlag(ZoneBehavior.RevealOnHover)
+                || temporaryRevealHeld && zone.Behavior.HasFlag(ZoneBehavior.HideDuringTemporaryReveal))
+            {
+                continue;
+            }
+
+            if (IsCursorInsideZone(cursorScreenPoint, trackedWindow.Snapshot.Bounds, zone.RelativeRect))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsRenderStateCurrent(
+        TrackedWindow trackedWindow,
+        RuntimeMode mode,
+        bool temporaryRevealHeld,
+        bool cursorAffectsRender,
+        Point cursorScreenPoint)
+    {
+        if (!_hasRenderState
+            || _lastMode != mode
+            || _lastBounds != trackedWindow.Snapshot.Bounds
+            || !ReferenceEquals(_lastProfile, trackedWindow.Profile)
+            || !ReferenceEquals(_lastEffectiveZones, trackedWindow.EffectiveZones)
+            || _lastMaskColor != trackedWindow.Profile.MaskColor
+            || _lastMaskIntensity != trackedWindow.Profile.MaskIntensity
+            || _lastHoverRevealWidthPixels != trackedWindow.Profile.HoverRevealWidthPixels
+            || _lastHoverRevealHeightPixels != trackedWindow.Profile.HoverRevealHeightPixels
+            || _lastTemporaryRevealHeld != temporaryRevealHeld
+            || _lastCursorAffectsRender != cursorAffectsRender
+            || cursorAffectsRender && _lastCursorScreenPoint != cursorScreenPoint
+            || !OccludingBoundsEqual(trackedWindow.OccludingBounds))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool OccludingBoundsEqual(IReadOnlyList<ScreenRect> occludingBounds)
+    {
+        if (_lastOccludingBounds.Length != occludingBounds.Count)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < occludingBounds.Count; index++)
+        {
+            if (_lastOccludingBounds[index] != occludingBounds[index])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void CaptureRenderState(
+        TrackedWindow trackedWindow,
+        RuntimeMode mode,
+        bool temporaryRevealHeld,
+        bool cursorAffectsRender,
+        Point cursorScreenPoint)
+    {
+        _lastMode = mode;
+        _lastBounds = trackedWindow.Snapshot.Bounds;
+        _lastProfile = trackedWindow.Profile;
+        _lastEffectiveZones = trackedWindow.EffectiveZones;
+        _lastMaskColor = trackedWindow.Profile.MaskColor;
+        _lastMaskIntensity = trackedWindow.Profile.MaskIntensity;
+        _lastHoverRevealWidthPixels = trackedWindow.Profile.HoverRevealWidthPixels;
+        _lastHoverRevealHeightPixels = trackedWindow.Profile.HoverRevealHeightPixels;
+        _lastTemporaryRevealHeld = temporaryRevealHeld;
+        _lastCursorAffectsRender = cursorAffectsRender;
+        _lastCursorScreenPoint = cursorScreenPoint;
+
+        if (_lastOccludingBounds.Length != trackedWindow.OccludingBounds.Count)
+        {
+            _lastOccludingBounds = new ScreenRect[trackedWindow.OccludingBounds.Count];
+        }
+
+        for (var index = 0; index < trackedWindow.OccludingBounds.Count; index++)
+        {
+            _lastOccludingBounds[index] = trackedWindow.OccludingBounds[index];
+        }
+
+        _hasRenderState = true;
+    }
+
     private Rect? CreateHoverRevealCutout(Rect zoneRect, Point cursorScreenPoint, double hoverRevealWidthPixels, double hoverRevealHeightPixels)
     {
         var source = PresentationSource.FromVisual(this);
@@ -243,17 +381,27 @@ public sealed class PrivacyOverlayWindow : Window
     {
         var normalized = NormalizeStrength(strength);
         var baseColor = GetMaskBaseColor(maskColor);
+        Brush brush;
         if (normalized >= 0.999d)
         {
-            return new SolidColorBrush(baseColor);
+            brush = new SolidColorBrush(baseColor);
+        }
+        else
+        {
+            brush = style switch
+            {
+                MaskStyle.Pixelate => CreatePixelBrush(baseColor, normalized),
+                MaskStyle.SolidRedact => CreateSolidRedactBrush(baseColor, normalized),
+                _ => CreateBlurBrush(baseColor, normalized),
+            };
         }
 
-        return style switch
+        if (brush.CanFreeze)
         {
-            MaskStyle.Pixelate => CreatePixelBrush(baseColor, normalized),
-            MaskStyle.SolidRedact => CreateSolidRedactBrush(baseColor, normalized),
-            _ => CreateBlurBrush(baseColor, normalized),
-        };
+            brush.Freeze();
+        }
+
+        return brush;
     }
 
     private static Brush CreateBlurBrush(MediaColor baseColor, double normalized)
@@ -334,6 +482,11 @@ public sealed class PrivacyOverlayWindow : Window
         foreach (var cutout in occludingCutouts)
         {
             geometry = new CombinedGeometry(GeometryCombineMode.Exclude, geometry, new RectangleGeometry(cutout));
+        }
+
+        if (geometry.CanFreeze)
+        {
+            geometry.Freeze();
         }
 
         var shape = new Path

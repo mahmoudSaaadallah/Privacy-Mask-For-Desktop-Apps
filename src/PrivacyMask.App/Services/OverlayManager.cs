@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using PrivacyMask.App.Windows;
 using PrivacyMask.Core.Models;
 using Point = System.Windows.Point;
@@ -10,13 +9,16 @@ namespace PrivacyMask.App.Services;
 public sealed class OverlayManager : IDisposable
 {
     private readonly Dictionary<nint, PrivacyOverlayWindow> _overlays = [];
+    private readonly HashSet<nint> _activeHandles = [];
+    private readonly List<nint> _staleHandles = [];
 
     public void Update(IReadOnlyList<TrackedWindow> windows, RuntimeMode mode, bool temporaryRevealHeld, Point cursorScreenPoint)
     {
-        var activeHandles = windows.Select(window => window.Snapshot.Handle).ToHashSet();
+        _activeHandles.Clear();
 
         foreach (var window in windows)
         {
+            _activeHandles.Add(window.Snapshot.Handle);
             if (!_overlays.TryGetValue(window.Snapshot.Handle, out var overlay))
             {
                 overlay = new PrivacyOverlayWindow();
@@ -26,7 +28,16 @@ public sealed class OverlayManager : IDisposable
             overlay.UpdateOverlay(window, mode, temporaryRevealHeld, cursorScreenPoint);
         }
 
-        foreach (var staleHandle in _overlays.Keys.Where(handle => !activeHandles.Contains(handle)).ToList())
+        _staleHandles.Clear();
+        foreach (var handle in _overlays.Keys)
+        {
+            if (!_activeHandles.Contains(handle))
+            {
+                _staleHandles.Add(handle);
+            }
+        }
+
+        foreach (var staleHandle in _staleHandles)
         {
             _overlays[staleHandle].HideOverlay();
             _overlays[staleHandle].Close();

@@ -11,6 +11,11 @@
 - Release timers, hotkeys, overlays, windows, and the tray icon reliably during shutdown
 - Report global shortcut conflicts in the tray and beside the affected setting
 - Handle startup, settings-save, and launch-at-sign-in failures without unhandled exceptions
+- Inspect detailed window metadata only for processes that can match enabled profiles
+- Cache process identity and effective mask zones across unchanged refresh cycles
+- Skip rebuilding overlay brushes and geometry when the rendered state is unchanged
+- Use a slower idle refresh cadence with immediate pause and panic updates
+- Reuse hot-path collections and lightweight desktop-window snapshots to reduce allocations
 
 ## 1.0.0
 

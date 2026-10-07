@@ -12,6 +12,7 @@ using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
 using PrivacyMask.Windows.Adapters;
 using PrivacyMask.Windows.Interop;
+using PrivacyMask.Windows.Models;
 using PrivacyMask.Windows.Services;
 using Application = System.Windows.Application;
 using Point = System.Windows.Point;
@@ -36,8 +37,13 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly ToolStripMenuItem _launchAtLoginItem;
     private readonly ToolStripMenuItem _toggleProtectionItem;
     private readonly ToolStripMenuItem _panicItem;
+    private readonly List<TrackedWindow> _trackedWindows = [];
+    private readonly Dictionary<nint, List<ScreenRect>> _occludingBoundsByWindow = [];
+    private readonly HashSet<nint> _activeOcclusionHandles = [];
+    private readonly List<nint> _staleOcclusionHandles = [];
 
     private AppSettings _settings = new();
+    private WindowProcessFilter _windowProcessFilter = new([]);
     private IReadOnlySet<HotkeyAction> _unavailableHotkeyActions = new HashSet<HotkeyAction>();
     private MainWindow? _mainWindow;
     private bool _isShuttingDown;
@@ -65,7 +71,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
         _refreshTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)
         {
-            Interval = TimeSpan.FromMilliseconds(140),
+            Interval = OverlayRefreshCadence.IdleInterval,
         };
         _refreshTimer.Tick += RefreshTimerOnTick;
 
@@ -105,6 +111,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     public async Task StartAsync()
     {
         _settings = await _settingsStore.LoadAsync();
+        RebuildWindowProcessFilter();
         var registrationState = _startupRegistrationService.GetState();
         if (registrationState.Enabled)
         {
@@ -116,6 +123,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
         RegisterHotkeys();
         UpdateTrayState();
+        RefreshOverlays();
         _refreshTimer.Start();
 
         if (!_settings.OnboardingCompleted)
@@ -164,19 +172,26 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void RefreshTimerOnTick(object? sender, EventArgs e)
     {
+        RefreshOverlays();
+    }
+
+    private void RefreshOverlays()
+    {
         try
         {
             var currentMode = _protectionStateMachine.CurrentMode;
             if (currentMode == RuntimeMode.Off)
             {
                 _overlayManager.HideAll();
+                UpdateRefreshInterval(OverlayRefreshCadence.Select(currentMode, hasCandidateWindows: false));
                 return;
             }
 
-            var discovery = _windowInspector.Capture();
-            var trackedWindows = new List<TrackedWindow>();
+            var discovery = _windowInspector.Capture(_windowProcessFilter);
+            _trackedWindows.Clear();
+            _activeOcclusionHandles.Clear();
 
-            foreach (var snapshot in discovery.Windows)
+            foreach (var snapshot in discovery.CandidateWindows)
             {
                 var trackedWindow = _windowProfileResolver.Resolve(snapshot, _settings.AppProfiles);
                 if (trackedWindow is null)
@@ -191,17 +206,26 @@ public sealed class ShellCoordinator : IAsyncDisposable
                     continue;
                 }
 
-                trackedWindow.OccludingBounds = ResolveOccludingBounds(snapshot, discovery.Windows);
-                trackedWindows.Add(trackedWindow);
+                var occludingBounds = GetOccludingBoundsBuffer(snapshot.Handle);
+                ResolveOccludingBounds(snapshot, discovery.Windows, occludingBounds);
+                trackedWindow.OccludingBounds = occludingBounds;
+                _activeOcclusionHandles.Add(snapshot.Handle);
+                _trackedWindows.Add(trackedWindow);
             }
+
+            PruneOccludingBoundsBuffers();
 
             var cursorPoint = GetCursorPoint();
             var temporaryRevealHeld = EvaluateTemporaryReveal();
-            _overlayManager.Update(trackedWindows, currentMode, temporaryRevealHeld, cursorPoint);
+            _overlayManager.Update(_trackedWindows, currentMode, temporaryRevealHeld, cursorPoint);
+            UpdateRefreshInterval(OverlayRefreshCadence.Select(
+                currentMode,
+                discovery.CandidateWindows.Count > 0));
         }
         catch
         {
             _overlayManager.HideAll();
+            UpdateRefreshInterval(OverlayRefreshCadence.IdleInterval);
         }
     }
 
@@ -261,6 +285,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         }
 
         _settings = nextSettings;
+        RebuildWindowProcessFilter();
         RegisterHotkeys();
         UpdateTrayState();
     }
@@ -270,6 +295,12 @@ public sealed class ShellCoordinator : IAsyncDisposable
         previewSettings.CurrentMode = RuntimeMode.Standard;
         previewSettings.OnboardingCompleted = true;
         _settings = _defaultSettingsFactory.MergeWithDefaults(previewSettings);
+        RebuildWindowProcessFilter();
+    }
+
+    private void RebuildWindowProcessFilter()
+    {
+        _windowProcessFilter = new WindowProcessFilter(_settings.AppProfiles);
     }
 
     private void RegisterHotkeys()
@@ -311,12 +342,14 @@ public sealed class ShellCoordinator : IAsyncDisposable
     {
         _protectionStateMachine.ToggleProtection();
         UpdateTrayState();
+        RefreshOverlays();
     }
 
     private void TogglePanicMode()
     {
         _protectionStateMachine.TogglePanic();
         UpdateTrayState();
+        RefreshOverlays();
     }
 
     private async Task ToggleLaunchAtLoginAsync()
@@ -429,18 +462,65 @@ public sealed class ShellCoordinator : IAsyncDisposable
             : new Point();
     }
 
-    private static IReadOnlyList<ScreenRect> ResolveOccludingBounds(WindowSnapshot target, IReadOnlyList<WindowSnapshot> windows)
+    private List<ScreenRect> GetOccludingBoundsBuffer(nint handle)
     {
-        return windows
-            .Where(candidate =>
-                candidate.Handle != target.Handle
-                && candidate.IsVisible
-                && !candidate.IsMinimized
-                && candidate.ZOrderIndex < target.ZOrderIndex
-                && candidate.Bounds.IntersectsWith(target.Bounds))
-            .Select(candidate => candidate.Bounds.Intersect(target.Bounds))
-            .Where(intersection => !intersection.IsEmpty)
-            .ToList();
+        if (!_occludingBoundsByWindow.TryGetValue(handle, out var bounds))
+        {
+            bounds = [];
+            _occludingBoundsByWindow[handle] = bounds;
+        }
+
+        bounds.Clear();
+        return bounds;
+    }
+
+    private void PruneOccludingBoundsBuffers()
+    {
+        _staleOcclusionHandles.Clear();
+        foreach (var handle in _occludingBoundsByWindow.Keys)
+        {
+            if (!_activeOcclusionHandles.Contains(handle))
+            {
+                _staleOcclusionHandles.Add(handle);
+            }
+        }
+
+        foreach (var handle in _staleOcclusionHandles)
+        {
+            _occludingBoundsByWindow.Remove(handle);
+        }
+    }
+
+    private void UpdateRefreshInterval(TimeSpan interval)
+    {
+        if (_refreshTimer.Interval != interval)
+        {
+            _refreshTimer.Interval = interval;
+        }
+    }
+
+    private static void ResolveOccludingBounds(
+        WindowSnapshot target,
+        IReadOnlyList<DesktopWindowSnapshot> windows,
+        List<ScreenRect> destination)
+    {
+        foreach (var candidate in windows)
+        {
+            if (candidate.Handle == target.Handle
+                || !candidate.IsVisible
+                || candidate.IsMinimized
+                || candidate.ZOrderIndex >= target.ZOrderIndex
+                || !candidate.Bounds.IntersectsWith(target.Bounds))
+            {
+                continue;
+            }
+
+            var intersection = candidate.Bounds.Intersect(target.Bounds);
+            if (!intersection.IsEmpty)
+            {
+                destination.Add(intersection);
+            }
+        }
     }
 
     private async Task ShutdownAsync()
