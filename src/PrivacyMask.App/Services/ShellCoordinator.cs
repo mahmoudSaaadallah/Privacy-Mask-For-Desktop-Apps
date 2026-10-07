@@ -23,6 +23,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly Dispatcher _dispatcher;
     private readonly string[] _args;
     private readonly DefaultSettingsFactory _defaultSettingsFactory;
+    private readonly ProtectionStateMachine _protectionStateMachine;
     private readonly JsonSettingsStore _settingsStore;
     private readonly DesktopWindowInspector _windowInspector;
     private readonly WindowProfileResolver _windowProfileResolver;
@@ -45,6 +46,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _dispatcher = dispatcher;
         _args = args;
         _defaultSettingsFactory = new DefaultSettingsFactory();
+        _protectionStateMachine = new ProtectionStateMachine();
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
         _windowInspector = new DesktopWindowInspector();
         _windowProfileResolver = new WindowProfileResolver(
@@ -158,7 +160,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
     {
         try
         {
-            if (_settings.CurrentMode is RuntimeMode.Off or RuntimeMode.Panic)
+            var currentMode = _protectionStateMachine.CurrentMode;
+            if (currentMode == RuntimeMode.Off)
             {
                 _overlayManager.HideAll();
                 return;
@@ -175,7 +178,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
                     continue;
                 }
 
-                if (trackedWindow.Profile.StartupMode == AppActivationMode.FocusAware && !snapshot.IsForeground)
+                if (currentMode != RuntimeMode.Panic
+                    && trackedWindow.Profile.StartupMode == AppActivationMode.FocusAware
+                    && !snapshot.IsForeground)
                 {
                     continue;
                 }
@@ -186,7 +191,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
             var cursorPoint = GetCursorPoint();
             var temporaryRevealHeld = EvaluateTemporaryReveal();
-            _overlayManager.Update(trackedWindows, _settings.CurrentMode, temporaryRevealHeld, cursorPoint);
+            _overlayManager.Update(trackedWindows, currentMode, temporaryRevealHeld, cursorPoint);
         }
         catch
         {
@@ -212,7 +217,10 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void ShowSettingsWindow()
     {
-        var viewModel = SettingsViewModel.FromModel(_settings, _settingsStore.SettingsPath);
+        var viewModel = SettingsViewModel.FromModel(
+            _settings,
+            _protectionStateMachine.CurrentMode,
+            _settingsStore.SettingsPath);
         if (_mainWindow is null)
         {
             _mainWindow = new MainWindow(viewModel);
@@ -231,7 +239,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task SaveSettingsAsync(AppSettings updatedSettings)
     {
-        updatedSettings.CurrentMode = _settings.CurrentMode;
+        updatedSettings.CurrentMode = RuntimeMode.Standard;
         updatedSettings.OnboardingCompleted = true;
         _settings = _defaultSettingsFactory.MergeWithDefaults(updatedSettings);
         _startupRegistrationService.SetEnabled(_settings.LaunchAtLogin, _settings.StartMinimized);
@@ -242,7 +250,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void PreviewSettings(AppSettings previewSettings)
     {
-        previewSettings.CurrentMode = _settings.CurrentMode;
+        previewSettings.CurrentMode = RuntimeMode.Standard;
         previewSettings.OnboardingCompleted = true;
         _settings = _defaultSettingsFactory.MergeWithDefaults(previewSettings);
     }
@@ -270,16 +278,14 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void ToggleProtection()
     {
-        _settings.CurrentMode = _settings.CurrentMode == RuntimeMode.Off ? RuntimeMode.Standard : RuntimeMode.Off;
+        _protectionStateMachine.ToggleProtection();
         UpdateTrayState();
-        _ = _settingsStore.SaveAsync(_settings);
     }
 
     private void TogglePanicMode()
     {
-        _settings.CurrentMode = _settings.CurrentMode == RuntimeMode.Panic ? RuntimeMode.Standard : RuntimeMode.Panic;
+        _protectionStateMachine.TogglePanic();
         UpdateTrayState();
-        _ = _settingsStore.SaveAsync(_settings);
     }
 
     private async Task ToggleLaunchAtLoginAsync()
@@ -292,11 +298,13 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void UpdateTrayState()
     {
-        _modeItem.Text = $"Mode: {_settings.CurrentMode}";
+        var currentMode = _protectionStateMachine.CurrentMode;
+        _modeItem.Text = $"Mode: {currentMode}";
         _launchAtLoginItem.Checked = _settings.LaunchAtLogin;
-        _toggleProtectionItem.Text = _settings.CurrentMode == RuntimeMode.Off ? "Resume protection" : "Pause protection";
-        _panicItem.Checked = _settings.CurrentMode == RuntimeMode.Panic;
-        _notifyIcon.Text = _settings.CurrentMode switch
+        _toggleProtectionItem.Text = currentMode == RuntimeMode.Off ? "Resume protection" : "Pause protection";
+        _toggleProtectionItem.Enabled = currentMode != RuntimeMode.Panic;
+        _panicItem.Checked = currentMode == RuntimeMode.Panic;
+        _notifyIcon.Text = currentMode switch
         {
             RuntimeMode.Standard => "PrivacyMask - protecting supported windows",
             RuntimeMode.Off => "PrivacyMask - protection paused",
@@ -308,6 +316,11 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private bool EvaluateTemporaryReveal()
     {
+        if (!_protectionStateMachine.IsTemporaryRevealAllowed)
+        {
+            return false;
+        }
+
         var holdBinding = _settings.GlobalHotkeys.FirstOrDefault(binding => binding.Action == HotkeyAction.TemporaryRevealHold && binding.Enabled);
         if (holdBinding is null)
         {

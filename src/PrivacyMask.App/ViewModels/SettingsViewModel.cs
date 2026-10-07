@@ -9,13 +9,13 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _launchAtLogin;
     private bool _startMinimized;
 
-    public static SettingsViewModel FromModel(AppSettings settings, string configPath)
+    public static SettingsViewModel FromModel(AppSettings settings, RuntimeMode currentMode, string configPath)
     {
         return new SettingsViewModel
         {
             _launchAtLogin = settings.LaunchAtLogin,
             _startMinimized = settings.StartMinimized,
-            CurrentModeSummary = settings.CurrentMode switch
+            CurrentModeSummary = currentMode switch
             {
                 RuntimeMode.Standard => "Standard masking is active when a supported app is detected.",
                 RuntimeMode.Off => "Protection is paused until you toggle it back on.",
