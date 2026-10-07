@@ -37,6 +37,7 @@ New-Item -ItemType Directory -Path (Join-Path $stagingPath 'single-file') -Force
 $packageFiles = @(
   'Install-PrivacyMask.cmd'
   'Install-PrivacyMask.ps1'
+  'ShortcutTools.ps1'
   'Uninstall-PrivacyMask.cmd'
   'Uninstall-PrivacyMask.ps1'
   'README.md'

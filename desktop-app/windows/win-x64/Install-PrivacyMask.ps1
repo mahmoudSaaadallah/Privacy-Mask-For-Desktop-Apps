@@ -4,6 +4,13 @@ $buildRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $singleFilePath = Join-Path $buildRoot 'single-file\\PrivacyMask.App.exe'
 $portableFolderPath = Join-Path $buildRoot 'app'
 $installPath = Join-Path $env:LOCALAPPDATA 'PrivacyMask.Desktop'
+$shortcutToolsPath = Join-Path $buildRoot 'ShortcutTools.ps1'
+
+if (-not (Test-Path -LiteralPath $shortcutToolsPath -PathType Leaf)) {
+  throw "Shortcut helper not found at '$shortcutToolsPath'."
+}
+
+. $shortcutToolsPath
 
 if (Test-Path $singleFilePath) {
   $sourcePath = $singleFilePath
@@ -25,20 +32,21 @@ else {
 }
 
 $exePath = Join-Path $installPath 'PrivacyMask.App.exe'
-$shell = New-Object -ComObject WScript.Shell
 
-$desktopShortcut = $shell.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) 'PrivacyMask.lnk'))
-$desktopShortcut.TargetPath = $exePath
-$desktopShortcut.WorkingDirectory = $installPath
-$desktopShortcut.Description = 'PrivacyMask for Desktop Apps'
-$desktopShortcut.Save()
+$desktopShortcutPath = Join-Path ([Environment]::GetFolderPath('Desktop')) 'PrivacyMask.lnk'
+New-PrivacyMaskShortcut `
+  -ShortcutPath $desktopShortcutPath `
+  -TargetPath $exePath `
+  -WorkingDirectory $installPath `
+  -Description 'PrivacyMask for Desktop Apps'
 
 $startMenuFolder = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\PrivacyMask'
 New-Item -ItemType Directory -Path $startMenuFolder -Force | Out-Null
-$startMenuShortcut = $shell.CreateShortcut((Join-Path $startMenuFolder 'PrivacyMask.lnk'))
-$startMenuShortcut.TargetPath = $exePath
-$startMenuShortcut.WorkingDirectory = $installPath
-$startMenuShortcut.Description = 'PrivacyMask for Desktop Apps'
-$startMenuShortcut.Save()
+$startMenuShortcutPath = Join-Path $startMenuFolder 'PrivacyMask.lnk'
+New-PrivacyMaskShortcut `
+  -ShortcutPath $startMenuShortcutPath `
+  -TargetPath $exePath `
+  -WorkingDirectory $installPath `
+  -Description 'PrivacyMask for Desktop Apps'
 
 Write-Host "Installed PrivacyMask to $installPath"
