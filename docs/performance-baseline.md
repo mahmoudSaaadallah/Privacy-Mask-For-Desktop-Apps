@@ -74,6 +74,25 @@ powershell -ExecutionPolicy Bypass -File .\scripts\measure-publish-size.ps1
 Pass `-NoRestore` after the solution has already been restored. Use
 `-OutputPath` to save a JSON summary.
 
+## Runtime-efficiency update
+
+The runtime-efficiency implementation was measured at product commit
+`c930427` on 2026-10-07. The framework-dependent application payload was
+0.309 MB across 6 files, below the 1 MB budget. The change adds no package or
+runtime dependencies.
+
+A comparable runtime sample was not captured during this change because a
+different, previously published PrivacyMask executable was already running and
+owned the single-instance mutex. Its counters do not represent this branch, so
+they were deliberately excluded. A fresh packaged build must be measured in
+the required scenarios before claiming a numeric CPU or memory improvement.
+
+The implementation reduces work through mechanisms that can be verified in
+code and tests: candidate-only detailed window inspection, cached process
+identity, reusable discovery and overlay collections, cached effective zones,
+render invalidation for unchanged overlays, adaptive polling, and releasing the
+settings visual tree when it closes.
+
 ## Performance budgets
 
 The first optimization work should target these budgets on the reference

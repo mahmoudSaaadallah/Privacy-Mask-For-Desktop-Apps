@@ -11,6 +11,7 @@ PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Tele
 - Hover reveal window around the mouse pointer
 - Adjustable mask darkness
 - Global hotkeys, tray controls, onboarding, and launch-at-sign-in support
+- Adaptive window inspection and cached overlay rendering to reduce idle work
 
 ## Privacy model
 
@@ -144,6 +145,10 @@ gestures until panic mode is turned off.
 If another program has already reserved a configured global shortcut,
 PrivacyMask shows a tray warning and marks that shortcut as unavailable in the
 settings window. Other registered shortcuts continue to work normally.
+
+Closing the settings window releases its WPF controls and view models while the
+tray process keeps running. Reopen settings from the tray icon or the configured
+global shortcut.
 
 ## Developer guide
 
