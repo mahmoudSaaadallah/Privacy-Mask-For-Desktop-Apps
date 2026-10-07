@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using PrivacyMask.App.ViewModels;
 using PrivacyMask.App.Windows;
 using PrivacyMask.Core.Models;
@@ -17,6 +18,7 @@ public partial class MainWindow : Window
     public static readonly Array ActivationModes = Enum.GetValues<AppActivationMode>();
 
     private bool _allowClose;
+    private bool _isSaving;
 
     public MainWindow(SettingsViewModel viewModel)
     {
@@ -27,6 +29,8 @@ public partial class MainWindow : Window
     public event Func<AppSettings, Task>? SaveRequested;
 
     public event Action<AppSettings>? PreviewRequested;
+
+    public event Action? DiscardRequested;
 
     public SettingsViewModel ViewModel => (SettingsViewModel)DataContext;
 
@@ -48,11 +52,12 @@ public partial class MainWindow : Window
 
     private async void Save_Click(object sender, RoutedEventArgs e)
     {
-        if (SaveRequested is null)
+        if (SaveRequested is null || _isSaving)
         {
             return;
         }
 
+        _isSaving = true;
         IsEnabled = false;
         try
         {
@@ -71,12 +76,13 @@ public partial class MainWindow : Window
         finally
         {
             IsEnabled = true;
+            _isSaving = false;
         }
     }
 
     private void CloseToTray_Click(object sender, RoutedEventArgs e)
     {
-        Hide();
+        DiscardAndHide();
     }
 
     private void ApplyPreset_Click(object sender, RoutedEventArgs e)
@@ -138,9 +144,31 @@ public partial class MainWindow : Window
         if (!_allowClose)
         {
             e.Cancel = true;
-            Hide();
+            DiscardAndHide();
         }
 
         base.OnClosing(e);
+    }
+
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            DiscardAndHide();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            Save_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
+
+        base.OnPreviewKeyDown(e);
+    }
+
+    private void DiscardAndHide()
+    {
+        DiscardRequested?.Invoke();
+        Hide();
     }
 }
