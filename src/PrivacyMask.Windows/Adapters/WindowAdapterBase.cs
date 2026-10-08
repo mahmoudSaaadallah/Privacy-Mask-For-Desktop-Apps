@@ -42,7 +42,9 @@ public abstract class WindowAdapterBase : IWindowAdapter
     private static bool Matches(WindowMatcher matcher, WindowSnapshot snapshot)
     {
         var processMatch = matcher.ProcessNames.Count == 0
-            || matcher.ProcessNames.Any(candidate => ProcessNameMatcher.Matches(candidate, snapshot.ProcessName));
+            || matcher.ProcessNames.Any(candidate => matcher.ProcessNameMatchMode == ProcessNameMatchMode.Exact
+                ? string.Equals(candidate, snapshot.ProcessName, StringComparison.OrdinalIgnoreCase)
+                : ProcessNameMatcher.Matches(candidate, snapshot.ProcessName));
 
         if (!processMatch)
         {
