@@ -1,7 +1,11 @@
 # Changelog
 
-## Unreleased
+## 2.0.0 - Unreleased
 
+- Begin the user-defined application profile foundation for protecting desktop apps beyond WhatsApp and Telegram
+- Give every profile a stable identity so multiple custom applications can coexist and receive independent hotkey updates
+- Add safe custom-profile defaults, exact process-name matching, and a generic Windows adapter
+- Preserve custom profiles and migrate existing 1.x profiles through settings schema version 8
 - Add a lightweight wet-glass mask with transparent condensation droplets over live blur
 - Expose mask-style selection in the primary per-application settings
 - Preserve the selected mask style when window width activates another adaptive preset

@@ -10,7 +10,8 @@ PrivacyMask is split into three projects:
 
 1. The tray application starts, loads local JSON settings, and initializes a transient protected runtime state.
 2. The window inspector captures visible desktop windows.
-3. Window adapters identify supported WhatsApp Desktop and Telegram Desktop windows.
+3. Built-in adapters identify WhatsApp and Telegram windows, while a generic
+   adapter exactly matches processes selected for user-defined profiles.
 4. The profile resolver selects a matching preset and effective mask settings.
 5. The overlay manager positions click-through windows over the supported app windows.
 
@@ -60,6 +61,10 @@ capture cadence to limit resource use.
   used only when neither the primary file nor the backup can be parsed.
 - A normalized file is not rewritten during startup when its serialized form
   is already current, reducing unnecessary disk writes.
+- Settings schema version 8 assigns every profile a stable identifier. Legacy
+  1.x WhatsApp and Telegram settings receive their built-in identifiers during
+  normalization, while user-defined profiles retain their own identities and
+  survive save/reload cycles.
 
 ## Lifecycle and hotkeys
 
