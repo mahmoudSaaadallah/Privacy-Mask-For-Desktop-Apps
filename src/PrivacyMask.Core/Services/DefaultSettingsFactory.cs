@@ -52,6 +52,13 @@ public sealed class DefaultSettingsFactory
                     Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Windows,
                     VirtualKey = 0x26,
                 },
+                new HotkeyBinding
+                {
+                    Action = HotkeyAction.DecreaseBlurStrength,
+                    DisplayName = "Decrease blur strength",
+                    Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Windows,
+                    VirtualKey = 0x28,
+                },
             ],
             AppProfiles =
             [

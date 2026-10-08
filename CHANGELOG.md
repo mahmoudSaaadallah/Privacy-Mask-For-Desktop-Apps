@@ -5,7 +5,7 @@
 - Add a lightweight wet-glass mask with transparent condensation droplets over live blur
 - Expose mask-style selection in the primary per-application settings
 - Preserve the selected mask style when window width activates another adaptive preset
-- Add `Ctrl + Win + ↑` to raise the focused protected app's blur strength by 5%
+- Add `Ctrl + Win + ↑` and `Ctrl + Win + ↓` to adjust the focused protected app's blur strength by 5%
 - Save shortcut adjustments atomically and prevent key-repeat from issuing duplicate steps
 - Replace the repeated procedural frost tiles with a live blur of the protected window
 - Make the 0–100% blur-strength scale progressively reveal or suppress underlying detail
