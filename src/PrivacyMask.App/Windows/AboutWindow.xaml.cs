@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Windows;
+using PrivacyMask.App.Services;
 
 namespace PrivacyMask.App.Windows;
 
@@ -13,6 +14,7 @@ public partial class AboutWindow : Window
     public AboutWindow()
     {
         InitializeComponent();
+        WindowWorkAreaSizer.Fit(this);
     }
 
     private void Close_Click(object sender, RoutedEventArgs e)

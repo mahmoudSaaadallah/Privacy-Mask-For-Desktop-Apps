@@ -16,7 +16,10 @@
         AutomationProperties.Name="PrivacyMask settings"
         AutomationProperties.HelpText="Configure startup, hotkeys, application profiles, masks, and privacy zones."
         WindowStartupLocation="CenterScreen">
-    <Grid Margin="18">
+    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Disabled">
+    <Grid MinWidth="1120"
+          Margin="18">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="320" />
             <ColumnDefinition Width="18" />
@@ -356,9 +359,11 @@
                                                               Margin="8,0,14,0"
                                                               HorizontalContentAlignment="Center"
                                                               AutomationProperties.Name="Hover reveal width in pixels"
+                                                              AutomationProperties.HelpText="Enter a width from 80 to 1400 pixels."
                                                               LostFocus="HoverRevealDimension_LostFocus"
-                                                             PreviewTextInput="NumericTextBox_PreviewTextInput"
-                                                             Text="{Binding HoverRevealWidthPixels, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                              PreviewTextInput="NumericTextBox_PreviewTextInput"
+                                                              Text="{Binding HoverRevealWidthPixels, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                              ToolTip="80–1400 pixels" />
                                                     <TextBlock VerticalAlignment="Center"
                                                                Foreground="#51656E"
                                                                Text="H" />
@@ -366,9 +371,11 @@
                                                               Margin="8,0,0,0"
                                                               HorizontalContentAlignment="Center"
                                                               AutomationProperties.Name="Hover reveal height in pixels"
+                                                              AutomationProperties.HelpText="Enter a height from 20 to 420 pixels."
                                                               LostFocus="HoverRevealDimension_LostFocus"
-                                                             PreviewTextInput="NumericTextBox_PreviewTextInput"
-                                                             Text="{Binding HoverRevealHeightPixels, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                              PreviewTextInput="NumericTextBox_PreviewTextInput"
+                                                              Text="{Binding HoverRevealHeightPixels, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                              ToolTip="20–420 pixels" />
                                                 </StackPanel>
 
                                                 <TextBlock Grid.Row="2"
@@ -381,42 +388,53 @@
                                             </Grid>
                                         </Border>
 
-                                        <DataGrid AutoGenerateColumns="False"
-                                                  AutomationProperties.Name="Privacy zones"
-                                                  AutomationProperties.HelpText="Edit which normalized regions of the selected app are masked."
-                                                  CanUserAddRows="False"
-                                                  HeadersVisibility="Column"
-                                                  ItemsSource="{Binding Zones}"
-                                                  RowBackground="#FCFAF6"
-                                                  AlternatingRowBackground="#F7F1E7"
-                                                  BorderThickness="0"
-                                                  GridLinesVisibility="Horizontal"
-                                                  MinHeight="260">
-                                            <DataGrid.Columns>
-                                                <DataGridCheckBoxColumn Binding="{Binding Enabled, Mode=TwoWay}" Header="On" Width="55" />
-                                                <DataGridTextColumn Binding="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="Zone" Width="170" />
-                                                <DataGridTextColumn Binding="{Binding X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="X" Width="70" />
-                                                <DataGridTextColumn Binding="{Binding Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="Y" Width="70" />
-                                                <DataGridTextColumn Binding="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="W" Width="70" />
-                                                <DataGridTextColumn Binding="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="H" Width="70" />
-                                                <DataGridTemplateColumn Header="Style" Width="130">
-                                                    <DataGridTemplateColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <TextBlock Text="{Binding Style}" />
-                                                        </DataTemplate>
-                                                    </DataGridTemplateColumn.CellTemplate>
-                                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                                        <DataTemplate>
-                                                            <ComboBox ItemsSource="{Binding MaskStylesSource, ElementName=SettingsWindow}"
-                                                                      SelectedItem="{Binding Style, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                        </DataTemplate>
-                                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                                </DataGridTemplateColumn>
-                                                <DataGridTextColumn Binding="{Binding Strength, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="Strength" Width="90" />
-                                                <DataGridCheckBoxColumn Binding="{Binding RevealOnHover, Mode=TwoWay}" Header="Hover reveal" Width="110" />
-                                                <DataGridCheckBoxColumn Binding="{Binding HideDuringTemporaryReveal, Mode=TwoWay}" Header="Hold reveal" Width="105" />
-                                            </DataGrid.Columns>
-                                        </DataGrid>
+                                        <Expander AutomationProperties.Name="Advanced privacy zones"
+                                                  AutomationProperties.HelpText="Expand to edit normalized zone coordinates, styles, strength, and reveal behavior."
+                                                  Header="_Advanced privacy zones">
+                                            <StackPanel Margin="0,10,0,0">
+                                                <TextBlock Margin="0,0,0,8"
+                                                           Foreground="#51656E"
+                                                           TextWrapping="Wrap"
+                                                           Text="X, Y, width, and height use 0.00–1.00 coordinates and must stay inside the app. Strength supports 0.15–2.40." />
+
+                                                <DataGrid AutoGenerateColumns="False"
+                                                          AutomationProperties.Name="Privacy zones"
+                                                          AutomationProperties.HelpText="Advanced settings. Edit normalized regions from zero to one and a strength from 0.15 to 2.40."
+                                                          CanUserAddRows="False"
+                                                          HeadersVisibility="Column"
+                                                          ItemsSource="{Binding Zones}"
+                                                          RowBackground="#FCFAF6"
+                                                          AlternatingRowBackground="#F7F1E7"
+                                                          BorderThickness="0"
+                                                          GridLinesVisibility="Horizontal"
+                                                          MinHeight="260">
+                                                    <DataGrid.Columns>
+                                                        <DataGridCheckBoxColumn Binding="{Binding Enabled, Mode=TwoWay}" Header="On" Width="55" />
+                                                        <DataGridTextColumn Binding="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="Zone" Width="170" />
+                                                        <DataGridTextColumn Binding="{Binding X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="X" Width="70" />
+                                                        <DataGridTextColumn Binding="{Binding Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="Y" Width="70" />
+                                                        <DataGridTextColumn Binding="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="W" Width="70" />
+                                                        <DataGridTextColumn Binding="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="H" Width="70" />
+                                                        <DataGridTemplateColumn Header="Style" Width="130">
+                                                            <DataGridTemplateColumn.CellTemplate>
+                                                                <DataTemplate>
+                                                                    <TextBlock Text="{Binding Style}" />
+                                                                </DataTemplate>
+                                                            </DataGridTemplateColumn.CellTemplate>
+                                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                                <DataTemplate>
+                                                                    <ComboBox ItemsSource="{Binding MaskStylesSource, ElementName=SettingsWindow}"
+                                                                              SelectedItem="{Binding Style, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                                </DataTemplate>
+                                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                                        </DataGridTemplateColumn>
+                                                        <DataGridTextColumn Binding="{Binding Strength, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="Strength" Width="90" />
+                                                        <DataGridCheckBoxColumn Binding="{Binding RevealOnHover, Mode=TwoWay}" Header="Hover reveal" Width="110" />
+                                                        <DataGridCheckBoxColumn Binding="{Binding HideDuringTemporaryReveal, Mode=TwoWay}" Header="Hold reveal" Width="105" />
+                                                    </DataGrid.Columns>
+                                                </DataGrid>
+                                            </StackPanel>
+                                        </Expander>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -453,4 +471,5 @@
             </Grid>
         </Border>
     </Grid>
+    </ScrollViewer>
 </Window>

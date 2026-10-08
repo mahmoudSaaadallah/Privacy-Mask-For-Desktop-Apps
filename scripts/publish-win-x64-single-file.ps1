@@ -9,11 +9,17 @@ Set-Location $repoRoot
 
 if (-not $SkipTests) {
   dotnet test PrivacyMask.Desktop.slnx
+  if ($LASTEXITCODE -ne 0) {
+    throw "dotnet test failed with exit code $LASTEXITCODE."
+  }
 }
 
 dotnet publish src/PrivacyMask.App/PrivacyMask.App.csproj `
   -c Release `
   -p:PublishProfile=WinX64SingleFile
+if ($LASTEXITCODE -ne 0) {
+  throw "dotnet publish failed with exit code $LASTEXITCODE."
+}
 
 $singleFileOutput = Join-Path $repoRoot 'desktop-app/windows/win-x64/single-file'
 Get-ChildItem -Path $singleFileOutput -Filter '*.pdb' -File -ErrorAction SilentlyContinue | Remove-Item -Force
