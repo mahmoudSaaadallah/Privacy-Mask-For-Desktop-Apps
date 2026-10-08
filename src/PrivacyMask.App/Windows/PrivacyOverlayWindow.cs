@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
@@ -19,9 +20,6 @@ namespace PrivacyMask.App.Windows;
 
 public sealed class PrivacyOverlayWindow : Window
 {
-    private const double FrostTileSize = 192d;
-    private static readonly Geometry FrostGrainGeometry = CreateFrostGrainGeometry(FrostTileSize);
-
     private readonly Canvas _canvas;
     private ScreenRect[] _lastOccludingBounds = [];
     private AppProfile? _lastProfile;
@@ -411,83 +409,36 @@ public sealed class PrivacyOverlayWindow : Window
         var surface = Blend(baseColor, neutralFrost, appearance.MidtoneBlend);
         var highlight = Blend(baseColor, MediaColor.FromRgb(255, 255, 255), appearance.HighlightBlend);
         var shadow = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), appearance.ShadowBlend);
-        var drawingGroup = new DrawingGroup();
+        var tile = FrostedSurfaceRasterizer.Render(
+            ToRgbColor(surface),
+            ToRgbColor(highlight),
+            ToRgbColor(shadow),
+            appearance.TextureContrast);
+        var bitmap = BitmapSource.Create(
+            tile.Width,
+            tile.Height,
+            96d,
+            96d,
+            PixelFormats.Bgra32,
+            null,
+            tile.BgraPixels,
+            tile.Stride);
+        bitmap.Freeze();
 
-        drawingGroup.Children.Add(new GeometryDrawing(
-            new SolidColorBrush(surface),
-            null,
-            new RectangleGeometry(new Rect(0d, 0d, FrostTileSize, FrostTileSize))));
-        drawingGroup.Children.Add(new GeometryDrawing(
-            CreateCloudBrush(highlight, ToByte(28d + (appearance.TextureContrast * 250d))),
-            null,
-            new EllipseGeometry(new Point(46d, 48d), 82d, 68d)));
-        drawingGroup.Children.Add(new GeometryDrawing(
-            CreateCloudBrush(shadow, ToByte(20d + (appearance.TextureContrast * 180d))),
-            null,
-            new EllipseGeometry(new Point(158d, 142d), 90d, 78d)));
-        drawingGroup.Children.Add(new GeometryDrawing(
-            CreateCloudBrush(highlight, ToByte(16d + (appearance.TextureContrast * 140d))),
-            null,
-            new EllipseGeometry(new Point(176d, 20d), 54d, 42d)));
-
-        drawingGroup.Children.Add(new GeometryDrawing(
-            new SolidColorBrush(MediaColor.FromArgb(
-                ToByte(4d + (appearance.TextureContrast * 80d)),
-                highlight.R,
-                highlight.G,
-                highlight.B)),
-            null,
-            FrostGrainGeometry));
-
-        var brush = new DrawingBrush(drawingGroup)
+        var brush = new ImageBrush(bitmap)
         {
             TileMode = TileMode.Tile,
-            Viewbox = new Rect(0d, 0d, FrostTileSize, FrostTileSize),
-            ViewboxUnits = BrushMappingMode.Absolute,
+            Viewbox = new Rect(0d, 0d, 1d, 1d),
+            ViewboxUnits = BrushMappingMode.RelativeToBoundingBox,
             Viewport = new Rect(
                 0d,
                 0d,
-                FrostTileSize * appearance.TextureScale,
-                FrostTileSize * appearance.TextureScale),
+                tile.Width * appearance.TextureScale,
+                tile.Height * appearance.TextureScale),
             ViewportUnits = BrushMappingMode.Absolute,
             Stretch = Stretch.Fill,
         };
         return brush;
-    }
-
-    private static RadialGradientBrush CreateCloudBrush(MediaColor color, byte centerAlpha)
-    {
-        var transparent = MediaColor.FromArgb(0, color.R, color.G, color.B);
-        var center = MediaColor.FromArgb(centerAlpha, color.R, color.G, color.B);
-        var brush = new RadialGradientBrush
-        {
-            Center = new Point(0.5d, 0.5d),
-            GradientOrigin = new Point(0.42d, 0.38d),
-            RadiusX = 0.62d,
-            RadiusY = 0.62d,
-        };
-        brush.GradientStops.Add(new GradientStop(center, 0d));
-        brush.GradientStops.Add(new GradientStop(transparent, 1d));
-        return brush;
-    }
-
-    private static Geometry CreateFrostGrainGeometry(double tileSize)
-    {
-        var geometry = new GeometryGroup();
-        uint state = 0x9E3779B9;
-        for (var index = 0; index < 28; index++)
-        {
-            state = (state * 1664525u) + 1013904223u;
-            var x = state % (uint)tileSize;
-            state = (state * 1664525u) + 1013904223u;
-            var y = state % (uint)tileSize;
-            state = (state * 1664525u) + 1013904223u;
-            var size = 0.7d + ((state % 15u) / 10d);
-            geometry.Children.Add(new EllipseGeometry(new Point(x, y), size, size));
-        }
-
-        geometry.Freeze();
-        return geometry;
     }
 
     private static Brush CreatePixelBrush(
@@ -565,9 +516,9 @@ public sealed class PrivacyOverlayWindow : Window
         _canvas.Children.Add(shape);
     }
 
-    private static byte ToByte(double value)
+    private static RgbColor ToRgbColor(MediaColor color)
     {
-        return (byte)Math.Round(double.Clamp(value, byte.MinValue, byte.MaxValue));
+        return new RgbColor(color.R, color.G, color.B);
     }
 
     private static MediaColor GetMaskBaseColor(MaskColorOption maskColor)
