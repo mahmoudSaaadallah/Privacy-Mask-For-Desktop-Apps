@@ -34,6 +34,7 @@ public static class HotkeyDisplayFormatter
             0x10 => "Shift",
             0x11 => "Ctrl",
             0x12 => "Alt",
+            0x26 => "↑",
             _ => KeyInterop.KeyFromVirtualKey(binding.VirtualKey).ToString(),
         };
 

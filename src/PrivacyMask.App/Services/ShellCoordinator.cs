@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
@@ -41,6 +42,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly Dictionary<nint, List<ScreenRect>> _occludingBoundsByWindow = [];
     private readonly HashSet<nint> _activeOcclusionHandles = [];
     private readonly List<nint> _staleOcclusionHandles = [];
+    private readonly SemaphoreSlim _blurStrengthUpdateGate = new(1, 1);
 
     private AppSettings _settings = new();
     private AppSettings _savedSettings = new();
@@ -355,7 +357,93 @@ public sealed class ShellCoordinator : IAsyncDisposable
             case HotkeyAction.OpenSettings:
                 ShowSettingsWindow();
                 break;
+            case HotkeyAction.IncreaseBlurStrength:
+                _ = IncreaseForegroundBlurStrengthAsync();
+                break;
         }
+    }
+
+    private async Task IncreaseForegroundBlurStrengthAsync()
+    {
+        var foregroundSnapshot = _windowInspector.TryGetWindow(NativeMethods.GetForegroundWindow());
+        var trackedWindow = foregroundSnapshot is null
+            ? null
+            : _windowProfileResolver.Resolve(foregroundSnapshot, _settings.AppProfiles);
+        if (trackedWindow is null)
+        {
+            ShowBlurStrengthTip(
+                "Focus WhatsApp or Telegram first, then press Ctrl + Win + ↑.",
+                ToolTipIcon.Info);
+            return;
+        }
+
+        var appId = trackedWindow.Profile.AppId;
+        await _blurStrengthUpdateGate.WaitAsync();
+        try
+        {
+            var nextSettings = AppSettingsCloner.Clone(_savedSettings);
+            var nextProfile = nextSettings.AppProfiles.FirstOrDefault(profile => profile.AppId == appId && profile.Enabled);
+            if (nextProfile is null)
+            {
+                ShowBlurStrengthTip("The focused app profile is disabled.", ToolTipIcon.Info);
+                return;
+            }
+
+            if (!BlurStrengthAdjustment.TryIncrease(nextProfile, out var adjustedStrength))
+            {
+                ShowBlurStrengthTip($"{nextProfile.DisplayName} blur is already at 100%.", ToolTipIcon.Info);
+                return;
+            }
+
+            ApplyBlurStrength(appId, adjustedStrength);
+            RefreshOverlays();
+            try
+            {
+                await _settingsStore.SaveAsync(nextSettings);
+                _savedSettings = AppSettingsCloner.Clone(nextSettings);
+            }
+            catch (Exception exception)
+            {
+                var savedProfile = _savedSettings.AppProfiles.FirstOrDefault(profile => profile.AppId == appId);
+                if (savedProfile is not null)
+                {
+                    ApplyBlurStrength(appId, savedProfile.MaskIntensity);
+                    RefreshOverlays();
+                }
+
+                ShowBlurStrengthTip(
+                    $"The blur changed temporarily but could not be saved. {exception.Message}",
+                    ToolTipIcon.Error);
+            }
+        }
+        finally
+        {
+            _blurStrengthUpdateGate.Release();
+        }
+    }
+
+    private void ApplyBlurStrength(AppId appId, double strength)
+    {
+        var runtimeProfile = _settings.AppProfiles.FirstOrDefault(profile => profile.AppId == appId);
+        if (runtimeProfile is not null)
+        {
+            runtimeProfile.MaskIntensity = strength;
+        }
+
+        var visibleProfile = _mainWindow?.ViewModel.AppProfiles.FirstOrDefault(profile => profile.AppId == appId);
+        if (visibleProfile is not null)
+        {
+            visibleProfile.MaskIntensity = strength;
+        }
+    }
+
+    private void ShowBlurStrengthTip(string message, ToolTipIcon icon)
+    {
+        _notifyIcon.ShowBalloonTip(
+            timeout: 3000,
+            tipTitle: "PrivacyMask blur strength",
+            tipText: message,
+            tipIcon: icon);
     }
 
     private void ToggleProtection()
