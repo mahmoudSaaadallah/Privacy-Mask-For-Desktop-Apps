@@ -181,7 +181,7 @@ public sealed class DefaultSettingsFactoryTests
 
         Assert.Equal(MaskIntensityScale.FromLegacy(1.35d), mergedProfile.MaskIntensity, 3);
         Assert.Equal(MaskIntensityScale.Maximum, mergedProfile.Zones.Single().Strength);
-        Assert.Equal(MaskStyle.FrostedGlass, mergedProfile.Zones.Single().Style);
+        Assert.Equal(MaskStyle.Blur, mergedProfile.Zones.Single().Style);
     }
 
     [Theory]

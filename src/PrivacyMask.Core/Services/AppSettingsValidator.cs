@@ -53,7 +53,7 @@ public static class AppSettingsValidator
         {
             errors.Add(new SettingsValidationError(
                 $"{profileName} > Mask intensity",
-                "Choose a surface intensity from 0% to 100%."));
+                "Choose a blur strength from 0% to 100%."));
         }
 
         for (var index = 0; index < profile.Zones.Count; index++)
@@ -104,7 +104,7 @@ public static class AppSettingsValidator
         {
             errors.Add(new SettingsValidationError(
                 location,
-                $"Surface intensity must be from {MinimumZoneStrength:P0} to {MaximumZoneStrength:P0}."));
+                $"Blur strength must be from {MinimumZoneStrength:P0} to {MaximumZoneStrength:P0}."));
         }
     }
 

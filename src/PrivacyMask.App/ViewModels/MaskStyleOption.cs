@@ -6,7 +6,7 @@ public sealed record MaskStyleOption(MaskStyle Value, string DisplayName)
 {
     public static IReadOnlyList<MaskStyleOption> All { get; } =
     [
-        new(MaskStyle.FrostedGlass, "Frosted glass"),
+        new(MaskStyle.Blur, "Live blur"),
         new(MaskStyle.Pixelate, "Pixelated"),
         new(MaskStyle.SolidRedact, "Solid redact"),
     ];
@@ -14,6 +14,6 @@ public sealed record MaskStyleOption(MaskStyle Value, string DisplayName)
     public static string GetDisplayName(MaskStyle style)
     {
         return All.FirstOrDefault(option => option.Value == style)?.DisplayName
-            ?? "Frosted glass";
+            ?? "Live blur";
     }
 }
