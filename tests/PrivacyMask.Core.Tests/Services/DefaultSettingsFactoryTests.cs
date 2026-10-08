@@ -144,6 +144,21 @@ public sealed class DefaultSettingsFactoryTests
     }
 
     [Fact]
+    public void MergeWithDefaults_AddsBlurShortcutToExistingSettings()
+    {
+        var factory = new DefaultSettingsFactory();
+        var persisted = factory.Create();
+        persisted.GlobalHotkeys.RemoveAll(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
+
+        var merged = factory.MergeWithDefaults(persisted);
+
+        var increaseBlur = merged.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
+        Assert.True(increaseBlur.Enabled);
+        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, increaseBlur.Modifiers);
+        Assert.Equal(0x26, increaseBlur.VirtualKey);
+    }
+
+    [Fact]
     public void MergeWithDefaults_ClampsPersistedRuntimeValues()
     {
         var factory = new DefaultSettingsFactory();
