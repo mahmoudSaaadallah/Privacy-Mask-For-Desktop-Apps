@@ -184,8 +184,8 @@ environment, initial measurements, performance budgets, and required scenarios.
 4. Move the blur-strength slider to your preferred appearance. Lower values
    reveal progressively clearer shapes and colors; higher values remove more
    detail. Use solid redact or panic mode when no underlying detail may remain.
-5. Press `Ctrl + Win + ↑` while WhatsApp or Telegram is focused to raise that
-   app's saved blur strength by 5%, up to 100%.
+5. While WhatsApp or Telegram is focused, press `Ctrl + Win + ↑` to raise that
+   app's saved blur strength by 5%, or `Ctrl + Win + ↓` to lower it by 5%.
 6. Hover over the masked app to reveal a small reading window around the pointer.
 7. Use the tray icon to pause protection, apply an opaque panic mask, reopen settings, or exit the app.
 
