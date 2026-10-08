@@ -20,8 +20,18 @@ public static class AppSettingsValidator
         ArgumentNullException.ThrowIfNull(settings);
 
         var errors = new List<SettingsValidationError>();
+        var profileIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var profile in settings.AppProfiles)
         {
+            if (string.IsNullOrWhiteSpace(profile.ProfileId))
+            {
+                errors.Add(new SettingsValidationError("App profiles", "Every app profile must have a stable identifier."));
+            }
+            else if (!profileIds.Add(profile.ProfileId.Trim()))
+            {
+                errors.Add(new SettingsValidationError(profile.DisplayName, "This app profile identifier is already in use."));
+            }
+
             ValidateProfile(profile, errors);
         }
 
@@ -33,6 +43,18 @@ public static class AppSettingsValidator
         var profileName = string.IsNullOrWhiteSpace(profile.DisplayName)
             ? profile.AppId.ToString()
             : profile.DisplayName.Trim();
+
+        if (string.IsNullOrWhiteSpace(profile.DisplayName))
+        {
+            errors.Add(new SettingsValidationError(profileName, "Enter an app profile name."));
+        }
+
+        if (profile.AppId == AppId.Custom
+            && !profile.WindowMatchers.Any(matcher =>
+                matcher.ProcessNames.Any(processName => !string.IsNullOrWhiteSpace(processName))))
+        {
+            errors.Add(new SettingsValidationError(profileName, "Choose at least one application process to protect."));
+        }
 
         if (profile.HoverRevealWidthPixels is < MinimumHoverRevealWidth or > MaximumHoverRevealWidth)
         {

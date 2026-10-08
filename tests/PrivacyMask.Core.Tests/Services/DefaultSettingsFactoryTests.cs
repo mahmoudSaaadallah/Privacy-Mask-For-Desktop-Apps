@@ -125,6 +125,9 @@ public sealed class DefaultSettingsFactoryTests
         Assert.Equal(AppSettings.CurrentVersion, settings.Version);
         Assert.Equal([AppId.WhatsApp, AppId.Telegram], settings.AppProfiles.Select(profile => profile.AppId));
         Assert.Equal(
+            [KnownProfileIds.WhatsApp, KnownProfileIds.Telegram],
+            settings.AppProfiles.Select(profile => profile.ProfileId));
+        Assert.Equal(
             [
                 HotkeyAction.ToggleProtection,
                 HotkeyAction.PanicHideAll,
@@ -226,5 +229,80 @@ public sealed class DefaultSettingsFactoryTests
 
         Assert.Equal(RuntimeMode.Standard, merged.CurrentMode);
         Assert.Equal(AppSettings.CurrentVersion, merged.Version);
+    }
+
+    [Fact]
+    public void MergeWithDefaults_AssignsStableIdsToLegacyBuiltInProfiles()
+    {
+        var factory = new DefaultSettingsFactory();
+        var current = factory.Create();
+        var legacyProfiles = current.AppProfiles.Select(profile => new AppProfile
+        {
+            AppId = profile.AppId,
+            DisplayName = profile.DisplayName,
+            Enabled = profile.Enabled,
+            StartupMode = profile.StartupMode,
+            MaskIntensity = profile.MaskIntensity,
+            MaskColor = profile.MaskColor,
+            HoverRevealWidthPixels = profile.HoverRevealWidthPixels,
+            HoverRevealHeightPixels = profile.HoverRevealHeightPixels,
+            WindowMatchers = profile.WindowMatchers,
+            Zones = profile.Zones,
+            Presets = profile.Presets,
+            SelectedPresetId = profile.SelectedPresetId,
+        }).ToList();
+        var persisted = new AppSettings
+        {
+            Version = 7,
+            GlobalHotkeys = current.GlobalHotkeys,
+            AppProfiles = legacyProfiles,
+        };
+
+        var merged = factory.MergeWithDefaults(persisted);
+
+        Assert.Equal(KnownProfileIds.WhatsApp, merged.AppProfiles.Single(profile => profile.AppId == AppId.WhatsApp).ProfileId);
+        Assert.Equal(KnownProfileIds.Telegram, merged.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).ProfileId);
+        Assert.Equal(AppSettings.CurrentVersion, merged.Version);
+    }
+
+    [Fact]
+    public void MergeWithDefaults_PreservesAndNormalizesCustomProfiles()
+    {
+        var factory = new DefaultSettingsFactory();
+        var persisted = factory.Create();
+        var custom = CustomAppProfileFactory.Create("Notes", "Notepad", "custom-notes");
+        custom.MaskIntensity = 0.72d;
+        custom.MaskColor = MaskColorOption.Blue;
+        custom.Zones.Single().Style = MaskStyle.WetGlass;
+        persisted.AppProfiles.Add(custom);
+
+        var merged = factory.MergeWithDefaults(persisted);
+        var restored = merged.AppProfiles.Single(profile => profile.ProfileId == "custom-notes");
+
+        Assert.Equal(AppId.Custom, restored.AppId);
+        Assert.Equal("Notes", restored.DisplayName);
+        Assert.Equal(0.72d, restored.MaskIntensity);
+        Assert.Equal(MaskColorOption.Blue, restored.MaskColor);
+        Assert.Equal(MaskStyle.WetGlass, restored.Zones.Single().Style);
+        Assert.Equal("Notepad", restored.WindowMatchers.Single().ProcessNames.Single());
+        Assert.Equal(ProcessNameMatchMode.Exact, restored.WindowMatchers.Single().ProcessNameMatchMode);
+    }
+
+    [Fact]
+    public void MergeWithDefaults_ReplacesDuplicateCustomProfileIds()
+    {
+        var factory = new DefaultSettingsFactory();
+        var persisted = factory.Create();
+        persisted.AppProfiles.Add(CustomAppProfileFactory.Create("First", "FirstApp", "duplicate"));
+        persisted.AppProfiles.Add(CustomAppProfileFactory.Create("Second", "SecondApp", "duplicate"));
+
+        var merged = factory.MergeWithDefaults(persisted);
+        var customIds = merged.AppProfiles
+            .Where(profile => profile.AppId == AppId.Custom)
+            .Select(profile => profile.ProfileId)
+            .ToList();
+
+        Assert.Equal(2, customIds.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Contains("duplicate", customIds);
     }
 }

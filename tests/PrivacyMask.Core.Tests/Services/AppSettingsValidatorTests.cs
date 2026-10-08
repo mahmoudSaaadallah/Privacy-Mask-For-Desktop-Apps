@@ -70,4 +70,32 @@ public sealed class AppSettingsValidatorTests
 
         Assert.Contains(errors, error => error.Message.StartsWith("X must be"));
     }
+
+    [Fact]
+    public void Validate_RejectsDuplicateProfileIds()
+    {
+        var settings = new DefaultSettingsFactory().Create();
+        settings.AppProfiles.Add(CustomAppProfileFactory.Create("Duplicate", "Notepad", KnownProfileIds.WhatsApp));
+
+        var errors = AppSettingsValidator.Validate(settings);
+
+        Assert.Contains(errors, error => error.Message.Contains("identifier is already in use"));
+    }
+
+    [Fact]
+    public void Validate_RejectsCustomProfileWithoutAProcess()
+    {
+        var settings = new DefaultSettingsFactory().Create();
+        settings.AppProfiles.Add(new AppProfile
+        {
+            ProfileId = "custom-empty",
+            AppId = AppId.Custom,
+            DisplayName = "Empty custom app",
+            Zones = [PresetCatalog.CloneZone(settings.AppProfiles[0].Zones[0])],
+        });
+
+        var errors = AppSettingsValidator.Validate(settings);
+
+        Assert.Contains(errors, error => error.Message.Contains("application process"));
+    }
 }

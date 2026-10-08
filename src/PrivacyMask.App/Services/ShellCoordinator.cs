@@ -64,6 +64,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         [
             new WhatsAppWindowAdapter(),
             new TelegramWindowAdapter(),
+            new GenericWindowAdapter(),
         ]);
         _overlayManager = new OverlayManager();
         _hotkeyManager = new GlobalHotkeyManager();
@@ -375,17 +376,19 @@ public sealed class ShellCoordinator : IAsyncDisposable
         if (trackedWindow is null)
         {
             ShowBlurStrengthTip(
-                "Focus WhatsApp or Telegram first, then press Ctrl + Win + ↑ or ↓.",
+                "Focus a protected app first, then press Ctrl + Win + ↑ or ↓.",
                 ToolTipIcon.Info);
             return;
         }
 
-        var appId = trackedWindow.Profile.AppId;
+        var profileId = trackedWindow.Profile.ProfileId;
         await _blurStrengthUpdateGate.WaitAsync();
         try
         {
             var nextSettings = AppSettingsCloner.Clone(_savedSettings);
-            var nextProfile = nextSettings.AppProfiles.FirstOrDefault(profile => profile.AppId == appId && profile.Enabled);
+            var nextProfile = nextSettings.AppProfiles.FirstOrDefault(profile =>
+                string.Equals(profile.ProfileId, profileId, StringComparison.OrdinalIgnoreCase)
+                && profile.Enabled);
             if (nextProfile is null)
             {
                 ShowBlurStrengthTip("The focused app profile is disabled.", ToolTipIcon.Info);
@@ -402,7 +405,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
                 return;
             }
 
-            ApplyBlurStrength(appId, adjustedStrength);
+            ApplyBlurStrength(profileId, adjustedStrength);
             RefreshOverlays();
             try
             {
@@ -411,10 +414,11 @@ public sealed class ShellCoordinator : IAsyncDisposable
             }
             catch (Exception exception)
             {
-                var savedProfile = _savedSettings.AppProfiles.FirstOrDefault(profile => profile.AppId == appId);
+                var savedProfile = _savedSettings.AppProfiles.FirstOrDefault(profile =>
+                    string.Equals(profile.ProfileId, profileId, StringComparison.OrdinalIgnoreCase));
                 if (savedProfile is not null)
                 {
-                    ApplyBlurStrength(appId, savedProfile.MaskIntensity);
+                    ApplyBlurStrength(profileId, savedProfile.MaskIntensity);
                     RefreshOverlays();
                 }
 
@@ -429,15 +433,17 @@ public sealed class ShellCoordinator : IAsyncDisposable
         }
     }
 
-    private void ApplyBlurStrength(AppId appId, double strength)
+    private void ApplyBlurStrength(string profileId, double strength)
     {
-        var runtimeProfile = _settings.AppProfiles.FirstOrDefault(profile => profile.AppId == appId);
+        var runtimeProfile = _settings.AppProfiles.FirstOrDefault(profile =>
+            string.Equals(profile.ProfileId, profileId, StringComparison.OrdinalIgnoreCase));
         if (runtimeProfile is not null)
         {
             runtimeProfile.MaskIntensity = strength;
         }
 
-        var visibleProfile = _mainWindow?.ViewModel.AppProfiles.FirstOrDefault(profile => profile.AppId == appId);
+        var visibleProfile = _mainWindow?.ViewModel.AppProfiles.FirstOrDefault(profile =>
+            string.Equals(profile.ProfileId, profileId, StringComparison.OrdinalIgnoreCase));
         if (visibleProfile is not null)
         {
             visibleProfile.MaskIntensity = strength;

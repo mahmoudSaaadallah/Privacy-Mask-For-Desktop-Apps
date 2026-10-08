@@ -6,6 +6,8 @@ public sealed class WindowMatcher
 {
     public List<string> ProcessNames { get; init; } = [];
 
+    public ProcessNameMatchMode ProcessNameMatchMode { get; init; }
+
     public string? TitleContains { get; init; }
 
     public string? ClassNameContains { get; init; }

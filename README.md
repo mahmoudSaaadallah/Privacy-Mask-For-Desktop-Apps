@@ -39,7 +39,7 @@ Minimum requirements:
 You do not need the source code or the .NET SDK to install a published release.
 
 1. Open the [latest GitHub release](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases/latest).
-2. Download the versioned Windows archive, for example `PrivacyMask-1.1.0-win-x64.zip`, and extract the whole archive.
+2. Download the versioned Windows archive, for example `PrivacyMask-2.0.0-win-x64.zip`, and extract the whole archive.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
 5. Complete onboarding, then open WhatsApp Desktop or Telegram Desktop.
@@ -61,10 +61,10 @@ installation in `%LocalAppData%\PrivacyMask.Desktop`.
 The matching `.sha256` release asset can be used to verify the downloaded ZIP:
 
 ```powershell
-(Get-FileHash .\PrivacyMask-1.1.0-win-x64.zip -Algorithm SHA256).Hash
+(Get-FileHash .\PrivacyMask-2.0.0-win-x64.zip -Algorithm SHA256).Hash
 ```
 
-Compare the output with the hash in `PrivacyMask-1.1.0-win-x64.zip.sha256`.
+Compare the output with the hash in `PrivacyMask-2.0.0-win-x64.zip.sha256`.
 
 ## One-click install from source
 
@@ -138,8 +138,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-win-x64-release.ps1
 
 Release package output:
 
-- `artifacts/release/PrivacyMask-1.1.0-win-x64.zip`
-- `artifacts/release/PrivacyMask-1.1.0-win-x64.zip.sha256`
+- `artifacts/release/PrivacyMask-2.0.0-win-x64.zip`
+- `artifacts/release/PrivacyMask-2.0.0-win-x64.zip.sha256`
 
 ## Repository layout
 

@@ -12,8 +12,29 @@ public static class PresetCatalog
         {
             AppId.WhatsApp => BuildWhatsAppPresets(),
             AppId.Telegram => BuildTelegramPresets(),
+            AppId.Custom => BuildCustomPresets(),
             _ => [],
         };
+    }
+
+    private static IReadOnlyList<LayoutPreset> BuildCustomPresets()
+    {
+        return
+        [
+            new LayoutPreset
+            {
+                PresetId = "custom-full-window",
+                AppId = AppId.Custom,
+                DisplayName = "Full-window privacy mask",
+                LayoutVariant = "full-window",
+                MinWindowWidth = 1,
+                MinWindowHeight = 1,
+                Zones =
+                [
+                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0d, 0d, 1d, 1d), MaskStyle.Blur, MaskIntensityScale.Default, ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal),
+                ],
+            },
+        ];
     }
 
     private static IReadOnlyList<LayoutPreset> BuildWhatsAppPresets()

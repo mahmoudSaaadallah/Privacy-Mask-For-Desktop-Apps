@@ -4,4 +4,5 @@ public enum AppId
 {
     WhatsApp = 1,
     Telegram = 2,
+    Custom = 1000,
 }

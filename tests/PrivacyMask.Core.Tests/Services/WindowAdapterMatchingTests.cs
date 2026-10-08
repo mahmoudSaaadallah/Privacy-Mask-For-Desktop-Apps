@@ -99,6 +99,31 @@ public sealed class WindowAdapterMatchingTests
         Assert.Equal("telegram-wide", wide.PresetId);
     }
 
+    [Fact]
+    public void GenericAdapter_MatchesOnlyTheExactConfiguredProcess()
+    {
+        var adapter = new GenericWindowAdapter();
+        var profile = PrivacyMask.Core.Services.CustomAppProfileFactory.Create("Notes", "Notepad", "custom-notes");
+
+        Assert.True(adapter.IsMatch(CreateSnapshot("Notepad", "Notes", "Notepad"), profile));
+        Assert.False(adapter.IsMatch(CreateSnapshot("NotepadPlus", "Notes", "Notepad"), profile));
+    }
+
+    [Fact]
+    public void GenericAdapter_SelectsTheCustomFullWindowPreset()
+    {
+        var adapter = new GenericWindowAdapter();
+        var profile = PrivacyMask.Core.Services.CustomAppProfileFactory.Create("Notes", "Notepad", "custom-notes");
+
+        var preset = adapter.SelectPreset(
+            CreateSnapshot("Notepad", "Notes", "Notepad"),
+            profile,
+            profile.Presets);
+
+        Assert.Equal("custom-full-window", preset.PresetId);
+        Assert.Equal(new RelativeRect(0d, 0d, 1d, 1d), preset.Zones.Single().RelativeRect);
+    }
+
     private static AppProfile CreateWhatsAppProfile(WindowMatcher matcher)
     {
         return new AppProfile

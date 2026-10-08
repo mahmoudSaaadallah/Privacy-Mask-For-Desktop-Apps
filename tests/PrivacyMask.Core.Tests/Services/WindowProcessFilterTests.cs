@@ -58,4 +58,15 @@ public sealed class WindowProcessFilterTests
         Assert.True(filter.MatchesAllProcesses);
         Assert.True(filter.IsMatch("AnyProcess"));
     }
+
+    [Fact]
+    public void IsMatch_CustomProfilesDoNotMatchSimilarProcessNames()
+    {
+        var profile = CustomAppProfileFactory.Create("Notes", "Notepad", "custom-notes");
+        var filter = new WindowProcessFilter([profile]);
+
+        Assert.True(filter.IsMatch("Notepad"));
+        Assert.False(filter.IsMatch("NotepadPlus"));
+        Assert.False(filter.IsMatch("Note"));
+    }
 }

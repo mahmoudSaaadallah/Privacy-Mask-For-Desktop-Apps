@@ -19,6 +19,7 @@ public sealed class AppProfileViewModel : ObservableObject
 
     public AppProfileViewModel(AppProfile profile)
     {
+        ProfileId = profile.ProfileId;
         AppId = profile.AppId;
         DisplayName = profile.DisplayName;
         _enabled = profile.Enabled;
@@ -39,6 +40,8 @@ public sealed class AppProfileViewModel : ObservableObject
             })
             .ToList();
     }
+
+    public string ProfileId { get; }
 
     public AppId AppId { get; }
 
@@ -194,6 +197,7 @@ public sealed class AppProfileViewModel : ObservableObject
     {
         return new AppProfile
         {
+            ProfileId = ProfileId,
             AppId = AppId,
             DisplayName = DisplayName,
             Enabled = Enabled,

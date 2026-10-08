@@ -6,7 +6,7 @@ namespace PrivacyMask.Core.Services;
 public sealed class WindowProcessFilter
 {
     private readonly HashSet<string> _exactProcessNames = new(StringComparer.OrdinalIgnoreCase);
-    private readonly List<string> _normalizedProcessNames = [];
+    private readonly List<string> _normalizedCompatibleProcessNames = [];
 
     public WindowProcessFilter(IEnumerable<AppProfile> profiles)
     {
@@ -32,7 +32,10 @@ public sealed class WindowProcessFilter
                         continue;
                     }
 
-                    _normalizedProcessNames.Add(ProcessNameMatcher.Normalize(processName));
+                    if (matcher.ProcessNameMatchMode == ProcessNameMatchMode.CompatibleVariants)
+                    {
+                        _normalizedCompatibleProcessNames.Add(ProcessNameMatcher.Normalize(processName));
+                    }
                 }
             }
         }
@@ -58,7 +61,7 @@ public sealed class WindowProcessFilter
         }
 
         var normalizedActual = ProcessNameMatcher.Normalize(processName);
-        foreach (var normalizedCandidate in _normalizedProcessNames)
+        foreach (var normalizedCandidate in _normalizedCompatibleProcessNames)
         {
             if (normalizedActual.StartsWith(normalizedCandidate, StringComparison.OrdinalIgnoreCase)
                 || normalizedCandidate.StartsWith(normalizedActual, StringComparison.OrdinalIgnoreCase))

@@ -61,6 +61,40 @@ public sealed class JsonSettingsStoreTests
     }
 
     [Fact]
+    public async Task SaveAsync_RoundTripsCustomAppProfiles()
+    {
+        var factory = new DefaultSettingsFactory();
+        var tempDirectory = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            var settingsPath = Path.Combine(tempDirectory.FullName, "settings.v1.json");
+            var store = new JsonSettingsStore(factory, settingsPath);
+            var settings = factory.Create();
+            settings.AppProfiles.Add(CustomAppProfileFactory.Create(
+                "Windows Notepad",
+                "Notepad",
+                "custom-windows-notepad"));
+
+            await store.SaveAsync(settings);
+            var reloaded = await store.LoadAsync();
+
+            var customProfile = Assert.Single(
+                reloaded.AppProfiles,
+                profile => profile.ProfileId == "custom-windows-notepad");
+            Assert.Equal(AppId.Custom, customProfile.AppId);
+            Assert.Equal("Windows Notepad", customProfile.DisplayName);
+            var matcher = Assert.Single(customProfile.WindowMatchers);
+            Assert.Equal("Notepad", Assert.Single(matcher.ProcessNames));
+            Assert.Equal(ProcessNameMatchMode.Exact, matcher.ProcessNameMatchMode);
+        }
+        finally
+        {
+            tempDirectory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task SaveAsync_SerializesConcurrentWritesWithoutLeavingTemporaryFiles()
     {
         var factory = new DefaultSettingsFactory();
