@@ -45,7 +45,7 @@ public sealed class AppSettingsValidatorTests
         var zone = profile.Zones[0];
         zone.DisplayName = " ";
         zone.RelativeRect = new RelativeRect(-0.1d, 0.8d, 1.2d, 0.4d);
-        zone.Strength = 2.5d;
+        zone.Strength = 1.1d;
 
         var errors = AppSettingsValidator.Validate(settings);
 

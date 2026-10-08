@@ -65,7 +65,7 @@ public sealed class WindowProfileResolver
                 // The app-wide darkness slider is the final effective strength for the
                 // current single-layer mask, so the runtime should not multiply it by
                 // the preset baseline or it will saturate too early.
-                clone.Strength = double.Clamp(profile.MaskIntensity, 0.60d, 2.40d);
+                clone.Strength = MaskIntensityScale.Clamp(profile.MaskIntensity);
                 return clone;
             })
             .ToList();

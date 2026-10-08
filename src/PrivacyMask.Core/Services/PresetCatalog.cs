@@ -30,7 +30,7 @@ public static class PresetCatalog
                 MinWindowHeight = 620,
                 Zones =
                 [
-                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0.00d, 0.00d, 1.00d, 1.00d), MaskStyle.Blur, 1.35d, ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal),
+                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0.00d, 0.00d, 1.00d, 1.00d), MaskStyle.FrostedGlass, MaskIntensityScale.Default, ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal),
                 ],
             },
             new LayoutPreset
@@ -43,7 +43,7 @@ public static class PresetCatalog
                 MinWindowHeight = 520,
                 Zones =
                 [
-                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0.00d, 0.00d, 1.00d, 1.00d), MaskStyle.Blur, 1.35d, ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal),
+                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0.00d, 0.00d, 1.00d, 1.00d), MaskStyle.FrostedGlass, MaskIntensityScale.Default, ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal),
                 ],
             },
         ];
@@ -63,7 +63,7 @@ public static class PresetCatalog
                 MinWindowHeight = 620,
                 Zones =
                 [
-                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0.00d, 0.00d, 1.00d, 1.00d), MaskStyle.Blur, 1.35d, ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal),
+                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0.00d, 0.00d, 1.00d, 1.00d), MaskStyle.FrostedGlass, MaskIntensityScale.Default, ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal),
                 ],
             },
             new LayoutPreset
@@ -76,7 +76,7 @@ public static class PresetCatalog
                 MinWindowHeight = 520,
                 Zones =
                 [
-                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0.00d, 0.00d, 1.00d, 1.00d), MaskStyle.Blur, 1.35d, ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal),
+                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0.00d, 0.00d, 1.00d, 1.00d), MaskStyle.FrostedGlass, MaskIntensityScale.Default, ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal),
                 ],
             },
         ];

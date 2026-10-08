@@ -12,7 +12,7 @@ public sealed class AppProfile
 
     public AppActivationMode StartupMode { get; set; } = AppActivationMode.Manual;
 
-    public double MaskIntensity { get; set; } = 1.35d;
+    public double MaskIntensity { get; set; } = MaskIntensityScale.Default;
 
     public MaskColorOption MaskColor { get; set; } = MaskColorOption.Black;
 

@@ -87,7 +87,7 @@ public sealed class AppProfileViewModel : ObservableObject
         get => _maskIntensity;
         set
         {
-            var normalized = double.Clamp(value, 0.60d, 2.40d);
+            var normalized = MaskIntensityScale.Clamp(value);
             if (SetProperty(ref _maskIntensity, normalized))
             {
                 RaisePropertyChanged(nameof(MaskIntensityPercent));

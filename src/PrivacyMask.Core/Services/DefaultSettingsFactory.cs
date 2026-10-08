@@ -71,6 +71,7 @@ public sealed class DefaultSettingsFactory
         var migrateLegacyMaskIntensity = persisted.Version < 3;
         var migrateLegacyHoverReveal = persisted.Version < 4;
         var migrateLegacyMaskColor = persisted.Version < 5;
+        var migrateLegacySurfaceIntensity = persisted.Version < 7;
 
         foreach (var defaultProfile in defaults.AppProfiles)
         {
@@ -84,9 +85,12 @@ public sealed class DefaultSettingsFactory
             defaultProfile.StartupMode = migrateLegacyFocusAwareProfiles && persistedProfile.StartupMode == AppActivationMode.FocusAware
                 ? AppActivationMode.Manual
                 : persistedProfile.StartupMode;
-            defaultProfile.MaskIntensity = migrateLegacyMaskIntensity && persistedProfile.MaskIntensity <= 1.01d
+            var persistedMaskIntensity = migrateLegacyMaskIntensity && persistedProfile.MaskIntensity <= 1.01d
                 ? 1.35d
-                : double.Clamp(persistedProfile.MaskIntensity, 0.60d, 2.40d);
+                : persistedProfile.MaskIntensity;
+            defaultProfile.MaskIntensity = migrateLegacySurfaceIntensity
+                ? MaskIntensityScale.FromLegacy(persistedMaskIntensity)
+                : MaskIntensityScale.Clamp(persistedMaskIntensity);
             defaultProfile.MaskColor = migrateLegacyMaskColor
                 ? defaultProfile.MaskColor
                 : NormalizeMaskColor(persistedProfile.MaskColor, defaultProfile.MaskColor);
@@ -98,7 +102,11 @@ public sealed class DefaultSettingsFactory
                 : int.Clamp(persistedProfile.HoverRevealHeightPixels, 20, 420);
             defaultProfile.SelectedPresetId = ResolvePresetId(defaultProfile, persistedProfile.SelectedPresetId);
             defaultProfile.Hotkeys = MergeHotkeys(defaultProfile.Hotkeys, persistedProfile.Hotkeys);
-            defaultProfile.Zones = MergeZones(defaultProfile.Presets, defaultProfile.SelectedPresetId, persistedProfile.Zones);
+            defaultProfile.Zones = MergeZones(
+                defaultProfile.Presets,
+                defaultProfile.SelectedPresetId,
+                persistedProfile.Zones,
+                migrateLegacySurfaceIntensity);
             defaultProfile.WindowMatchers = MergeWindowMatchers(defaultProfile.WindowMatchers, persistedProfile.WindowMatchers);
         }
 
@@ -116,7 +124,7 @@ public sealed class DefaultSettingsFactory
             DisplayName = displayName,
             Enabled = true,
             StartupMode = AppActivationMode.Manual,
-            MaskIntensity = 1.35d,
+            MaskIntensity = MaskIntensityScale.Default,
             MaskColor = MaskColorOption.Black,
             HoverRevealWidthPixels = 394,
             HoverRevealHeightPixels = 42,
@@ -161,7 +169,11 @@ public sealed class DefaultSettingsFactory
             : defaultProfile.SelectedPresetId;
     }
 
-    private static List<PrivacyZone> MergeZones(IEnumerable<LayoutPreset> presets, string selectedPresetId, IEnumerable<PrivacyZone>? persistedZones)
+    private static List<PrivacyZone> MergeZones(
+        IEnumerable<LayoutPreset> presets,
+        string selectedPresetId,
+        IEnumerable<PrivacyZone>? persistedZones,
+        bool migrateLegacySurfaceIntensity)
     {
         var presetZones = presets.First(preset => preset.PresetId == selectedPresetId).Zones;
         if (persistedZones is null)
@@ -184,8 +196,10 @@ public sealed class DefaultSettingsFactory
                     DisplayName = persisted.DisplayName,
                     Anchor = persisted.Anchor,
                     RelativeRect = persisted.RelativeRect.Clamp(),
-                    Style = persisted.Style,
-                    Strength = persisted.Strength,
+                    Style = NormalizeMaskStyle(persisted.Style, defaultZone.Style),
+                    Strength = migrateLegacySurfaceIntensity
+                        ? MaskIntensityScale.FromLegacy(persisted.Strength)
+                        : MaskIntensityScale.Clamp(persisted.Strength),
                     Behavior = persisted.Behavior,
                     Enabled = persisted.Enabled,
                 };
@@ -232,6 +246,13 @@ public sealed class DefaultSettingsFactory
     {
         return Enum.IsDefined(typeof(MaskColorOption), persistedColor)
             ? persistedColor
+            : fallback;
+    }
+
+    private static MaskStyle NormalizeMaskStyle(MaskStyle persistedStyle, MaskStyle fallback)
+    {
+        return Enum.IsDefined(typeof(MaskStyle), persistedStyle)
+            ? persistedStyle
             : fallback;
     }
 }

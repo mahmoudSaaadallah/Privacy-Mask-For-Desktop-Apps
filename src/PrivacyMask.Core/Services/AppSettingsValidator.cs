@@ -10,10 +10,10 @@ public static class AppSettingsValidator
     public const int MaximumHoverRevealWidth = 1400;
     public const int MinimumHoverRevealHeight = 20;
     public const int MaximumHoverRevealHeight = 420;
-    public const double MinimumMaskIntensity = 0.60d;
-    public const double MaximumMaskIntensity = 2.40d;
-    public const double MinimumZoneStrength = 0.15d;
-    public const double MaximumZoneStrength = 2.40d;
+    public const double MinimumMaskIntensity = MaskIntensityScale.Minimum;
+    public const double MaximumMaskIntensity = MaskIntensityScale.Maximum;
+    public const double MinimumZoneStrength = MaskIntensityScale.Minimum;
+    public const double MaximumZoneStrength = MaskIntensityScale.Maximum;
 
     public static IReadOnlyList<SettingsValidationError> Validate(AppSettings settings)
     {
@@ -53,7 +53,7 @@ public static class AppSettingsValidator
         {
             errors.Add(new SettingsValidationError(
                 $"{profileName} > Mask intensity",
-                $"Choose a value from {MinimumMaskIntensity:0.00} to {MaximumMaskIntensity:0.00}."));
+                "Choose a surface intensity from 0% to 100%."));
         }
 
         for (var index = 0; index < profile.Zones.Count; index++)
