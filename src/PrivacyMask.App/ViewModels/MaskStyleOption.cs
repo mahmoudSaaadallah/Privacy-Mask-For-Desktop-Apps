@@ -7,6 +7,7 @@ public sealed record MaskStyleOption(MaskStyle Value, string DisplayName)
     public static IReadOnlyList<MaskStyleOption> All { get; } =
     [
         new(MaskStyle.Blur, "Live blur"),
+        new(MaskStyle.WetGlass, "Wet glass"),
         new(MaskStyle.Pixelate, "Pixelated"),
         new(MaskStyle.SolidRedact, "Solid redact"),
     ];

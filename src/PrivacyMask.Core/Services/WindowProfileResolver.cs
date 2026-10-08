@@ -47,13 +47,15 @@ public sealed class WindowProfileResolver
 
     private IReadOnlyList<PrivacyZone> ResolveZones(AppProfile profile, LayoutPreset preset)
     {
-        var sourceZones = profile.Zones.Count == 0 || profile.SelectedPresetId != preset.PresetId
-            ? preset.Zones
-            : profile.Zones;
+        var usesProfileZones = profile.Zones.Count > 0 && profile.SelectedPresetId == preset.PresetId;
+        var sourceZones = usesProfileZones ? profile.Zones : preset.Zones;
+        var adaptiveStyleOverride = usesProfileZones
+            ? null
+            : profile.Zones.FirstOrDefault()?.Style;
 
         var profileCache = _zoneCaches.GetValue(profile, static _ => new ProfileZoneCache());
         if (profileCache.Entries.TryGetValue(preset.PresetId, out var cached)
-            && cached.Matches(sourceZones, profile.MaskIntensity))
+            && cached.Matches(sourceZones, profile.MaskIntensity, adaptiveStyleOverride))
         {
             return cached.Zones;
         }
@@ -66,11 +68,20 @@ public sealed class WindowProfileResolver
                 // current single-layer mask, so the runtime should not multiply it by
                 // the preset baseline or it will saturate too early.
                 clone.Strength = MaskIntensityScale.Clamp(profile.MaskIntensity);
+                if (adaptiveStyleOverride is not null)
+                {
+                    clone.Style = adaptiveStyleOverride.Value;
+                }
+
                 return clone;
             })
             .ToList();
 
-        profileCache.Entries[preset.PresetId] = CachedZones.Create(sourceZones, profile.MaskIntensity, zones);
+        profileCache.Entries[preset.PresetId] = CachedZones.Create(
+            sourceZones,
+            profile.MaskIntensity,
+            adaptiveStyleOverride,
+            zones);
         return zones;
     }
 
@@ -82,14 +93,17 @@ public sealed class WindowProfileResolver
     private sealed class CachedZones
     {
         private readonly double _maskIntensity;
+        private readonly MaskStyle? _adaptiveStyleOverride;
         private readonly ZoneConfiguration[] _configurations;
 
         private CachedZones(
             double maskIntensity,
+            MaskStyle? adaptiveStyleOverride,
             ZoneConfiguration[] configurations,
             IReadOnlyList<PrivacyZone> zones)
         {
             _maskIntensity = maskIntensity;
+            _adaptiveStyleOverride = adaptiveStyleOverride;
             _configurations = configurations;
             Zones = zones;
         }
@@ -99,6 +113,7 @@ public sealed class WindowProfileResolver
         public static CachedZones Create(
             IReadOnlyList<PrivacyZone> sourceZones,
             double maskIntensity,
+            MaskStyle? adaptiveStyleOverride,
             IReadOnlyList<PrivacyZone> effectiveZones)
         {
             var configurations = new ZoneConfiguration[sourceZones.Count];
@@ -107,12 +122,17 @@ public sealed class WindowProfileResolver
                 configurations[index] = ZoneConfiguration.From(sourceZones[index]);
             }
 
-            return new CachedZones(maskIntensity, configurations, effectiveZones);
+            return new CachedZones(maskIntensity, adaptiveStyleOverride, configurations, effectiveZones);
         }
 
-        public bool Matches(IReadOnlyList<PrivacyZone> sourceZones, double maskIntensity)
+        public bool Matches(
+            IReadOnlyList<PrivacyZone> sourceZones,
+            double maskIntensity,
+            MaskStyle? adaptiveStyleOverride)
         {
-            if (_maskIntensity != maskIntensity || _configurations.Length != sourceZones.Count)
+            if (_maskIntensity != maskIntensity
+                || _adaptiveStyleOverride != adaptiveStyleOverride
+                || _configurations.Length != sourceZones.Count)
             {
                 return false;
             }

@@ -147,6 +147,16 @@ public partial class MainWindow : Window
         PreviewRequested?.Invoke(ViewModel.ToModel());
     }
 
+    private void MaskStyleSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded || sender is not System.Windows.Controls.ComboBox)
+        {
+            return;
+        }
+
+        PreviewRequested?.Invoke(ViewModel.ToModel());
+    }
+
     private void NumericTextBox_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
     {
         e.Handled = !Regex.IsMatch(e.Text, "^[0-9]+$");

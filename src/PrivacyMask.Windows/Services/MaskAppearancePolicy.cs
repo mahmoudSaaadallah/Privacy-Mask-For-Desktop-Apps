@@ -14,6 +14,16 @@ public static class MaskAppearancePolicy
 
         return style switch
         {
+            MaskStyle.WetGlass => new MaskSurfaceAppearance(
+                normalized,
+                smoothed,
+                SecureOverlayOpacity,
+                Lerp(0.78d, 0.56d, smoothed),
+                Lerp(0.42d, 0.24d, smoothed),
+                Lerp(0.16d, 0.42d, smoothed),
+                Lerp(0.03d, 0.28d, smoothed),
+                Lerp(1d, 32d, smoothed),
+                1d),
             MaskStyle.Pixelate => new MaskSurfaceAppearance(
                 normalized,
                 smoothed,

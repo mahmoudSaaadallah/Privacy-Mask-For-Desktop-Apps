@@ -23,6 +23,8 @@ namespace PrivacyMask.App.Windows;
 public sealed class PrivacyOverlayWindow : Window
 {
     private static readonly TimeSpan BlurCaptureInterval = TimeSpan.FromMilliseconds(250d);
+    private static readonly TimeSpan WetGlassCaptureInterval = TimeSpan.FromMilliseconds(500d);
+    private static readonly Brush WetGlassTextureBrush = CreateWetGlassTextureBrush();
 
     private readonly Canvas _canvas;
     private readonly List<WpfImage> _blurImages = [];
@@ -244,7 +246,11 @@ public sealed class PrivacyOverlayWindow : Window
     {
         if (renderPolicy.ForceFullWindowMask
             || IsFullyOccluded(trackedWindow.Snapshot.Bounds, trackedWindow.OccludingBounds)
-            || !TryGetBlurAppearance(trackedWindow, temporaryRevealHeld, out var appearance))
+            || !TryGetLiveCaptureAppearance(
+                trackedWindow,
+                temporaryRevealHeld,
+                out var captureStyle,
+                out var appearance))
         {
             ResetBlurCapture();
             return;
@@ -253,7 +259,8 @@ public sealed class PrivacyOverlayWindow : Window
         var request = new BlurCaptureRequest(
             trackedWindow.Snapshot.Handle,
             trackedWindow.Snapshot.Bounds,
-            appearance.BlurDownsampleFactor);
+            appearance.BlurDownsampleFactor,
+            captureStyle);
         if (_captureRequest != request)
         {
             _captureRequest = request;
@@ -271,29 +278,39 @@ public sealed class PrivacyOverlayWindow : Window
         }
 
         _captureInProgress = true;
-        _nextCaptureUtc = now + BlurCaptureInterval;
+        _nextCaptureUtc = now + (captureStyle == MaskStyle.WetGlass
+            ? WetGlassCaptureInterval
+            : BlurCaptureInterval);
         var generation = _captureGeneration;
         _ = CaptureBlurFrameAsync(request, generation);
     }
 
-    private static bool TryGetBlurAppearance(
+    private static bool TryGetLiveCaptureAppearance(
         TrackedWindow trackedWindow,
         bool temporaryRevealHeld,
+        out MaskStyle captureStyle,
         out MaskSurfaceAppearance appearance)
     {
         foreach (var zone in trackedWindow.EffectiveZones)
         {
             if (zone.Enabled
-                && zone.Style == MaskStyle.Blur
+                && UsesLiveWindowCapture(zone.Style)
                 && !(temporaryRevealHeld && zone.Behavior.HasFlag(ZoneBehavior.HideDuringTemporaryReveal)))
             {
+                captureStyle = zone.Style;
                 appearance = MaskAppearancePolicy.Resolve(zone.Style, zone.Strength);
                 return true;
             }
         }
 
+        captureStyle = default;
         appearance = default;
         return false;
+    }
+
+    private static bool UsesLiveWindowCapture(MaskStyle style)
+    {
+        return style is MaskStyle.Blur or MaskStyle.WetGlass;
     }
 
     private static bool IsFullyOccluded(ScreenRect targetBounds, IReadOnlyList<ScreenRect> occludingBounds)
@@ -555,6 +572,126 @@ public sealed class PrivacyOverlayWindow : Window
         return brush;
     }
 
+    private static Brush CreateWetGlassTextureBrush()
+    {
+        const int textureWidth = 640;
+        const int textureHeight = 448;
+        var random = new Random(19770519);
+        using var bitmap = new System.Drawing.Bitmap(
+            textureWidth,
+            textureHeight,
+            System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+        using (var graphics = System.Drawing.Graphics.FromImage(bitmap))
+        {
+            graphics.Clear(System.Drawing.Color.Transparent);
+            graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceOver;
+            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            using var shadowBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(34, 8, 28, 38));
+            using var highlightBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(118, 255, 255, 255));
+            using var rimPen = new System.Drawing.Pen(System.Drawing.Color.FromArgb(62, 214, 239, 246), 1.15f);
+            using var streakShadowPen = new System.Drawing.Pen(System.Drawing.Color.FromArgb(38, 7, 35, 48), 2.4f)
+            {
+                StartCap = System.Drawing.Drawing2D.LineCap.Round,
+                EndCap = System.Drawing.Drawing2D.LineCap.Round,
+            };
+            using var streakHighlightPen = new System.Drawing.Pen(System.Drawing.Color.FromArgb(72, 238, 252, 255), 0.9f)
+            {
+                StartCap = System.Drawing.Drawing2D.LineCap.Round,
+                EndCap = System.Drawing.Drawing2D.LineCap.Round,
+            };
+
+            for (var index = 0; index < 104; index++)
+            {
+                var radius = index % 13 == 0
+                    ? 6.4f + ((float)random.NextDouble() * 7f)
+                    : 1.4f + ((float)random.NextDouble() * 4.4f);
+                var verticalRadius = radius * (0.68f + ((float)random.NextDouble() * 0.62f));
+                var centerX = 15f + ((float)random.NextDouble() * (textureWidth - 30f));
+                var centerY = 13f + ((float)random.NextDouble() * (textureHeight - 26f));
+                var bounds = new System.Drawing.RectangleF(
+                    centerX - radius,
+                    centerY - verticalRadius,
+                    radius * 2f,
+                    verticalRadius * 2f);
+
+                graphics.FillEllipse(
+                    shadowBrush,
+                    bounds.X + 1.4f,
+                    bounds.Y + 2f,
+                    bounds.Width + 0.7f,
+                    bounds.Height + 0.7f);
+                using (var path = new System.Drawing.Drawing2D.GraphicsPath())
+                {
+                    path.AddEllipse(bounds);
+                    using var dropletBrush = new System.Drawing.Drawing2D.PathGradientBrush(path)
+                    {
+                        CenterColor = System.Drawing.Color.FromArgb(42, 255, 255, 255),
+                        CenterPoint = new System.Drawing.PointF(
+                            centerX - (radius * 0.24f),
+                            centerY - (verticalRadius * 0.28f)),
+                        SurroundColors = [System.Drawing.Color.FromArgb(44, 20, 63, 82)],
+                    };
+                    graphics.FillPath(dropletBrush, path);
+                    graphics.DrawPath(rimPen, path);
+                }
+
+                var highlightRadius = Math.Max(0.65f, radius * 0.13f);
+                graphics.FillEllipse(
+                    highlightBrush,
+                    centerX - (radius * 0.34f) - highlightRadius,
+                    centerY - (verticalRadius * 0.34f) - (highlightRadius * 0.72f),
+                    highlightRadius * 2f,
+                    highlightRadius * 1.44f);
+
+                if (index % 23 == 0)
+                {
+                    var streakLength = 20f + ((float)random.NextDouble() * 46f);
+                    var startX = centerX + 1.3f;
+                    var startY = centerY + (verticalRadius * 0.72f);
+                    var endX = startX - 2f;
+                    var endY = Math.Min(textureHeight, startY + streakLength);
+                    graphics.DrawLine(streakShadowPen, startX, startY, endX, endY);
+                    graphics.DrawLine(streakHighlightPen, startX - 1.2f, startY, endX - 1.2f, endY);
+                }
+            }
+        }
+
+        var bitmapRect = new System.Drawing.Rectangle(0, 0, textureWidth, textureHeight);
+        var bitmapData = bitmap.LockBits(
+            bitmapRect,
+            System.Drawing.Imaging.ImageLockMode.ReadOnly,
+            System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+        BitmapSource bitmapSource;
+        try
+        {
+            bitmapSource = BitmapSource.Create(
+                textureWidth,
+                textureHeight,
+                96d,
+                96d,
+                PixelFormats.Pbgra32,
+                palette: null,
+                bitmapData.Scan0,
+                Math.Abs(bitmapData.Stride) * textureHeight,
+                bitmapData.Stride);
+            bitmapSource.Freeze();
+        }
+        finally
+        {
+            bitmap.UnlockBits(bitmapData);
+        }
+
+        var brush = new ImageBrush(bitmapSource)
+        {
+            Stretch = Stretch.UniformToFill,
+        };
+        brush.Freeze();
+        return brush;
+    }
+
     private static Brush CreateBlurFallbackBrush(
         MediaColor baseColor,
         MaskSurfaceAppearance appearance)
@@ -639,9 +776,9 @@ public sealed class PrivacyOverlayWindow : Window
             geometry.Freeze();
         }
 
-        if (style == MaskStyle.Blur && _blurFrame is not null)
+        if (UsesLiveWindowCapture(style) && _blurFrame is not null)
         {
-            AddLiveBlurRegion(geometry, maskColor, appearance, overlayWidth, overlayHeight);
+            AddLiveCaptureRegion(style, geometry, maskColor, appearance, overlayWidth, overlayHeight);
             return;
         }
 
@@ -654,9 +791,14 @@ public sealed class PrivacyOverlayWindow : Window
         };
 
         _canvas.Children.Add(shape);
+        if (style == MaskStyle.WetGlass)
+        {
+            AddWetGlassLayer(geometry, appearance);
+        }
     }
 
-    private void AddLiveBlurRegion(
+    private void AddLiveCaptureRegion(
+        MaskStyle style,
         Geometry geometry,
         MaskColorOption maskColor,
         MaskSurfaceAppearance appearance,
@@ -686,6 +828,23 @@ public sealed class PrivacyOverlayWindow : Window
             IsHitTestVisible = false,
         };
         _canvas.Children.Add(tint);
+
+        if (style == MaskStyle.WetGlass)
+        {
+            AddWetGlassLayer(geometry, appearance);
+        }
+    }
+
+    private void AddWetGlassLayer(Geometry geometry, MaskSurfaceAppearance appearance)
+    {
+        var droplets = new Path
+        {
+            Data = geometry,
+            Fill = WetGlassTextureBrush,
+            Opacity = 0.36d + (appearance.SmoothedIntensity * 0.34d),
+            IsHitTestVisible = false,
+        };
+        _canvas.Children.Add(droplets);
     }
 
     private static MediaColor GetMaskBaseColor(MaskColorOption maskColor)
@@ -713,5 +872,6 @@ public sealed class PrivacyOverlayWindow : Window
     private readonly record struct BlurCaptureRequest(
         nint WindowHandle,
         ScreenRect Bounds,
-        double DownsampleFactor);
+        double DownsampleFactor,
+        MaskStyle Style);
 }

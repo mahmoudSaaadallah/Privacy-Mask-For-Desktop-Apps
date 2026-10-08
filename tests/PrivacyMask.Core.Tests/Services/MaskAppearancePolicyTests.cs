@@ -7,6 +7,7 @@ public sealed class MaskAppearancePolicyTests
 {
     [Theory]
     [InlineData(MaskStyle.Blur)]
+    [InlineData(MaskStyle.WetGlass)]
     [InlineData(MaskStyle.Pixelate)]
     [InlineData(MaskStyle.SolidRedact)]
     public void Resolve_KeepsEveryProtectiveStyleFullyOpaque(MaskStyle style)
@@ -17,6 +18,22 @@ public sealed class MaskAppearancePolicyTests
 
             Assert.Equal(MaskAppearancePolicy.SecureOverlayOpacity, appearance.OverlayOpacity);
         }
+    }
+
+    [Fact]
+    public void Resolve_WetGlassUsesProgressiveBlurAndTint()
+    {
+        var clear = MaskAppearancePolicy.Resolve(MaskStyle.WetGlass, 0d);
+        var balanced = MaskAppearancePolicy.Resolve(MaskStyle.WetGlass, 0.50d);
+        var strong = MaskAppearancePolicy.Resolve(MaskStyle.WetGlass, 1d);
+
+        Assert.True(clear.BlurDownsampleFactor < balanced.BlurDownsampleFactor);
+        Assert.True(balanced.BlurDownsampleFactor < strong.BlurDownsampleFactor);
+        Assert.True(clear.TintOpacity < balanced.TintOpacity);
+        Assert.True(balanced.TintOpacity < strong.TintOpacity);
+        Assert.Equal(
+            MaskAppearancePolicy.Resolve(MaskStyle.Blur, 1d).BlurDownsampleFactor,
+            strong.BlurDownsampleFactor);
     }
 
     [Fact]
