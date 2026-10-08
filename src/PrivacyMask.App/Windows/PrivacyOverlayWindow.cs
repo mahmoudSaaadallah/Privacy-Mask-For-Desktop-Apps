@@ -8,6 +8,8 @@ using System.Windows.Shapes;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
 using PrivacyMask.Windows.Interop;
+using PrivacyMask.Windows.Models;
+using PrivacyMask.Windows.Services;
 using Brush = System.Windows.Media.Brush;
 using MediaBrushes = System.Windows.Media.Brushes;
 using MediaColor = System.Windows.Media.Color;
@@ -17,6 +19,9 @@ namespace PrivacyMask.App.Windows;
 
 public sealed class PrivacyOverlayWindow : Window
 {
+    private const double FrostTileSize = 192d;
+    private static readonly Geometry FrostGrainGeometry = CreateFrostGrainGeometry(FrostTileSize);
+
     private readonly Canvas _canvas;
     private ScreenRect[] _lastOccludingBounds = [];
     private AppProfile? _lastProfile;
@@ -377,24 +382,18 @@ public sealed class PrivacyOverlayWindow : Window
         return cutouts;
     }
 
-    private static Brush BuildBackground(MaskStyle style, MaskColorOption maskColor, double strength)
+    private static Brush BuildBackground(
+        MaskStyle style,
+        MaskColorOption maskColor,
+        MaskSurfaceAppearance appearance)
     {
-        var normalized = NormalizeStrength(strength);
         var baseColor = GetMaskBaseColor(maskColor);
-        Brush brush;
-        if (normalized >= 0.999d)
+        var brush = style switch
         {
-            brush = new SolidColorBrush(baseColor);
-        }
-        else
-        {
-            brush = style switch
-            {
-                MaskStyle.Pixelate => CreatePixelBrush(baseColor, normalized),
-                MaskStyle.SolidRedact => CreateSolidRedactBrush(baseColor, normalized),
-                _ => CreateBlurBrush(baseColor, normalized),
-            };
-        }
+            MaskStyle.Pixelate => CreatePixelBrush(baseColor, appearance),
+            MaskStyle.SolidRedact => CreateSolidRedactBrush(baseColor, appearance),
+            _ => CreateFrostedGlassBrush(baseColor, appearance),
+        };
 
         if (brush.CanFreeze)
         {
@@ -404,61 +403,127 @@ public sealed class PrivacyOverlayWindow : Window
         return brush;
     }
 
-    private static Brush CreateBlurBrush(MediaColor baseColor, double normalized)
+    private static Brush CreateFrostedGlassBrush(
+        MediaColor baseColor,
+        MaskSurfaceAppearance appearance)
     {
-        var brush = new LinearGradientBrush
+        var neutralFrost = MediaColor.FromRgb(216, 222, 225);
+        var surface = Blend(baseColor, neutralFrost, appearance.MidtoneBlend);
+        var highlight = Blend(baseColor, MediaColor.FromRgb(255, 255, 255), appearance.HighlightBlend);
+        var shadow = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), appearance.ShadowBlend);
+        var drawingGroup = new DrawingGroup();
+
+        drawingGroup.Children.Add(new GeometryDrawing(
+            new SolidColorBrush(surface),
+            null,
+            new RectangleGeometry(new Rect(0d, 0d, FrostTileSize, FrostTileSize))));
+        drawingGroup.Children.Add(new GeometryDrawing(
+            CreateCloudBrush(highlight, ToByte(28d + (appearance.TextureContrast * 250d))),
+            null,
+            new EllipseGeometry(new Point(46d, 48d), 82d, 68d)));
+        drawingGroup.Children.Add(new GeometryDrawing(
+            CreateCloudBrush(shadow, ToByte(20d + (appearance.TextureContrast * 180d))),
+            null,
+            new EllipseGeometry(new Point(158d, 142d), 90d, 78d)));
+        drawingGroup.Children.Add(new GeometryDrawing(
+            CreateCloudBrush(highlight, ToByte(16d + (appearance.TextureContrast * 140d))),
+            null,
+            new EllipseGeometry(new Point(176d, 20d), 54d, 42d)));
+
+        drawingGroup.Children.Add(new GeometryDrawing(
+            new SolidColorBrush(MediaColor.FromArgb(
+                ToByte(4d + (appearance.TextureContrast * 80d)),
+                highlight.R,
+                highlight.G,
+                highlight.B)),
+            null,
+            FrostGrainGeometry));
+
+        var brush = new DrawingBrush(drawingGroup)
         {
-            StartPoint = new Point(0, 0),
-            EndPoint = new Point(1, 1),
+            TileMode = TileMode.Tile,
+            Viewbox = new Rect(0d, 0d, FrostTileSize, FrostTileSize),
+            ViewboxUnits = BrushMappingMode.Absolute,
+            Viewport = new Rect(
+                0d,
+                0d,
+                FrostTileSize * appearance.TextureScale,
+                FrostTileSize * appearance.TextureScale),
+            ViewportUnits = BrushMappingMode.Absolute,
+            Stretch = Stretch.Fill,
         };
-        brush.GradientStops.Add(new GradientStop(Blend(baseColor, MediaColor.FromRgb(255, 255, 255), 0.62d - (0.20d * normalized)), 0.0));
-        brush.GradientStops.Add(new GradientStop(Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.22d + (0.12d * normalized)), 0.45));
-        brush.GradientStops.Add(new GradientStop(Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.42d + (0.24d * normalized)), 1.0));
         return brush;
     }
 
-    private static Brush CreatePixelBrush(MediaColor baseColor, double normalized)
+    private static RadialGradientBrush CreateCloudBrush(MediaColor color, byte centerAlpha)
     {
-        var dark = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.34d + (0.24d * normalized));
-        var light = Blend(baseColor, MediaColor.FromRgb(255, 255, 255), 0.52d - (0.18d * normalized));
+        var transparent = MediaColor.FromArgb(0, color.R, color.G, color.B);
+        var center = MediaColor.FromArgb(centerAlpha, color.R, color.G, color.B);
+        var brush = new RadialGradientBrush
+        {
+            Center = new Point(0.5d, 0.5d),
+            GradientOrigin = new Point(0.42d, 0.38d),
+            RadiusX = 0.62d,
+            RadiusY = 0.62d,
+        };
+        brush.GradientStops.Add(new GradientStop(center, 0d));
+        brush.GradientStops.Add(new GradientStop(transparent, 1d));
+        return brush;
+    }
+
+    private static Geometry CreateFrostGrainGeometry(double tileSize)
+    {
+        var geometry = new GeometryGroup();
+        uint state = 0x9E3779B9;
+        for (var index = 0; index < 28; index++)
+        {
+            state = (state * 1664525u) + 1013904223u;
+            var x = state % (uint)tileSize;
+            state = (state * 1664525u) + 1013904223u;
+            var y = state % (uint)tileSize;
+            state = (state * 1664525u) + 1013904223u;
+            var size = 0.7d + ((state % 15u) / 10d);
+            geometry.Children.Add(new EllipseGeometry(new Point(x, y), size, size));
+        }
+
+        geometry.Freeze();
+        return geometry;
+    }
+
+    private static Brush CreatePixelBrush(
+        MediaColor baseColor,
+        MaskSurfaceAppearance appearance)
+    {
+        var neutralFrost = MediaColor.FromRgb(216, 222, 225);
+        var dark = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), appearance.ShadowBlend);
+        var light = Blend(baseColor, neutralFrost, appearance.HighlightBlend);
+        var tileSize = 16d * appearance.TextureScale;
+        var halfTileSize = tileSize / 2d;
 
         var drawingBrush = new DrawingBrush
         {
             TileMode = TileMode.Tile,
-            Viewport = new Rect(0, 0, 16, 16),
+            Viewport = new Rect(0, 0, tileSize, tileSize),
             ViewportUnits = BrushMappingMode.Absolute,
-            Viewbox = new Rect(0, 0, 16, 16),
+            Viewbox = new Rect(0, 0, tileSize, tileSize),
             ViewboxUnits = BrushMappingMode.Absolute,
             Stretch = Stretch.Fill,
         };
 
         var drawingGroup = new DrawingGroup();
-        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(light), null, new RectangleGeometry(new Rect(0, 0, 16, 16))));
-        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(dark), null, new RectangleGeometry(new Rect(0, 0, 8, 8))));
-        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(dark), null, new RectangleGeometry(new Rect(8, 8, 8, 8))));
+        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(light), null, new RectangleGeometry(new Rect(0, 0, tileSize, tileSize))));
+        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(dark), null, new RectangleGeometry(new Rect(0, 0, halfTileSize, halfTileSize))));
+        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(dark), null, new RectangleGeometry(new Rect(halfTileSize, halfTileSize, halfTileSize, halfTileSize))));
         drawingBrush.Drawing = drawingGroup;
         return drawingBrush;
     }
 
-    private static Brush CreateSolidRedactBrush(MediaColor baseColor, double normalized)
+    private static Brush CreateSolidRedactBrush(
+        MediaColor baseColor,
+        MaskSurfaceAppearance appearance)
     {
-        var toned = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.12d + (0.10d * normalized));
+        var toned = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), appearance.ShadowBlend);
         return new SolidColorBrush(toned);
-    }
-
-    private static double ComputeOverlayOpacity(MaskStyle style, double strength)
-    {
-        var normalized = NormalizeStrength(strength);
-        if (normalized >= 0.999d)
-        {
-            return 1.0d;
-        }
-
-        return style switch
-        {
-            MaskStyle.SolidRedact => 0.86d + (0.10d * normalized),
-            _ => 0.72d + (0.22d * normalized),
-        };
     }
 
     private void AddMaskedRegion(
@@ -470,8 +535,8 @@ public sealed class PrivacyOverlayWindow : Window
         IReadOnlyList<Rect> occludingCutouts,
         double cornerRadius = 14d)
     {
-        var fill = BuildBackground(style, maskColor, strength);
-        var opacity = ComputeOverlayOpacity(style, strength);
+        var appearance = MaskAppearancePolicy.Resolve(style, strength);
+        var fill = BuildBackground(style, maskColor, appearance);
         Geometry geometry = new RectangleGeometry(zoneRect, cornerRadius, cornerRadius);
 
         if (revealCutout is not null)
@@ -493,16 +558,16 @@ public sealed class PrivacyOverlayWindow : Window
         {
             Data = geometry,
             Fill = fill,
-            Opacity = opacity,
+            Opacity = appearance.OverlayOpacity,
             IsHitTestVisible = false,
         };
 
         _canvas.Children.Add(shape);
     }
 
-    private static double NormalizeStrength(double strength)
+    private static byte ToByte(double value)
     {
-        return double.Clamp((strength - 0.15d) / 2.25d, 0d, 1d);
+        return (byte)Math.Round(double.Clamp(value, byte.MinValue, byte.MaxValue));
     }
 
     private static MediaColor GetMaskBaseColor(MaskColorOption maskColor)
