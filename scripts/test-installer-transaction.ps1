@@ -23,6 +23,7 @@ $installPath = Join-Path $smokeRoot 'install'
 $desktopShortcutPath = Join-Path $smokeRoot 'desktop\PrivacyMask.lnk'
 $startMenuFolder = Join-Path $smokeRoot 'start-menu\PrivacyMask'
 $startMenuShortcutPath = Join-Path $startMenuFolder 'PrivacyMask.lnk'
+$runningTestProcess = $null
 
 function Assert-PathExists {
   param([string]$Path, [string]$Description)
@@ -69,6 +70,31 @@ try {
   if (-not [string]::Equals($desktopTarget, $expectedTarget, [StringComparison]::OrdinalIgnoreCase) -or
       -not [string]::Equals($startMenuTarget, $expectedTarget, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'An installer shortcut does not target the installed executable.'
+  }
+
+  Copy-Item `
+    -LiteralPath (Join-Path $env:SystemRoot 'System32\PING.EXE') `
+    -Destination $installedExePath `
+    -Force
+  $runningTestProcess = Start-Process `
+    -FilePath $installedExePath `
+    -ArgumentList '-n', '60', '127.0.0.1' `
+    -WindowStyle Hidden `
+    -PassThru
+  Start-Sleep -Milliseconds 500
+  if ($runningTestProcess.HasExited) {
+    throw 'The running-update test process exited before the installer could detect it.'
+  }
+
+  & $installerPath `
+    -SourcePath $resolvedSourcePath `
+    -InstallPath $installPath `
+    -DesktopShortcutPath $desktopShortcutPath `
+    -StartMenuFolder $startMenuFolder `
+    -SkipRestart
+  $runningTestProcess.WaitForExit(10000) | Out-Null
+  if (-not $runningTestProcess.HasExited) {
+    throw 'The installer did not stop the running installed executable before updating.'
   }
 
   $settingsPath = Join-Path $installPath 'settings.v1.json'
@@ -127,6 +153,10 @@ try {
   Write-Host 'Transactional installer test passed.'
 }
 finally {
+  if ($null -ne $runningTestProcess -and -not $runningTestProcess.HasExited) {
+    Stop-Process -Id $runningTestProcess.Id -Force -ErrorAction SilentlyContinue
+  }
+
   $resolvedSmokeRoot = [System.IO.Path]::GetFullPath($smokeRoot)
   $resolvedTempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
   if ($resolvedSmokeRoot.StartsWith($resolvedTempRoot, [StringComparison]::OrdinalIgnoreCase) -and
