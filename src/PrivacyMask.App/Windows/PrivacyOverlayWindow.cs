@@ -6,6 +6,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using PrivacyMask.App.Services;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
 using PrivacyMask.Windows.Interop;
@@ -15,12 +16,16 @@ using Brush = System.Windows.Media.Brush;
 using MediaBrushes = System.Windows.Media.Brushes;
 using MediaColor = System.Windows.Media.Color;
 using Point = System.Windows.Point;
+using WpfImage = System.Windows.Controls.Image;
 
 namespace PrivacyMask.App.Windows;
 
 public sealed class PrivacyOverlayWindow : Window
 {
+    private static readonly TimeSpan BlurCaptureInterval = TimeSpan.FromMilliseconds(250d);
+
     private readonly Canvas _canvas;
+    private readonly List<WpfImage> _blurImages = [];
     private ScreenRect[] _lastOccludingBounds = [];
     private AppProfile? _lastProfile;
     private IReadOnlyList<PrivacyZone>? _lastEffectiveZones;
@@ -34,6 +39,12 @@ public sealed class PrivacyOverlayWindow : Window
     private bool _lastCursorAffectsRender;
     private Point _lastCursorScreenPoint;
     private bool _hasRenderState;
+    private BitmapSource? _blurFrame;
+    private BlurCaptureRequest? _captureRequest;
+    private DateTime _nextCaptureUtc;
+    private int _captureGeneration;
+    private bool _captureInProgress;
+    private bool _isClosed;
 
     public PrivacyOverlayWindow()
     {
@@ -55,6 +66,7 @@ public sealed class PrivacyOverlayWindow : Window
 
         Content = _canvas;
         Loaded += OnLoaded;
+        Closed += OnClosed;
     }
 
     public void UpdateOverlay(TrackedWindow trackedWindow, RuntimeMode mode, bool temporaryRevealHeld, Point cursorScreenPoint)
@@ -77,6 +89,7 @@ public sealed class PrivacyOverlayWindow : Window
             renderPolicy,
             temporaryRevealHeld,
             cursorScreenPoint);
+        ScheduleBlurCapture(trackedWindow, renderPolicy, temporaryRevealHeld);
         if (wasVisible && IsRenderStateCurrent(
                 trackedWindow,
                 mode,
@@ -105,7 +118,15 @@ public sealed class PrivacyOverlayWindow : Window
         }
 
         _canvas.Children.Clear();
+        _blurImages.Clear();
+        ResetBlurCapture();
         _hasRenderState = false;
+    }
+
+    private void OnClosed(object? sender, EventArgs e)
+    {
+        _isClosed = true;
+        ResetBlurCapture();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -150,6 +171,7 @@ public sealed class PrivacyOverlayWindow : Window
         Point cursorScreenPoint)
     {
         _canvas.Children.Clear();
+        _blurImages.Clear();
         var width = ActualWidth <= 0 ? Width : ActualWidth;
         var height = ActualHeight <= 0 ? Height : ActualHeight;
         if (width <= 0 || height <= 0)
@@ -168,6 +190,8 @@ public sealed class PrivacyOverlayWindow : Window
                 renderPolicy.ForcedStrength,
                 revealCutout: null,
                 occludingCutouts: occludingCutouts,
+                overlayWidth: width,
+                overlayHeight: height,
                 cornerRadius: 0d);
             return;
         }
@@ -201,8 +225,138 @@ public sealed class PrivacyOverlayWindow : Window
                 : null;
 
             var occludingCutouts = CreateOcclusionCutouts(zoneRect, trackedWindow.OccludingBounds);
-            AddMaskedRegion(zoneRect, zone.Style, trackedWindow.Profile.MaskColor, zone.Strength, revealCutout, occludingCutouts);
+            AddMaskedRegion(
+                zoneRect,
+                zone.Style,
+                trackedWindow.Profile.MaskColor,
+                zone.Strength,
+                revealCutout,
+                occludingCutouts,
+                width,
+                height);
         }
+    }
+
+    private void ScheduleBlurCapture(
+        TrackedWindow trackedWindow,
+        ProtectionRenderPolicy renderPolicy,
+        bool temporaryRevealHeld)
+    {
+        if (renderPolicy.ForceFullWindowMask
+            || IsFullyOccluded(trackedWindow.Snapshot.Bounds, trackedWindow.OccludingBounds)
+            || !TryGetBlurAppearance(trackedWindow, temporaryRevealHeld, out var appearance))
+        {
+            ResetBlurCapture();
+            return;
+        }
+
+        var request = new BlurCaptureRequest(
+            trackedWindow.Snapshot.Handle,
+            trackedWindow.Snapshot.Bounds,
+            appearance.BlurDownsampleFactor);
+        if (_captureRequest != request)
+        {
+            _captureRequest = request;
+            _blurFrame = null;
+            _blurImages.Clear();
+            _hasRenderState = false;
+            _captureGeneration++;
+            _nextCaptureUtc = DateTime.MinValue;
+        }
+
+        var now = DateTime.UtcNow;
+        if (_captureInProgress || now < _nextCaptureUtc)
+        {
+            return;
+        }
+
+        _captureInProgress = true;
+        _nextCaptureUtc = now + BlurCaptureInterval;
+        var generation = _captureGeneration;
+        _ = CaptureBlurFrameAsync(request, generation);
+    }
+
+    private static bool TryGetBlurAppearance(
+        TrackedWindow trackedWindow,
+        bool temporaryRevealHeld,
+        out MaskSurfaceAppearance appearance)
+    {
+        foreach (var zone in trackedWindow.EffectiveZones)
+        {
+            if (zone.Enabled
+                && zone.Style == MaskStyle.Blur
+                && !(temporaryRevealHeld && zone.Behavior.HasFlag(ZoneBehavior.HideDuringTemporaryReveal)))
+            {
+                appearance = MaskAppearancePolicy.Resolve(zone.Style, zone.Strength);
+                return true;
+            }
+        }
+
+        appearance = default;
+        return false;
+    }
+
+    private static bool IsFullyOccluded(ScreenRect targetBounds, IReadOnlyList<ScreenRect> occludingBounds)
+    {
+        return occludingBounds.Any(bounds =>
+            bounds.Left <= targetBounds.Left
+            && bounds.Top <= targetBounds.Top
+            && bounds.Right >= targetBounds.Right
+            && bounds.Bottom >= targetBounds.Bottom);
+    }
+
+    private async Task CaptureBlurFrameAsync(BlurCaptureRequest request, int generation)
+    {
+        BitmapSource? frame = null;
+        try
+        {
+            frame = await Task.Run(() => WindowCaptureService.TryCapture(
+                request.WindowHandle,
+                request.Bounds,
+                request.DownsampleFactor));
+        }
+        catch
+        {
+            // A protected fallback remains visible when a window rejects capture.
+        }
+
+        if (_isClosed || generation != _captureGeneration || _captureRequest != request)
+        {
+            return;
+        }
+
+        _captureInProgress = false;
+        if (frame is null)
+        {
+            _nextCaptureUtc = DateTime.UtcNow + TimeSpan.FromSeconds(1d);
+            return;
+        }
+
+        _blurFrame = frame;
+        if (_blurImages.Count == 0)
+        {
+            _hasRenderState = false;
+            return;
+        }
+
+        foreach (var image in _blurImages)
+        {
+            image.Source = frame;
+        }
+    }
+
+    private void ResetBlurCapture()
+    {
+        if (_captureRequest is null && _blurFrame is null && !_captureInProgress)
+        {
+            return;
+        }
+
+        _captureRequest = null;
+        _blurFrame = null;
+        _captureInProgress = false;
+        _nextCaptureUtc = DateTime.MinValue;
+        _captureGeneration++;
     }
 
     private static bool IsCursorInsideZone(Point cursorScreenPoint, ScreenRect bounds, RelativeRect relativeRect)
@@ -390,7 +544,7 @@ public sealed class PrivacyOverlayWindow : Window
         {
             MaskStyle.Pixelate => CreatePixelBrush(baseColor, appearance),
             MaskStyle.SolidRedact => CreateSolidRedactBrush(baseColor, appearance),
-            _ => CreateFrostedGlassBrush(baseColor, appearance),
+            _ => CreateBlurFallbackBrush(baseColor, appearance),
         };
 
         if (brush.CanFreeze)
@@ -401,7 +555,7 @@ public sealed class PrivacyOverlayWindow : Window
         return brush;
     }
 
-    private static Brush CreateFrostedGlassBrush(
+    private static Brush CreateBlurFallbackBrush(
         MediaColor baseColor,
         MaskSurfaceAppearance appearance)
     {
@@ -409,35 +563,14 @@ public sealed class PrivacyOverlayWindow : Window
         var surface = Blend(baseColor, neutralFrost, appearance.MidtoneBlend);
         var highlight = Blend(baseColor, MediaColor.FromRgb(255, 255, 255), appearance.HighlightBlend);
         var shadow = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), appearance.ShadowBlend);
-        var tile = FrostedSurfaceRasterizer.Render(
-            ToRgbColor(surface),
-            ToRgbColor(highlight),
-            ToRgbColor(shadow),
-            appearance.TextureContrast);
-        var bitmap = BitmapSource.Create(
-            tile.Width,
-            tile.Height,
-            96d,
-            96d,
-            PixelFormats.Bgra32,
-            null,
-            tile.BgraPixels,
-            tile.Stride);
-        bitmap.Freeze();
-
-        var brush = new ImageBrush(bitmap)
+        var brush = new LinearGradientBrush
         {
-            TileMode = TileMode.Tile,
-            Viewbox = new Rect(0d, 0d, 1d, 1d),
-            ViewboxUnits = BrushMappingMode.RelativeToBoundingBox,
-            Viewport = new Rect(
-                0d,
-                0d,
-                tile.Width * appearance.TextureScale,
-                tile.Height * appearance.TextureScale),
-            ViewportUnits = BrushMappingMode.Absolute,
-            Stretch = Stretch.Fill,
+            StartPoint = new Point(0d, 0d),
+            EndPoint = new Point(1d, 1d),
         };
+        brush.GradientStops.Add(new GradientStop(highlight, 0d));
+        brush.GradientStops.Add(new GradientStop(surface, 0.52d));
+        brush.GradientStops.Add(new GradientStop(shadow, 1d));
         return brush;
     }
 
@@ -448,7 +581,7 @@ public sealed class PrivacyOverlayWindow : Window
         var neutralFrost = MediaColor.FromRgb(216, 222, 225);
         var dark = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), appearance.ShadowBlend);
         var light = Blend(baseColor, neutralFrost, appearance.HighlightBlend);
-        var tileSize = 16d * appearance.TextureScale;
+        var tileSize = 16d * appearance.PixelScale;
         var halfTileSize = tileSize / 2d;
 
         var drawingBrush = new DrawingBrush
@@ -484,10 +617,11 @@ public sealed class PrivacyOverlayWindow : Window
         double strength,
         Rect? revealCutout,
         IReadOnlyList<Rect> occludingCutouts,
+        double overlayWidth,
+        double overlayHeight,
         double cornerRadius = 14d)
     {
         var appearance = MaskAppearancePolicy.Resolve(style, strength);
-        var fill = BuildBackground(style, maskColor, appearance);
         Geometry geometry = new RectangleGeometry(zoneRect, cornerRadius, cornerRadius);
 
         if (revealCutout is not null)
@@ -505,10 +639,16 @@ public sealed class PrivacyOverlayWindow : Window
             geometry.Freeze();
         }
 
+        if (style == MaskStyle.Blur && _blurFrame is not null)
+        {
+            AddLiveBlurRegion(geometry, maskColor, appearance, overlayWidth, overlayHeight);
+            return;
+        }
+
         var shape = new Path
         {
             Data = geometry,
-            Fill = fill,
+            Fill = BuildBackground(style, maskColor, appearance),
             Opacity = appearance.OverlayOpacity,
             IsHitTestVisible = false,
         };
@@ -516,9 +656,36 @@ public sealed class PrivacyOverlayWindow : Window
         _canvas.Children.Add(shape);
     }
 
-    private static RgbColor ToRgbColor(MediaColor color)
+    private void AddLiveBlurRegion(
+        Geometry geometry,
+        MaskColorOption maskColor,
+        MaskSurfaceAppearance appearance,
+        double overlayWidth,
+        double overlayHeight)
     {
-        return new RgbColor(color.R, color.G, color.B);
+        var image = new WpfImage
+        {
+            Source = _blurFrame,
+            Width = overlayWidth,
+            Height = overlayHeight,
+            Stretch = Stretch.Fill,
+            Clip = geometry,
+            IsHitTestVisible = false,
+        };
+        RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
+        Canvas.SetLeft(image, 0d);
+        Canvas.SetTop(image, 0d);
+        _canvas.Children.Add(image);
+        _blurImages.Add(image);
+
+        var tint = new Path
+        {
+            Data = geometry,
+            Fill = new SolidColorBrush(GetMaskBaseColor(maskColor)),
+            Opacity = appearance.TintOpacity,
+            IsHitTestVisible = false,
+        };
+        _canvas.Children.Add(tint);
     }
 
     private static MediaColor GetMaskBaseColor(MaskColorOption maskColor)
@@ -542,4 +709,9 @@ public sealed class PrivacyOverlayWindow : Window
             (byte)Math.Round(source.G + ((target.G - source.G) * normalized)),
             (byte)Math.Round(source.B + ((target.B - source.B) * normalized)));
     }
+
+    private readonly record struct BlurCaptureRequest(
+        nint WindowHandle,
+        ScreenRect Bounds,
+        double DownsampleFactor);
 }

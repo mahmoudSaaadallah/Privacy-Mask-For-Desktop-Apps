@@ -9,8 +9,8 @@ PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Tele
 - Local-only settings with no telemetry and no cloud dependency
 - Single full-window mask for each supported app
 - Hover reveal window around the mouse pointer
-- Privacy-safe frosted-glass, pixelated, and solid-redact surfaces
-- Adjustable surface intensity that remains fully opaque at every level
+- Live blur, pixelated, and solid-redact surfaces
+- Adjustable blur strength that progressively reveals or hides visual detail
 - Global hotkeys, tray controls, onboarding, and launch-at-sign-in support
 - Adaptive window inspection and cached overlay rendering to reduce idle work
 
@@ -19,8 +19,9 @@ PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Tele
 - PrivacyMask does not read message content.
 - PrivacyMask does not inject into WhatsApp or Telegram.
 - PrivacyMask does not send data to a server.
-- PrivacyMask does not capture the protected app to create its frosted effect;
-  the mask is an opaque surface generated locally by PrivacyMask.
+- Live blur captures only the selected application window into a bounded
+  in-memory frame. Frames are never written to disk or sent anywhere, and are
+  released when the mask is hidden or the application exits.
 - All settings are stored locally in `%LocalAppData%\PrivacyMask.Desktop\settings.v1.json`.
 - Settings saves are atomic and keep a local `.bak` recovery copy after the first update.
 
@@ -178,8 +179,9 @@ environment, initial measurements, performance budgets, and required scenarios.
 
 1. Start PrivacyMask.
 2. Keep WhatsApp Desktop or Telegram Desktop open.
-3. Move the surface intensity slider to your preferred appearance. Every level
-   remains fully opaque; only the frost color, contrast, and texture change.
+3. Move the blur-strength slider to your preferred appearance. Lower values
+   reveal progressively clearer shapes and colors; higher values remove more
+   detail. Use solid redact or panic mode when no underlying detail may remain.
 4. Hover over the masked app to reveal a small reading window around the pointer.
 5. Use the tray icon to pause protection, apply an opaque panic mask, reopen settings, or exit the app.
 

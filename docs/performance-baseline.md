@@ -144,6 +144,34 @@ an opaque 192x192 BGRA texture and its WPF composition resource. This is a
 short directional comparison; movement, reveal, two-window, and long-duration
 stability scenarios remain required before the next stable release.
 
+## Live-blur replacement measurement
+
+The tiled frosted renderer at product commit `48a0d79` was compared with the
+live-blur candidate at product commit `4b8d691` on 2026-10-08. WhatsApp was
+visible and stationary at 30% strength, the settings window remained closed,
+and both single-file builds used the same local settings. Each build received
+an 8-second warm-up followed by two 20-second passes sampled every 500 ms on
+the same Windows machine with 20 logical processors. The table averages the
+two per-pass summaries.
+
+| Metric | Tiled frost | Live blur | Change |
+| --- | ---: | ---: | ---: |
+| Working set average | 286.20 MB | 284.39 MB | -1.81 MB (-0.6%) |
+| Working set P95 | 290.04 MB | 284.78 MB | -5.26 MB (-1.8%) |
+| Private memory average | 171.44 MB | 172.66 MB | +1.22 MB (+0.7%) |
+| Private memory P95 | 174.65 MB | 173.02 MB | -1.63 MB (-0.9%) |
+| Whole-machine CPU average | 0.216% | 0.116% | -0.100 percentage points (-46.3%) |
+| Whole-machine CPU P95 | 2.356% | 0.729% | -1.627 percentage points (-69.1%) |
+| Handles average | 951 | 945.5 | -5.5 (-0.6%) |
+| Threads average | 39 | 37 | -2 (-5.1%) |
+
+The candidate replaces repeated WPF tile composition with one bounded image
+per protected window and reuses that image element between captures. Average
+private memory is effectively neutral within short-run variance, while the
+stationary-window CPU and tail working set improved in this comparison. The
+result is directional rather than a release guarantee; movement, reveal,
+two-window, and long-duration stability scenarios are still required.
+
 ## Performance budgets
 
 The first optimization work should target these budgets on the reference

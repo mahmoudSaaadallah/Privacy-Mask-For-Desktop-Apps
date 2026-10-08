@@ -6,7 +6,7 @@ namespace PrivacyMask.Core.Tests.Services;
 public sealed class MaskAppearancePolicyTests
 {
     [Theory]
-    [InlineData(MaskStyle.FrostedGlass)]
+    [InlineData(MaskStyle.Blur)]
     [InlineData(MaskStyle.Pixelate)]
     [InlineData(MaskStyle.SolidRedact)]
     public void Resolve_KeepsEveryProtectiveStyleFullyOpaque(MaskStyle style)
@@ -22,27 +22,30 @@ public sealed class MaskAppearancePolicyTests
     [Fact]
     public void Resolve_UsesASmoothMonotonicFrostCurve()
     {
-        var light = MaskAppearancePolicy.Resolve(MaskStyle.FrostedGlass, 0d);
-        var balanced = MaskAppearancePolicy.Resolve(MaskStyle.FrostedGlass, 0.50d);
-        var strong = MaskAppearancePolicy.Resolve(MaskStyle.FrostedGlass, 1d);
+        var light = MaskAppearancePolicy.Resolve(MaskStyle.Blur, 0d);
+        var balanced = MaskAppearancePolicy.Resolve(MaskStyle.Blur, 0.50d);
+        var strong = MaskAppearancePolicy.Resolve(MaskStyle.Blur, 1d);
 
         Assert.True(light.HighlightBlend > balanced.HighlightBlend);
         Assert.True(balanced.HighlightBlend > strong.HighlightBlend);
         Assert.True(light.ShadowBlend < balanced.ShadowBlend);
         Assert.True(balanced.ShadowBlend < strong.ShadowBlend);
-        Assert.True(light.TextureContrast < balanced.TextureContrast);
-        Assert.True(balanced.TextureContrast < strong.TextureContrast);
+        Assert.True(light.BlurDownsampleFactor < balanced.BlurDownsampleFactor);
+        Assert.True(balanced.BlurDownsampleFactor < strong.BlurDownsampleFactor);
+        Assert.True(light.TintOpacity < balanced.TintOpacity);
+        Assert.True(balanced.TintOpacity < strong.TintOpacity);
     }
 
     [Fact]
     public void Resolve_DoesNotJumpToADifferentAppearanceAtMaximum()
     {
-        var nearMaximum = MaskAppearancePolicy.Resolve(MaskStyle.FrostedGlass, 0.99d);
-        var maximum = MaskAppearancePolicy.Resolve(MaskStyle.FrostedGlass, 1d);
+        var nearMaximum = MaskAppearancePolicy.Resolve(MaskStyle.Blur, 0.99d);
+        var maximum = MaskAppearancePolicy.Resolve(MaskStyle.Blur, 1d);
 
         Assert.InRange(Math.Abs(maximum.HighlightBlend - nearMaximum.HighlightBlend), 0d, 0.001d);
         Assert.InRange(Math.Abs(maximum.ShadowBlend - nearMaximum.ShadowBlend), 0d, 0.001d);
-        Assert.InRange(Math.Abs(maximum.TextureContrast - nearMaximum.TextureContrast), 0d, 0.001d);
+        Assert.InRange(Math.Abs(maximum.BlurDownsampleFactor - nearMaximum.BlurDownsampleFactor), 0d, 0.02d);
+        Assert.InRange(Math.Abs(maximum.TintOpacity - nearMaximum.TintOpacity), 0d, 0.001d);
     }
 
     [Theory]
@@ -51,7 +54,7 @@ public sealed class MaskAppearancePolicyTests
     [InlineData(double.NaN, MaskIntensityScale.Default)]
     public void Resolve_NormalizesInvalidIntensity(double intensity, double expected)
     {
-        var appearance = MaskAppearancePolicy.Resolve(MaskStyle.FrostedGlass, intensity);
+        var appearance = MaskAppearancePolicy.Resolve(MaskStyle.Blur, intensity);
 
         Assert.Equal(expected, appearance.Intensity);
     }

@@ -10,7 +10,7 @@ public sealed class PrivacyZone
 
     public RelativeRect RelativeRect { get; set; } = new(0d, 0d, 1d, 1d);
 
-    public MaskStyle Style { get; set; } = MaskStyle.FrostedGlass;
+    public MaskStyle Style { get; set; } = MaskStyle.Blur;
 
     public double Strength { get; set; } = MaskIntensityScale.Default;
 

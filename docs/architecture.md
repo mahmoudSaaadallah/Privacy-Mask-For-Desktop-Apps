@@ -29,10 +29,12 @@ cursor position; unchanged frames do not rebuild WPF brushes or geometry.
 See [runtime-protection.md](runtime-protection.md) for runtime state transitions,
 panic-mask behavior, and persistence compatibility.
 
-Mask appearance is resolved independently from overlay geometry. The renderer
-uses fully opaque, frozen WPF drawing resources and never captures protected
-window pixels. See [mask-rendering.md](mask-rendering.md) for the rendering
-invariants and surface-intensity scale.
+Mask appearance is resolved independently from overlay geometry. Live blur
+captures the target window handle directly into a bounded in-memory frame,
+downsamples it off the UI thread, and reuses the existing WPF image elements
+between refreshes. Pixelate, solid redact, capture fallback, and panic mode use
+local WPF drawing resources. See [mask-rendering.md](mask-rendering.md) for the
+rendering behavior and blur-strength scale.
 
 ## Settings durability
 
@@ -68,3 +70,4 @@ successfully.
 - No process injection
 - No telemetry
 - No cloud service dependency
+- No captured-frame persistence or transmission

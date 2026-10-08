@@ -32,7 +32,7 @@ public readonly record struct ProtectionRenderPolicy(
                 ShouldRender: true,
                 ForceFullWindowMask: false,
                 AllowHoverReveal: true,
-                ForcedStyle: MaskStyle.FrostedGlass,
+                ForcedStyle: MaskStyle.Blur,
                 ForcedColor: MaskColorOption.Black,
                 ForcedStrength: MaskIntensityScale.Default),
         };

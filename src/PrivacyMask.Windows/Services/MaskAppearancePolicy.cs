@@ -21,7 +21,8 @@ public static class MaskAppearancePolicy
                 Lerp(0.58d, 0.40d, smoothed),
                 Lerp(0.30d, 0.18d, smoothed),
                 Lerp(0.22d, 0.52d, smoothed),
-                Lerp(0.18d, 0.48d, smoothed),
+                0d,
+                1d,
                 Lerp(1.35d, 0.60d, smoothed)),
             MaskStyle.SolidRedact => new MaskSurfaceAppearance(
                 normalized,
@@ -31,6 +32,7 @@ public static class MaskAppearancePolicy
                 Lerp(0.12d, 0.04d, smoothed),
                 Lerp(0.12d, 0.30d, smoothed),
                 0d,
+                1d,
                 1d),
             _ => new MaskSurfaceAppearance(
                 normalized,
@@ -39,8 +41,9 @@ public static class MaskAppearancePolicy
                 Lerp(0.72d, 0.48d, smoothed),
                 Lerp(0.46d, 0.26d, smoothed),
                 Lerp(0.18d, 0.50d, smoothed),
-                Lerp(0.035d, 0.15d, smoothed),
-                Lerp(1.25d, 0.80d, smoothed)),
+                Lerp(0.04d, 0.36d, smoothed),
+                Lerp(1d, 32d, smoothed),
+                1d),
         };
     }
 
