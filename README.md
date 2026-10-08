@@ -35,7 +35,7 @@ Minimum requirements:
 You do not need the source code or the .NET SDK to install a published release.
 
 1. Open the [latest GitHub release](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases/latest).
-2. Download `PrivacyMask-win-x64.zip` and extract the whole archive.
+2. Download the versioned Windows archive, for example `PrivacyMask-1.1.0-win-x64.zip`, and extract the whole archive.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
 5. Complete onboarding, then open WhatsApp Desktop or Telegram Desktop.
@@ -43,7 +43,9 @@ You do not need the source code or the .NET SDK to install a published release.
 The installer does not require administrator access. It copies the standalone app
 to `%LocalAppData%\PrivacyMask.Desktop` and creates Desktop and Start Menu
 shortcuts. To update, download the newer release and run
-`Install-PrivacyMask.cmd` again.
+`Install-PrivacyMask.cmd` again. If PrivacyMask is running, the installer closes
+it, preserves the settings, replaces the application transactionally, and
+restarts it minimized. A failed update restores the previous installation.
 
 To run the release without installing it, open `single-file` in the extracted
 archive and double-click `PrivacyMask.App.exe`.
@@ -55,10 +57,10 @@ installation in `%LocalAppData%\PrivacyMask.Desktop`.
 The matching `.sha256` release asset can be used to verify the downloaded ZIP:
 
 ```powershell
-(Get-FileHash .\PrivacyMask-win-x64.zip -Algorithm SHA256).Hash
+(Get-FileHash .\PrivacyMask-1.1.0-win-x64.zip -Algorithm SHA256).Hash
 ```
 
-Compare the output with the hash in `PrivacyMask-win-x64.zip.sha256`.
+Compare the output with the hash in `PrivacyMask-1.1.0-win-x64.zip.sha256`.
 
 ## One-click install from source
 
@@ -132,8 +134,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-win-x64-release.ps1
 
 Release package output:
 
-- `artifacts/release/PrivacyMask-win-x64.zip`
-- `artifacts/release/PrivacyMask-win-x64.zip.sha256`
+- `artifacts/release/PrivacyMask-1.1.0-win-x64.zip`
+- `artifacts/release/PrivacyMask-1.1.0-win-x64.zip.sha256`
 
 ## Repository layout
 

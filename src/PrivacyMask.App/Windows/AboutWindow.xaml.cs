@@ -17,6 +17,8 @@ public partial class AboutWindow : Window
         WindowWorkAreaSizer.Fit(this);
     }
 
+    public string VersionText => $"Version {typeof(AboutWindow).Assembly.GetName().Version?.ToString(3) ?? "unknown"}";
+
     private void Close_Click(object sender, RoutedEventArgs e)
     {
         Close();

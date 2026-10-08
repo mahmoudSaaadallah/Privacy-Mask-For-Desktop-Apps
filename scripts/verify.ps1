@@ -13,3 +13,5 @@ dotnet build PrivacyMask.Desktop.slnx
 if ($LASTEXITCODE -ne 0) {
   throw "dotnet build failed with exit code $LASTEXITCODE."
 }
+
+& .\scripts\test-installer-transaction.ps1
