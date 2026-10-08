@@ -17,7 +17,6 @@ namespace PrivacyMask.App;
 
 public partial class MainWindow : Window
 {
-    public static readonly Array MaskStyles = Enum.GetValues<MaskStyle>();
     public static readonly Array MaskColors = Enum.GetValues<MaskColorOption>();
     public static readonly Array ActivationModes = Enum.GetValues<AppActivationMode>();
 
@@ -39,7 +38,7 @@ public partial class MainWindow : Window
 
     public SettingsViewModel ViewModel => (SettingsViewModel)DataContext;
 
-    public Array MaskStylesSource => MaskStyles;
+    public IReadOnlyList<MaskStyleOption> MaskStylesSource => MaskStyleOption.All;
 
     public Array MaskColorsSource => MaskColors;
 

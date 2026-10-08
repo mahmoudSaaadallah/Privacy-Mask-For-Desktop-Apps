@@ -301,16 +301,16 @@
 
                                                 <TextBlock VerticalAlignment="Center"
                                                            FontWeight="SemiBold"
-                                                           Text="Mask darkness" />
+                                                           Text="Surface intensity" />
 
                                                 <Slider Grid.Column="1"
                                                         Margin="18,0,18,0"
-                                                        AutomationProperties.Name="Mask darkness"
-                                                        AutomationProperties.HelpText="Adjust mask darkness between 60 and 240 percent."
-                                                        Minimum="60"
-                                                        Maximum="240"
+                                                        AutomationProperties.Name="Frosted surface intensity"
+                                                        AutomationProperties.HelpText="Adjust the frosted surface appearance from zero to one hundred percent. The privacy mask remains fully opaque at every level."
+                                                        Minimum="0"
+                                                        Maximum="100"
                                                         TickFrequency="5"
-                                                        IsSnapToTickEnabled="False"
+                                                        IsSnapToTickEnabled="True"
                                                         ValueChanged="MaskIntensitySlider_ValueChanged"
                                                         Value="{Binding MaskIntensityPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -395,11 +395,11 @@
                                                 <TextBlock Margin="0,0,0,8"
                                                            Foreground="#51656E"
                                                            TextWrapping="Wrap"
-                                                           Text="X, Y, width, and height use 0.00–1.00 coordinates and must stay inside the app. Strength supports 0.15–2.40." />
+                                                           Text="X, Y, width, and height use 0.00–1.00 coordinates and must stay inside the app. Surface intensity supports 0–100%." />
 
                                                 <DataGrid AutoGenerateColumns="False"
                                                           AutomationProperties.Name="Privacy zones"
-                                                          AutomationProperties.HelpText="Advanced settings. Edit normalized regions from zero to one and a strength from 0.15 to 2.40."
+                                                          AutomationProperties.HelpText="Advanced settings. Edit normalized regions from zero to one and a surface intensity from zero to one hundred percent."
                                                           CanUserAddRows="False"
                                                           HeadersVisibility="Column"
                                                           ItemsSource="{Binding Zones}"
@@ -418,17 +418,19 @@
                                                         <DataGridTemplateColumn Header="Style" Width="130">
                                                             <DataGridTemplateColumn.CellTemplate>
                                                                 <DataTemplate>
-                                                                    <TextBlock Text="{Binding Style}" />
+                                                                    <TextBlock Text="{Binding StyleDisplayName}" />
                                                                 </DataTemplate>
                                                             </DataGridTemplateColumn.CellTemplate>
                                                             <DataGridTemplateColumn.CellEditingTemplate>
                                                                 <DataTemplate>
                                                                     <ComboBox ItemsSource="{Binding MaskStylesSource, ElementName=SettingsWindow}"
-                                                                              SelectedItem="{Binding Style, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                                              DisplayMemberPath="DisplayName"
+                                                                              SelectedValue="{Binding Style, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                              SelectedValuePath="Value" />
                                                                 </DataTemplate>
                                                             </DataGridTemplateColumn.CellEditingTemplate>
                                                         </DataGridTemplateColumn>
-                                                        <DataGridTextColumn Binding="{Binding Strength, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Header="Strength" Width="90" />
+                                                        <DataGridTextColumn Binding="{Binding SurfaceIntensityPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F0}" Header="Intensity %" Width="90" />
                                                         <DataGridCheckBoxColumn Binding="{Binding RevealOnHover, Mode=TwoWay}" Header="Hover reveal" Width="110" />
                                                         <DataGridCheckBoxColumn Binding="{Binding HideDuringTemporaryReveal, Mode=TwoWay}" Header="Hold reveal" Width="105" />
                                                     </DataGrid.Columns>
