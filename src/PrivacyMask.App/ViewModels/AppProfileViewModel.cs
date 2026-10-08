@@ -50,6 +50,8 @@ public sealed class AppProfileViewModel : ObservableObject
 
     public string MaskIntensitySummary => $"Blur strength: {MaskIntensityPercent:0}%";
 
+    public string MaskStyleSummary => $"Mask style: {MaskStyleOption.GetDisplayName(PrimaryMaskStyle)}";
+
     public string MaskColorSummary => $"Mask color: {MaskColor}";
 
     public string HoverRevealSummary => $"Hover reveal window: {HoverRevealWidthPixels} x {HoverRevealHeightPixels} px";
@@ -118,6 +120,31 @@ public sealed class AppProfileViewModel : ObservableObject
         }
     }
 
+    public MaskStyle PrimaryMaskStyle
+    {
+        get => Zones.FirstOrDefault()?.Style ?? MaskStyle.Blur;
+        set
+        {
+            var changed = false;
+            foreach (var zone in Zones)
+            {
+                if (zone.Style == value)
+                {
+                    continue;
+                }
+
+                zone.Style = value;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                RaisePropertyChanged(nameof(PrimaryMaskStyle));
+                RaisePropertyChanged(nameof(MaskStyleSummary));
+            }
+        }
+    }
+
     public ObservableCollection<PrivacyZoneViewModel> Zones
     {
         get => _zones;
@@ -159,6 +186,8 @@ public sealed class AppProfileViewModel : ObservableObject
 
         Zones = new ObservableCollection<PrivacyZoneViewModel>(
             selectedPreset.Zones.Select(zone => new PrivacyZoneViewModel(PresetCatalog.CloneZone(zone))));
+        RaisePropertyChanged(nameof(PrimaryMaskStyle));
+        RaisePropertyChanged(nameof(MaskStyleSummary));
     }
 
     public AppProfile ToModel()

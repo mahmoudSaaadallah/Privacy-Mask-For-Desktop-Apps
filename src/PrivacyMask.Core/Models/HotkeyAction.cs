@@ -6,4 +6,5 @@ public enum HotkeyAction
     PanicHideAll = 2,
     OpenSettings = 3,
     TemporaryRevealHold = 4,
+    IncreaseBlurStrength = 5,
 }

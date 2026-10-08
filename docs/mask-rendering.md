@@ -8,6 +8,9 @@ protection and opaque modes for cases where no underlying detail may remain.
 - Live blur samples the selected application window directly. Lower strength
   intentionally reveals progressively clearer shapes and colors, while higher
   strength removes more detail.
+- Wet glass follows the same progressive blur scale and adds transparent
+  condensation droplets. It is an appearance option, not a stronger security
+  boundary.
 - Captured frames remain in process memory, are never written to disk or sent
   over the network, and are released when the overlay is hidden or closed.
 - Solid redact remains fully opaque when progressive visibility is unsuitable.
@@ -48,9 +51,12 @@ instead of rebuilding the overlay tree. It skips capture while one unrelated
 window fully covers the target. Native bitmap handles are released after each
 frame, and hiding or closing an overlay discards the retained frame.
 
-The reference wet-glass image remains visual direction only and is not included
-in the repository or application. A water-droplet distortion mode should be a
-separate future style because its texture and GPU cost differ from blur.
+Wet glass generates a deterministic transparent 640x448 condensation texture
+once in memory. More than one hundred small droplets and a few short streaks
+are rasterized into that single shared image, so WPF does not retain a large
+vector tree or expose visible tile seams. The reference image remains visual
+direction only and is not included in the repository or application. Wet-glass
+captures refresh every 500 ms; ordinary live blur remains at 250 ms.
 
 ## Settings compatibility
 

@@ -9,7 +9,7 @@ PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Tele
 - Local-only settings with no telemetry and no cloud dependency
 - Single full-window mask for each supported app
 - Hover reveal window around the mouse pointer
-- Live blur, pixelated, and solid-redact surfaces
+- Live blur, wet-glass, pixelated, and solid-redact surfaces
 - Adjustable blur strength that progressively reveals or hides visual detail
 - Global hotkeys, tray controls, onboarding, and launch-at-sign-in support
 - Adaptive window inspection and cached overlay rendering to reduce idle work
@@ -19,7 +19,7 @@ PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Tele
 - PrivacyMask does not read message content.
 - PrivacyMask does not inject into WhatsApp or Telegram.
 - PrivacyMask does not send data to a server.
-- Live blur captures only the selected application window into a bounded
+- Live blur and wet glass capture only the selected application window into a bounded
   in-memory frame. Frames are never written to disk or sent anywhere, and are
   released when the mask is hidden or the application exits.
 - All settings are stored locally in `%LocalAppData%\PrivacyMask.Desktop\settings.v1.json`.
@@ -179,11 +179,15 @@ environment, initial measurements, performance budgets, and required scenarios.
 
 1. Start PrivacyMask.
 2. Keep WhatsApp Desktop or Telegram Desktop open.
-3. Move the blur-strength slider to your preferred appearance. Lower values
+3. Choose a mask style. `Live blur` keeps the cleanest appearance, while
+   `Wet glass` adds a locally generated condensation layer.
+4. Move the blur-strength slider to your preferred appearance. Lower values
    reveal progressively clearer shapes and colors; higher values remove more
    detail. Use solid redact or panic mode when no underlying detail may remain.
-4. Hover over the masked app to reveal a small reading window around the pointer.
-5. Use the tray icon to pause protection, apply an opaque panic mask, reopen settings, or exit the app.
+5. Press `Ctrl + Win + ↑` while WhatsApp or Telegram is focused to raise that
+   app's saved blur strength by 5%, up to 100%.
+6. Hover over the masked app to reveal a small reading window around the pointer.
+7. Use the tray icon to pause protection, apply an opaque panic mask, reopen settings, or exit the app.
 
 Protection always starts enabled when PrivacyMask launches. Pausing protection
 is a runtime-only action and is not restored after an app restart. The panic

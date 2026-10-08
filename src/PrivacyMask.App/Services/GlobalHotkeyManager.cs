@@ -10,6 +10,8 @@ namespace PrivacyMask.App.Services;
 
 public sealed class GlobalHotkeyManager : IDisposable
 {
+    private const uint ModifierNoRepeat = 0x4000;
+
     private readonly Dictionary<int, HotkeyAction> _registrations = [];
     private readonly HwndSource _source;
     private int _nextId = 1;
@@ -91,7 +93,7 @@ public sealed class GlobalHotkeyManager : IDisposable
 
     private static uint ConvertModifiers(HotkeyModifiers modifiers)
     {
-        uint result = 0;
+        var result = ModifierNoRepeat;
         if (modifiers.HasFlag(HotkeyModifiers.Alt))
         {
             result |= 0x0001;

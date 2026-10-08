@@ -143,6 +143,22 @@ public sealed class WindowProfileResolverTests
         Assert.DoesNotContain(tracked.EffectiveZones, zone => zone.DisplayName == "Wide-only customization");
     }
 
+    [Fact]
+    public void Resolve_PreservesSelectedStyleAcrossAdaptivePresetChanges()
+    {
+        var settings = new DefaultSettingsFactory().Create();
+        var profile = settings.AppProfiles.Single(candidate => candidate.AppId == AppId.WhatsApp);
+        profile.SelectedPresetId = "whatsapp-wide";
+        profile.Zones.Single().Style = MaskStyle.WetGlass;
+        var resolver = new WindowProfileResolver([new FakeWhatsAppAdapter()]);
+
+        var tracked = resolver.Resolve(CreateWhatsAppSnapshot(width: 840), settings.AppProfiles);
+
+        Assert.NotNull(tracked);
+        Assert.Equal("whatsapp-compact", tracked!.Preset.PresetId);
+        Assert.All(tracked.EffectiveZones, zone => Assert.Equal(MaskStyle.WetGlass, zone.Style));
+    }
+
     private static WindowSnapshot CreateWhatsAppSnapshot(int width)
     {
         return new WindowSnapshot

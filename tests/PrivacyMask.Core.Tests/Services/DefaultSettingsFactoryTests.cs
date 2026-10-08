@@ -130,6 +130,7 @@ public sealed class DefaultSettingsFactoryTests
                 HotkeyAction.PanicHideAll,
                 HotkeyAction.OpenSettings,
                 HotkeyAction.TemporaryRevealHold,
+                HotkeyAction.IncreaseBlurStrength,
             ],
             settings.GlobalHotkeys.Select(binding => binding.Action));
         Assert.All(settings.AppProfiles, profile => Assert.Single(profile.Zones));
@@ -137,6 +138,24 @@ public sealed class DefaultSettingsFactoryTests
         Assert.Equal(
             "Panic mask all",
             settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.PanicHideAll).DisplayName);
+        var increaseBlur = settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
+        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, increaseBlur.Modifiers);
+        Assert.Equal(0x26, increaseBlur.VirtualKey);
+    }
+
+    [Fact]
+    public void MergeWithDefaults_AddsBlurShortcutToExistingSettings()
+    {
+        var factory = new DefaultSettingsFactory();
+        var persisted = factory.Create();
+        persisted.GlobalHotkeys.RemoveAll(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
+
+        var merged = factory.MergeWithDefaults(persisted);
+
+        var increaseBlur = merged.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
+        Assert.True(increaseBlur.Enabled);
+        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, increaseBlur.Modifiers);
+        Assert.Equal(0x26, increaseBlur.VirtualKey);
     }
 
     [Fact]

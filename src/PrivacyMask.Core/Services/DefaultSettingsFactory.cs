@@ -45,6 +45,13 @@ public sealed class DefaultSettingsFactory
                     VirtualKey = 0x12,
                     IsHoldGesture = true,
                 },
+                new HotkeyBinding
+                {
+                    Action = HotkeyAction.IncreaseBlurStrength,
+                    DisplayName = "Increase blur strength",
+                    Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Windows,
+                    VirtualKey = 0x26,
+                },
             ],
             AppProfiles =
             [
