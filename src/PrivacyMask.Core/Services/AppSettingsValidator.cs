@@ -21,6 +21,7 @@ public static class AppSettingsValidator
 
         var errors = new List<SettingsValidationError>();
         var profileIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var processOwners = new Dictionary<string, AppProfile>(StringComparer.OrdinalIgnoreCase);
         foreach (var profile in settings.AppProfiles)
         {
             if (string.IsNullOrWhiteSpace(profile.ProfileId))
@@ -30,6 +31,25 @@ public static class AppSettingsValidator
             else if (!profileIds.Add(profile.ProfileId.Trim()))
             {
                 errors.Add(new SettingsValidationError(profile.DisplayName, "This app profile identifier is already in use."));
+            }
+
+            foreach (var processName in profile.WindowMatchers
+                .SelectMany(matcher => matcher.ProcessNames)
+                .Where(processName => !string.IsNullOrWhiteSpace(processName))
+                .Select(processName => processName.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (processOwners.TryGetValue(processName, out var existingOwner)
+                    && !ReferenceEquals(existingOwner, profile))
+                {
+                    errors.Add(new SettingsValidationError(
+                        profile.DisplayName,
+                        $"{processName}.exe is already protected by {existingOwner.DisplayName}."));
+                }
+                else
+                {
+                    processOwners[processName] = profile;
+                }
             }
 
             ValidateProfile(profile, errors);

@@ -98,4 +98,15 @@ public sealed class AppSettingsValidatorTests
 
         Assert.Contains(errors, error => error.Message.Contains("application process"));
     }
+
+    [Fact]
+    public void Validate_RejectsProcessAssignedToMultipleProfiles()
+    {
+        var settings = new DefaultSettingsFactory().Create();
+        settings.AppProfiles.Add(CustomAppProfileFactory.Create("Another Telegram", "telegram"));
+
+        var errors = AppSettingsValidator.Validate(settings);
+
+        Assert.Contains(errors, error => error.Message.Contains("already protected by Telegram Desktop"));
+    }
 }

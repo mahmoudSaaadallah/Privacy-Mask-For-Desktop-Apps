@@ -28,6 +28,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly ProtectionStateMachine _protectionStateMachine;
     private readonly JsonSettingsStore _settingsStore;
     private readonly DesktopWindowInspector _windowInspector;
+    private readonly DesktopApplicationCatalog _applicationCatalog;
     private readonly WindowProfileResolver _windowProfileResolver;
     private readonly OverlayManager _overlayManager;
     private readonly GlobalHotkeyManager _hotkeyManager;
@@ -60,6 +61,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _protectionStateMachine = new ProtectionStateMachine();
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
         _windowInspector = new DesktopWindowInspector();
+        _applicationCatalog = new DesktopApplicationCatalog(_windowInspector);
         _windowProfileResolver = new WindowProfileResolver(
         [
             new WhatsAppWindowAdapter(),
@@ -259,7 +261,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         if (_mainWindow is null)
         {
             var viewModel = CreateSettingsViewModel();
-            _mainWindow = new MainWindow(viewModel);
+            _mainWindow = new MainWindow(viewModel, _applicationCatalog);
             _mainWindow.SaveRequested += SaveSettingsAsync;
             _mainWindow.PreviewRequested += PreviewSettings;
             _mainWindow.DiscardRequested += DiscardPreview;
@@ -303,6 +305,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         previewSettings.OnboardingCompleted = true;
         _settings = _defaultSettingsFactory.MergeWithDefaults(previewSettings);
         RebuildWindowProcessFilter();
+        RefreshOverlays();
     }
 
     private void DiscardPreview()
