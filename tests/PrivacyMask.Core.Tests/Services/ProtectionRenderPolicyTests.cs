@@ -34,6 +34,6 @@ public sealed class ProtectionRenderPolicyTests
         Assert.False(policy.AllowHoverReveal);
         Assert.Equal(MaskStyle.SolidRedact, policy.ForcedStyle);
         Assert.Equal(MaskColorOption.Black, policy.ForcedColor);
-        Assert.Equal(2.40d, policy.ForcedStrength);
+        Assert.Equal(MaskIntensityScale.Maximum, policy.ForcedStrength);
     }
 }

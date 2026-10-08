@@ -53,7 +53,7 @@ public sealed class DefaultSettingsFactoryTests
     }
 
     [Fact]
-    public void MergeWithDefaults_MigratesLegacyMaskIntensity_ToStrongerDefault()
+    public void MergeWithDefaults_MigratesLegacyMaskIntensity_ToSecureSurfaceScale()
     {
         var factory = new DefaultSettingsFactory();
         var persisted = factory.Create();
@@ -72,7 +72,10 @@ public sealed class DefaultSettingsFactoryTests
 
         var merged = factory.MergeWithDefaults(persisted);
 
-        Assert.Equal(1.35d, merged.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).MaskIntensity);
+        Assert.Equal(
+            MaskIntensityScale.FromLegacy(1.35d),
+            merged.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).MaskIntensity,
+            3);
     }
 
     [Fact]
@@ -149,9 +152,36 @@ public sealed class DefaultSettingsFactoryTests
         var merged = factory.MergeWithDefaults(persisted);
         var mergedProfile = merged.AppProfiles.Single(candidate => candidate.AppId == AppId.Telegram);
 
-        Assert.Equal(2.40d, mergedProfile.MaskIntensity);
+        Assert.Equal(MaskIntensityScale.Maximum, mergedProfile.MaskIntensity);
         Assert.Equal(80, mergedProfile.HoverRevealWidthPixels);
         Assert.Equal(420, mergedProfile.HoverRevealHeightPixels);
+    }
+
+    [Fact]
+    public void MergeWithDefaults_MigratesVersionSixProfileAndZoneIntensity()
+    {
+        var factory = new DefaultSettingsFactory();
+        var current = factory.Create();
+        var persisted = new AppSettings
+        {
+            Version = 6,
+            OnboardingCompleted = current.OnboardingCompleted,
+            LaunchAtLogin = current.LaunchAtLogin,
+            StartMinimized = current.StartMinimized,
+            CurrentMode = current.CurrentMode,
+            GlobalHotkeys = current.GlobalHotkeys,
+            AppProfiles = current.AppProfiles,
+        };
+        var profile = persisted.AppProfiles.Single(candidate => candidate.AppId == AppId.WhatsApp);
+        profile.MaskIntensity = 1.35d;
+        profile.Zones.Single().Strength = 2.40d;
+
+        var merged = factory.MergeWithDefaults(persisted);
+        var mergedProfile = merged.AppProfiles.Single(candidate => candidate.AppId == AppId.WhatsApp);
+
+        Assert.Equal(MaskIntensityScale.FromLegacy(1.35d), mergedProfile.MaskIntensity, 3);
+        Assert.Equal(MaskIntensityScale.Maximum, mergedProfile.Zones.Single().Strength);
+        Assert.Equal(MaskStyle.FrostedGlass, mergedProfile.Zones.Single().Style);
     }
 
     [Theory]

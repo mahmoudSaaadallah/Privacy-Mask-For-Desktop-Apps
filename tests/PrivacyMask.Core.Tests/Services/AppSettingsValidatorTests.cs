@@ -45,7 +45,7 @@ public sealed class AppSettingsValidatorTests
         var zone = profile.Zones[0];
         zone.DisplayName = " ";
         zone.RelativeRect = new RelativeRect(-0.1d, 0.8d, 1.2d, 0.4d);
-        zone.Strength = 2.5d;
+        zone.Strength = 1.1d;
 
         var errors = AppSettingsValidator.Validate(settings);
 
@@ -54,7 +54,7 @@ public sealed class AppSettingsValidatorTests
         Assert.Contains(errors, error => error.Message.StartsWith("X must be"));
         Assert.Contains(errors, error => error.Message.StartsWith("Width must be"));
         Assert.Contains(errors, error => error.Message.StartsWith("Y plus Height"));
-        Assert.Contains(errors, error => error.Message.StartsWith("Strength must be"));
+        Assert.Contains(errors, error => error.Message.StartsWith("Surface intensity must be"));
     }
 
     [Theory]

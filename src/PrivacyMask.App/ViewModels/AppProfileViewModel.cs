@@ -48,7 +48,7 @@ public sealed class AppProfileViewModel : ObservableObject
         ? "Masks only while the supported app is focused."
         : "Covers the whole app window even when it is visible but inactive.";
 
-    public string MaskIntensitySummary => $"Mask darkness: {MaskIntensityPercent:0}%";
+    public string MaskIntensitySummary => $"Surface intensity: {MaskIntensityPercent:0}%";
 
     public string MaskColorSummary => $"Mask color: {MaskColor}";
 
@@ -87,7 +87,7 @@ public sealed class AppProfileViewModel : ObservableObject
         get => _maskIntensity;
         set
         {
-            var normalized = double.Clamp(value, 0.60d, 2.40d);
+            var normalized = MaskIntensityScale.Clamp(value);
             if (SetProperty(ref _maskIntensity, normalized))
             {
                 RaisePropertyChanged(nameof(MaskIntensityPercent));

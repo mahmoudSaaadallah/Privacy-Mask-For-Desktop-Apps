@@ -9,7 +9,8 @@ PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Tele
 - Local-only settings with no telemetry and no cloud dependency
 - Single full-window mask for each supported app
 - Hover reveal window around the mouse pointer
-- Adjustable mask darkness
+- Privacy-safe frosted-glass, pixelated, and solid-redact surfaces
+- Adjustable surface intensity that remains fully opaque at every level
 - Global hotkeys, tray controls, onboarding, and launch-at-sign-in support
 - Adaptive window inspection and cached overlay rendering to reduce idle work
 
@@ -18,6 +19,8 @@ PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Tele
 - PrivacyMask does not read message content.
 - PrivacyMask does not inject into WhatsApp or Telegram.
 - PrivacyMask does not send data to a server.
+- PrivacyMask does not capture the protected app to create its frosted effect;
+  the mask is an opaque surface generated locally by PrivacyMask.
 - All settings are stored locally in `%LocalAppData%\PrivacyMask.Desktop\settings.v1.json`.
 - Settings saves are atomic and keep a local `.bak` recovery copy after the first update.
 
@@ -175,7 +178,8 @@ environment, initial measurements, performance budgets, and required scenarios.
 
 1. Start PrivacyMask.
 2. Keep WhatsApp Desktop or Telegram Desktop open.
-3. Move the mask darkness slider to your preferred level.
+3. Move the surface intensity slider to your preferred appearance. Every level
+   remains fully opaque; only the frost color, contrast, and texture change.
 4. Hover over the masked app to reveal a small reading window around the pointer.
 5. Use the tray icon to pause protection, apply an opaque panic mask, reopen settings, or exit the app.
 
@@ -199,6 +203,7 @@ last saved configuration and return the window to the tray.
 - Review [docs/troubleshooting.md](docs/troubleshooting.md) if builds or overlays are not behaving as expected.
 - Review [docs/performance-baseline.md](docs/performance-baseline.md) before and after performance-sensitive changes.
 - Review [docs/runtime-protection.md](docs/runtime-protection.md) for pause, panic-mask, and startup behavior.
+- Review [docs/mask-rendering.md](docs/mask-rendering.md) for rendering guarantees, intensity behavior, and performance boundaries.
 - Keep tests updated whenever profile matching, settings migration, or overlay behavior changes.
 
 ## Known limitations

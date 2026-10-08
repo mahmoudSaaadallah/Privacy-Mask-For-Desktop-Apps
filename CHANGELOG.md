@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Replace the translucent pseudo-blur with a fully opaque procedural frosted-glass surface
+- Keep protected content hidden at every surface-intensity level and remove the maximum-value visual jump
+- Replace the legacy 60–240% darkness control with a clear 0–100% surface-intensity scale
+- Migrate existing profile and zone intensities to settings schema version 7
+- Present friendly mask-style names and percentage-based zone intensity in advanced settings
+
 ## 1.1.0 - 2026-10-08
 
 - Start every app launch with protection enabled instead of restoring a paused or panic runtime state

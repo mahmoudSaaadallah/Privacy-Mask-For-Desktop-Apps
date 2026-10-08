@@ -20,21 +20,21 @@ public readonly record struct ProtectionRenderPolicy(
                 AllowHoverReveal: false,
                 ForcedStyle: MaskStyle.SolidRedact,
                 ForcedColor: MaskColorOption.Black,
-                ForcedStrength: 2.40d),
+                ForcedStrength: MaskIntensityScale.Maximum),
             RuntimeMode.Panic => new ProtectionRenderPolicy(
                 ShouldRender: true,
                 ForceFullWindowMask: true,
                 AllowHoverReveal: false,
                 ForcedStyle: MaskStyle.SolidRedact,
                 ForcedColor: MaskColorOption.Black,
-                ForcedStrength: 2.40d),
+                ForcedStrength: MaskIntensityScale.Maximum),
             _ => new ProtectionRenderPolicy(
                 ShouldRender: true,
                 ForceFullWindowMask: false,
                 AllowHoverReveal: true,
-                ForcedStyle: MaskStyle.Blur,
+                ForcedStyle: MaskStyle.FrostedGlass,
                 ForcedColor: MaskColorOption.Black,
-                ForcedStrength: 1.35d),
+                ForcedStrength: MaskIntensityScale.Default),
         };
     }
 }

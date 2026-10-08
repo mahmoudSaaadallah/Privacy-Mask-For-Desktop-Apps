@@ -40,7 +40,7 @@ public sealed class WindowProfileResolverTests
         var factory = new DefaultSettingsFactory();
         var settings = factory.Create();
         var whatsAppProfile = settings.AppProfiles.Single(profile => profile.AppId == AppId.WhatsApp);
-        whatsAppProfile.MaskIntensity = 0.60d;
+        whatsAppProfile.MaskIntensity = 0.25d;
 
         var resolver = new WindowProfileResolver([new FakeWhatsAppAdapter()]);
         var snapshot = new WindowSnapshot
@@ -59,7 +59,7 @@ public sealed class WindowProfileResolverTests
 
         Assert.NotNull(tracked);
         var zone = tracked!.EffectiveZones.Single(item => item.ZoneId == "full-window");
-        Assert.Equal(0.60d, zone.Strength, 2);
+        Assert.Equal(0.25d, zone.Strength, 2);
     }
 
     [Fact]
@@ -86,14 +86,14 @@ public sealed class WindowProfileResolverTests
         var snapshot = CreateWhatsAppSnapshot(width: 1200);
         var first = resolver.Resolve(snapshot, settings.AppProfiles);
 
-        profile.MaskIntensity = 2.1d;
+        profile.MaskIntensity = 0.85d;
         profile.Zones.Single().Enabled = false;
         var second = resolver.Resolve(snapshot, settings.AppProfiles);
 
         Assert.NotNull(first);
         Assert.NotNull(second);
         Assert.NotSame(first!.EffectiveZones, second!.EffectiveZones);
-        Assert.Equal(2.1d, second.EffectiveZones.Single().Strength, 2);
+        Assert.Equal(0.85d, second.EffectiveZones.Single().Strength, 2);
         Assert.False(second.EffectiveZones.Single().Enabled);
     }
 

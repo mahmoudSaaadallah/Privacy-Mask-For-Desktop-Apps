@@ -64,12 +64,11 @@ if (Test-Path -LiteralPath $StartMenuFolder) {
 
 $runKeyPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 if (Test-Path -LiteralPath $runKeyPath) {
-  $startupCommand = Get-ItemPropertyValue `
-    -LiteralPath $runKeyPath `
-    -Name 'PrivacyMask.Desktop' `
-    -ErrorAction SilentlyContinue
-  if ($startupCommand -is [string] -and
-      $startupCommand.IndexOf($exePath, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+  $runKey = Get-ItemProperty -LiteralPath $runKeyPath -ErrorAction SilentlyContinue
+  $startupProperty = $runKey.PSObject.Properties['PrivacyMask.Desktop']
+  if ($null -ne $startupProperty -and
+      $startupProperty.Value -is [string] -and
+      $startupProperty.Value.IndexOf($exePath, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
     Remove-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -ErrorAction SilentlyContinue
   }
 }

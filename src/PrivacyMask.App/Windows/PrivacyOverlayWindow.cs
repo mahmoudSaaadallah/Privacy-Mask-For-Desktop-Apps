@@ -4,10 +4,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
 using PrivacyMask.Windows.Interop;
+using PrivacyMask.Windows.Models;
+using PrivacyMask.Windows.Services;
 using Brush = System.Windows.Media.Brush;
 using MediaBrushes = System.Windows.Media.Brushes;
 using MediaColor = System.Windows.Media.Color;
@@ -377,24 +380,18 @@ public sealed class PrivacyOverlayWindow : Window
         return cutouts;
     }
 
-    private static Brush BuildBackground(MaskStyle style, MaskColorOption maskColor, double strength)
+    private static Brush BuildBackground(
+        MaskStyle style,
+        MaskColorOption maskColor,
+        MaskSurfaceAppearance appearance)
     {
-        var normalized = NormalizeStrength(strength);
         var baseColor = GetMaskBaseColor(maskColor);
-        Brush brush;
-        if (normalized >= 0.999d)
+        var brush = style switch
         {
-            brush = new SolidColorBrush(baseColor);
-        }
-        else
-        {
-            brush = style switch
-            {
-                MaskStyle.Pixelate => CreatePixelBrush(baseColor, normalized),
-                MaskStyle.SolidRedact => CreateSolidRedactBrush(baseColor, normalized),
-                _ => CreateBlurBrush(baseColor, normalized),
-            };
-        }
+            MaskStyle.Pixelate => CreatePixelBrush(baseColor, appearance),
+            MaskStyle.SolidRedact => CreateSolidRedactBrush(baseColor, appearance),
+            _ => CreateFrostedGlassBrush(baseColor, appearance),
+        };
 
         if (brush.CanFreeze)
         {
@@ -404,61 +401,80 @@ public sealed class PrivacyOverlayWindow : Window
         return brush;
     }
 
-    private static Brush CreateBlurBrush(MediaColor baseColor, double normalized)
+    private static Brush CreateFrostedGlassBrush(
+        MediaColor baseColor,
+        MaskSurfaceAppearance appearance)
     {
-        var brush = new LinearGradientBrush
+        var neutralFrost = MediaColor.FromRgb(216, 222, 225);
+        var surface = Blend(baseColor, neutralFrost, appearance.MidtoneBlend);
+        var highlight = Blend(baseColor, MediaColor.FromRgb(255, 255, 255), appearance.HighlightBlend);
+        var shadow = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), appearance.ShadowBlend);
+        var tile = FrostedSurfaceRasterizer.Render(
+            ToRgbColor(surface),
+            ToRgbColor(highlight),
+            ToRgbColor(shadow),
+            appearance.TextureContrast);
+        var bitmap = BitmapSource.Create(
+            tile.Width,
+            tile.Height,
+            96d,
+            96d,
+            PixelFormats.Bgra32,
+            null,
+            tile.BgraPixels,
+            tile.Stride);
+        bitmap.Freeze();
+
+        var brush = new ImageBrush(bitmap)
         {
-            StartPoint = new Point(0, 0),
-            EndPoint = new Point(1, 1),
+            TileMode = TileMode.Tile,
+            Viewbox = new Rect(0d, 0d, 1d, 1d),
+            ViewboxUnits = BrushMappingMode.RelativeToBoundingBox,
+            Viewport = new Rect(
+                0d,
+                0d,
+                tile.Width * appearance.TextureScale,
+                tile.Height * appearance.TextureScale),
+            ViewportUnits = BrushMappingMode.Absolute,
+            Stretch = Stretch.Fill,
         };
-        brush.GradientStops.Add(new GradientStop(Blend(baseColor, MediaColor.FromRgb(255, 255, 255), 0.62d - (0.20d * normalized)), 0.0));
-        brush.GradientStops.Add(new GradientStop(Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.22d + (0.12d * normalized)), 0.45));
-        brush.GradientStops.Add(new GradientStop(Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.42d + (0.24d * normalized)), 1.0));
         return brush;
     }
 
-    private static Brush CreatePixelBrush(MediaColor baseColor, double normalized)
+    private static Brush CreatePixelBrush(
+        MediaColor baseColor,
+        MaskSurfaceAppearance appearance)
     {
-        var dark = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.34d + (0.24d * normalized));
-        var light = Blend(baseColor, MediaColor.FromRgb(255, 255, 255), 0.52d - (0.18d * normalized));
+        var neutralFrost = MediaColor.FromRgb(216, 222, 225);
+        var dark = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), appearance.ShadowBlend);
+        var light = Blend(baseColor, neutralFrost, appearance.HighlightBlend);
+        var tileSize = 16d * appearance.TextureScale;
+        var halfTileSize = tileSize / 2d;
 
         var drawingBrush = new DrawingBrush
         {
             TileMode = TileMode.Tile,
-            Viewport = new Rect(0, 0, 16, 16),
+            Viewport = new Rect(0, 0, tileSize, tileSize),
             ViewportUnits = BrushMappingMode.Absolute,
-            Viewbox = new Rect(0, 0, 16, 16),
+            Viewbox = new Rect(0, 0, tileSize, tileSize),
             ViewboxUnits = BrushMappingMode.Absolute,
             Stretch = Stretch.Fill,
         };
 
         var drawingGroup = new DrawingGroup();
-        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(light), null, new RectangleGeometry(new Rect(0, 0, 16, 16))));
-        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(dark), null, new RectangleGeometry(new Rect(0, 0, 8, 8))));
-        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(dark), null, new RectangleGeometry(new Rect(8, 8, 8, 8))));
+        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(light), null, new RectangleGeometry(new Rect(0, 0, tileSize, tileSize))));
+        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(dark), null, new RectangleGeometry(new Rect(0, 0, halfTileSize, halfTileSize))));
+        drawingGroup.Children.Add(new GeometryDrawing(new SolidColorBrush(dark), null, new RectangleGeometry(new Rect(halfTileSize, halfTileSize, halfTileSize, halfTileSize))));
         drawingBrush.Drawing = drawingGroup;
         return drawingBrush;
     }
 
-    private static Brush CreateSolidRedactBrush(MediaColor baseColor, double normalized)
+    private static Brush CreateSolidRedactBrush(
+        MediaColor baseColor,
+        MaskSurfaceAppearance appearance)
     {
-        var toned = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), 0.12d + (0.10d * normalized));
+        var toned = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), appearance.ShadowBlend);
         return new SolidColorBrush(toned);
-    }
-
-    private static double ComputeOverlayOpacity(MaskStyle style, double strength)
-    {
-        var normalized = NormalizeStrength(strength);
-        if (normalized >= 0.999d)
-        {
-            return 1.0d;
-        }
-
-        return style switch
-        {
-            MaskStyle.SolidRedact => 0.86d + (0.10d * normalized),
-            _ => 0.72d + (0.22d * normalized),
-        };
     }
 
     private void AddMaskedRegion(
@@ -470,8 +486,8 @@ public sealed class PrivacyOverlayWindow : Window
         IReadOnlyList<Rect> occludingCutouts,
         double cornerRadius = 14d)
     {
-        var fill = BuildBackground(style, maskColor, strength);
-        var opacity = ComputeOverlayOpacity(style, strength);
+        var appearance = MaskAppearancePolicy.Resolve(style, strength);
+        var fill = BuildBackground(style, maskColor, appearance);
         Geometry geometry = new RectangleGeometry(zoneRect, cornerRadius, cornerRadius);
 
         if (revealCutout is not null)
@@ -493,16 +509,16 @@ public sealed class PrivacyOverlayWindow : Window
         {
             Data = geometry,
             Fill = fill,
-            Opacity = opacity,
+            Opacity = appearance.OverlayOpacity,
             IsHitTestVisible = false,
         };
 
         _canvas.Children.Add(shape);
     }
 
-    private static double NormalizeStrength(double strength)
+    private static RgbColor ToRgbColor(MediaColor color)
     {
-        return double.Clamp((strength - 0.15d) / 2.25d, 0d, 1d);
+        return new RgbColor(color.R, color.G, color.B);
     }
 
     private static MediaColor GetMaskBaseColor(MaskColorOption maskColor)

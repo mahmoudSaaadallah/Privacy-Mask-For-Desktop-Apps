@@ -72,14 +72,34 @@ public sealed class PrivacyZoneViewModel : ObservableObject
     public double Strength
     {
         get => _strength;
-        set => SetProperty(ref _strength, value);
+        set
+        {
+            if (SetProperty(ref _strength, value))
+            {
+                RaisePropertyChanged(nameof(SurfaceIntensityPercent));
+            }
+        }
+    }
+
+    public double SurfaceIntensityPercent
+    {
+        get => Strength * 100d;
+        set => Strength = value / 100d;
     }
 
     public MaskStyle Style
     {
         get => _style;
-        set => SetProperty(ref _style, value);
+        set
+        {
+            if (SetProperty(ref _style, value))
+            {
+                RaisePropertyChanged(nameof(StyleDisplayName));
+            }
+        }
     }
+
+    public string StyleDisplayName => MaskStyleOption.GetDisplayName(Style);
 
     public bool RevealOnHover
     {
