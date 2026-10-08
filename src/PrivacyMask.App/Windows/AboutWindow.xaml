@@ -93,7 +93,7 @@
                                 <TextBlock Margin="0,12,0,0"
                                            Foreground="#51656E"
                                            TextWrapping="Wrap">
-                                    This app was created with a simple goal: give users full control over what remains visible on screen when WhatsApp Desktop and Telegram Desktop are open.
+                                    This app was created with a simple goal: give users full control over what remains visible on screen when their chosen desktop applications are open.
                                 </TextBlock>
                                 <TextBlock Margin="0,12,0,0"
                                            Foreground="#51656E"

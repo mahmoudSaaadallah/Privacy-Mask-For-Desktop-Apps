@@ -8,6 +8,7 @@ namespace PrivacyMask.App.ViewModels;
 
 public sealed class AppProfileViewModel : ObservableObject
 {
+    private string _displayName;
     private bool _enabled;
     private AppActivationMode _startupMode;
     private string _selectedPresetId;
@@ -21,7 +22,7 @@ public sealed class AppProfileViewModel : ObservableObject
     {
         ProfileId = profile.ProfileId;
         AppId = profile.AppId;
-        DisplayName = profile.DisplayName;
+        _displayName = profile.DisplayName;
         _enabled = profile.Enabled;
         _startupMode = profile.StartupMode;
         _selectedPresetId = profile.SelectedPresetId;
@@ -35,6 +36,7 @@ public sealed class AppProfileViewModel : ObservableObject
             .Select(matcher => new WindowMatcher
             {
                 ProcessNames = [.. matcher.ProcessNames],
+                ProcessNameMatchMode = matcher.ProcessNameMatchMode,
                 TitleContains = matcher.TitleContains,
                 ClassNameContains = matcher.ClassNameContains,
             })
@@ -45,7 +47,15 @@ public sealed class AppProfileViewModel : ObservableObject
 
     public AppId AppId { get; }
 
-    public string DisplayName { get; }
+    public string DisplayName
+    {
+        get => _displayName;
+        set => SetProperty(ref _displayName, value);
+    }
+
+    public bool IsCustom => AppId == AppId.Custom;
+
+    public bool IsBuiltIn => !IsCustom;
 
     public string Summary => StartupMode == AppActivationMode.FocusAware
         ? "Masks only while the supported app is focused."
@@ -210,6 +220,7 @@ public sealed class AppProfileViewModel : ObservableObject
                 .Select(matcher => new WindowMatcher
                 {
                     ProcessNames = [.. matcher.ProcessNames],
+                    ProcessNameMatchMode = matcher.ProcessNameMatchMode,
                     TitleContains = matcher.TitleContains,
                     ClassNameContains = matcher.ClassNameContains,
                 })

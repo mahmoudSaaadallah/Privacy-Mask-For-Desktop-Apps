@@ -16,6 +16,9 @@
         AutomationProperties.Name="PrivacyMask settings"
         AutomationProperties.HelpText="Configure startup, hotkeys, application profiles, masks, and privacy zones."
         WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+    </Window.Resources>
     <ScrollViewer HorizontalScrollBarVisibility="Auto"
                   VerticalScrollBarVisibility="Disabled">
     <Grid MinWidth="1120"
@@ -52,7 +55,7 @@
                     <TextBlock Margin="0,8,0,20"
                                TextWrapping="Wrap"
                                Foreground="#D4E3E3"
-                               Text="A local-only privacy companion for WhatsApp Desktop and Telegram Desktop." />
+                               Text="A local-only privacy companion for the desktop applications you choose." />
 
                     <Border Margin="0,0,0,18"
                             Padding="18"
@@ -198,17 +201,35 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <StackPanel Margin="0,0,0,20">
-                    <TextBlock FontSize="30"
-                               FontWeight="Bold"
-                               Text="App Profiles" />
-                    <TextBlock Margin="0,8,0,0"
-                               Foreground="#51656E"
-                               Text="Tune supported apps, choose a preset, and calibrate the zones with normalized values between 0 and 1." />
-                    <TextBlock Margin="0,8,0,0"
-                               Foreground="#8A6A38"
-                               Text="{Binding ConfigPath}" />
-                </StackPanel>
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock FontSize="30"
+                                   FontWeight="Bold"
+                                   Text="App Profiles" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Foreground="#51656E"
+                                   Text="Add desktop applications, tune their protection, and calibrate privacy zones." />
+                        <TextBlock Margin="0,8,0,0"
+                                   Foreground="#8A6A38"
+                                   Text="{Binding ConfigPath}" />
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            MinWidth="170"
+                            Margin="20,0,0,0"
+                            Padding="16,11"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Background="#1F6E6C"
+                            BorderBrush="#1F6E6C"
+                            Foreground="White"
+                            AutomationProperties.HelpText="Choose a running desktop application or browse to an executable file."
+                            Click="AddApplication_Click"
+                            Content="_Add application" />
+                </Grid>
 
                 <ScrollViewer Grid.Row="1"
                               VerticalScrollBarVisibility="Auto">
@@ -228,18 +249,51 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
-                                                <TextBlock FontSize="22"
-                                                           FontWeight="Bold"
-                                                           Text="{Binding DisplayName}" />
+                                                <TextBox FontSize="22"
+                                                         FontWeight="Bold"
+                                                         IsReadOnly="{Binding IsBuiltIn}"
+                                                         MaxLength="80"
+                                                         Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                    <TextBox.Style>
+                                                        <Style TargetType="TextBox">
+                                                            <Setter Property="Padding" Value="0" />
+                                                            <Setter Property="Background" Value="Transparent" />
+                                                            <Setter Property="BorderThickness" Value="0" />
+                                                            <Setter Property="ToolTip" Value="Built-in application profile" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsCustom}" Value="True">
+                                                                    <Setter Property="Padding" Value="7,3" />
+                                                                    <Setter Property="Background" Value="#F7F1E7" />
+                                                                    <Setter Property="BorderBrush" Value="#C3B6A2" />
+                                                                    <Setter Property="BorderThickness" Value="1" />
+                                                                    <Setter Property="ToolTip" Value="Rename this application profile" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBox.Style>
+                                                </TextBox>
                                                 <TextBlock Margin="0,6,0,0"
                                                            Foreground="#51656E"
                                                            Text="{Binding Summary}" />
                                             </StackPanel>
-                                            <CheckBox Grid.Column="1"
-                                                      VerticalAlignment="Top"
-                                                      AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0} masking}"
-                                                      Content="Enabled"
-                                                      IsChecked="{Binding Enabled, Mode=TwoWay}" />
+                                            <StackPanel Grid.Column="1"
+                                                        VerticalAlignment="Top"
+                                                        Orientation="Horizontal">
+                                                <Button Margin="0,0,14,0"
+                                                        Padding="10,5"
+                                                        VerticalAlignment="Center"
+                                                        Background="#F3E5E1"
+                                                        BorderBrush="#C98270"
+                                                        Foreground="#8E3024"
+                                                        Visibility="{Binding IsCustom, Converter={StaticResource BooleanToVisibility}}"
+                                                        Click="RemoveApplication_Click"
+                                                        Content="_Remove"
+                                                        Tag="{Binding}" />
+                                                <CheckBox VerticalAlignment="Center"
+                                                          AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0} masking}"
+                                                          Content="Enabled"
+                                                          IsChecked="{Binding Enabled, Mode=TwoWay}" />
+                                            </StackPanel>
                                         </Grid>
 
                                         <Grid Margin="0,16,0,16">

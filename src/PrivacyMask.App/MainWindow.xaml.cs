@@ -12,6 +12,7 @@ using PrivacyMask.App.ViewModels;
 using PrivacyMask.App.Windows;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
+using PrivacyMask.Windows.Services;
 
 namespace PrivacyMask.App;
 
@@ -22,9 +23,11 @@ public partial class MainWindow : Window
 
     private bool _allowClose;
     private bool _isSaving;
+    private readonly DesktopApplicationCatalog _applicationCatalog;
 
-    public MainWindow(SettingsViewModel viewModel)
+    public MainWindow(SettingsViewModel viewModel, DesktopApplicationCatalog applicationCatalog)
     {
+        _applicationCatalog = applicationCatalog;
         InitializeComponent();
         WindowWorkAreaSizer.Fit(this);
         ReplaceViewModel(viewModel);
@@ -170,6 +173,57 @@ public partial class MainWindow : Window
         };
 
         aboutWindow.ShowDialog();
+    }
+
+    private void AddApplication_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new AddApplicationWindow(_applicationCatalog, GetProtectedProcessNames())
+        {
+            Owner = this,
+        };
+        if (picker.ShowDialog() != true || picker.SelectedApplication is null)
+        {
+            return;
+        }
+
+        var profile = CustomAppProfileFactory.Create(
+            picker.ProfileDisplayName,
+            picker.SelectedApplication.ProcessName);
+        ViewModel.AppProfiles.Add(new AppProfileViewModel(profile));
+        PreviewRequested?.Invoke(ViewModel.ToModel());
+    }
+
+    private void RemoveApplication_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not AppProfileViewModel { IsCustom: true } profile)
+        {
+            return;
+        }
+
+        var result = System.Windows.MessageBox.Show(
+            this,
+            $"Remove {profile.DisplayName} from PrivacyMask?\n\nThe application itself will not be changed. This removal is kept only after you save settings.",
+            "Remove application profile",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question,
+            MessageBoxResult.No);
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        ViewModel.AppProfiles.Remove(profile);
+        PreviewRequested?.Invoke(ViewModel.ToModel());
+    }
+
+    private IReadOnlySet<string> GetProtectedProcessNames()
+    {
+        return ViewModel.AppProfiles
+            .SelectMany(profile => profile.WindowMatchers)
+            .SelectMany(matcher => matcher.ProcessNames)
+            .Where(processName => !string.IsNullOrWhiteSpace(processName))
+            .Select(processName => processName.Trim())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
     protected override void OnClosing(CancelEventArgs e)
