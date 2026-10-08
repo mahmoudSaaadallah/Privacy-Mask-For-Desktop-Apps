@@ -30,3 +30,15 @@ jobs:
 
       - name: Test
         run: dotnet test PrivacyMask.Desktop.slnx --no-build
+
+      - name: Test installer transactions
+        shell: powershell
+        run: .\scripts\test-installer-transaction.ps1
+
+      - name: Package Windows release
+        shell: powershell
+        run: .\scripts\package-win-x64-release.ps1 -SkipTests
+
+      - name: Smoke test release package
+        shell: powershell
+        run: .\scripts\test-release-package.ps1

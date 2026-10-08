@@ -33,6 +33,23 @@ function Assert-PathExists {
 }
 
 try {
+  $unsafePathRejected = $false
+  try {
+    & $installerPath `
+      -SourcePath $resolvedSourcePath `
+      -InstallPath ([System.IO.Path]::GetTempPath()) `
+      -DesktopShortcutPath $desktopShortcutPath `
+      -StartMenuFolder $startMenuFolder `
+      -SkipRestart
+  }
+  catch {
+    $unsafePathRejected = $true
+  }
+
+  if (-not $unsafePathRejected) {
+    throw 'The installer accepted an unsafe broad installation path.'
+  }
+
   & $installerPath `
     -SourcePath $resolvedSourcePath `
     -InstallPath $installPath `
