@@ -1,11 +1,12 @@
 # PrivacyMask for Desktop Apps
 
-PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Telegram Desktop. It places a local click-through mask over supported app windows so you can hide message content while still keeping the apps open on screen.
+PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
 ## Highlights
 
 - Windows-first WPF tray application
-- Supports WhatsApp Desktop and Telegram Desktop
+- Includes ready-made profiles for WhatsApp Desktop and Telegram Desktop
+- Adds any running desktop application, or an application executable selected from disk
 - Local-only settings with no telemetry and no cloud dependency
 - Single full-window mask for each supported app
 - Hover reveal window around the mouse pointer
@@ -17,7 +18,7 @@ PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop and Tele
 ## Privacy model
 
 - PrivacyMask does not read message content.
-- PrivacyMask does not inject into WhatsApp or Telegram.
+- PrivacyMask does not inject into protected applications.
 - PrivacyMask does not send data to a server.
 - Live blur and wet glass capture only the selected application window into a bounded
   in-memory frame. Frames are never written to disk or sent anywhere, and are
@@ -32,7 +33,7 @@ See [requirements.md](requirements.md) for the full list.
 Minimum requirements:
 
 - Windows 10 or Windows 11, 64-bit
-- Official WhatsApp Desktop and/or Telegram Desktop
+- At least one conventional Windows desktop application to protect
 
 ## End-user quick start
 
@@ -42,7 +43,7 @@ You do not need the source code or the .NET SDK to install a published release.
 2. Download the versioned Windows archive, for example `PrivacyMask-2.0.0-win-x64.zip`, and extract the whole archive.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
-5. Complete onboarding, then open WhatsApp Desktop or Telegram Desktop.
+5. Complete onboarding. Use **Add application** to select a running program or browse to its `.exe` file.
 
 The installer does not require administrator access. It copies the standalone app
 to `%LocalAppData%\PrivacyMask.Desktop` and creates Desktop and Start Menu
@@ -178,14 +179,15 @@ environment, initial measurements, performance budgets, and required scenarios.
 ## Normal user guide
 
 1. Start PrivacyMask.
-2. Keep WhatsApp Desktop or Telegram Desktop open.
-3. Choose a mask style. `Live blur` keeps the cleanest appearance, while
+2. Select **Add application**, then choose a visible running program or browse
+   directly to its `.exe` file. WhatsApp and Telegram are already included.
+3. Rename a custom profile if needed, then choose a mask style. `Live blur` keeps the cleanest appearance, while
    `Wet glass` adds a locally generated condensation layer.
 4. Move the blur-strength slider to your preferred appearance. Lower values
    reveal progressively clearer shapes and colors; higher values remove more
    detail. Use solid redact or panic mode when no underlying detail may remain.
-5. While WhatsApp or Telegram is focused, press `Ctrl + Win + ↑` to raise that
-   app's saved blur strength by 5%, or `Ctrl + Win + ↓` to lower it by 5%.
+5. While a protected application is focused, press `Ctrl + Win + ↑` to raise
+   its saved blur strength by 5%, or `Ctrl + Win + ↓` to lower it by 5%.
 6. Hover over the masked app to reveal a small reading window around the pointer.
 7. Use the tray icon to pause protection, apply an opaque panic mask, reopen settings, or exit the app.
 
@@ -217,3 +219,6 @@ last saved configuration and return the window to the tray.
 - Overlay protection is designed for local privacy and best-effort full-screen sharing support.
 - Window-only capture behavior depends on how external apps capture the desktop.
 - Layout changes in WhatsApp Desktop or Telegram Desktop may require preset updates.
+- Custom profiles match a process name and therefore protect every visible
+  top-level window created by that process. Windows shell and security-sensitive
+  processes are intentionally unavailable in the picker.

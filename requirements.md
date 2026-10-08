@@ -3,7 +3,8 @@
 ## End-user requirements
 
 - Windows 10 or Windows 11, 64-bit
-- Official WhatsApp Desktop and/or Telegram Desktop installed
+- At least one conventional Windows desktop application to protect; WhatsApp
+  Desktop and Telegram Desktop have ready-made profiles
 - A screen resolution of at least 1280 x 720 is recommended
 - Administrator rights are not required for normal use
 

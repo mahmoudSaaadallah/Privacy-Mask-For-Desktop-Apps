@@ -46,7 +46,7 @@
                 <TextBlock Margin="0,14,0,0"
                            TextWrapping="Wrap"
                            Foreground="#D4E3E3"
-                           Text="PrivacyMask sits beside WhatsApp Desktop and Telegram Desktop, then places click-through masks over sensitive regions. It does not inject into the apps, scrape messages, or send telemetry anywhere." />
+                           Text="PrivacyMask places click-through masks over WhatsApp, Telegram, and other desktop applications you choose. It does not inject into apps, scrape content, or send telemetry anywhere." />
 
                 <Border Margin="0,26,0,0"
                         Padding="16"

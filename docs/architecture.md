@@ -30,6 +30,12 @@ cursor position; unchanged frames do not rebuild WPF brushes or geometry.
 See [runtime-protection.md](runtime-protection.md) for runtime state transitions,
 panic-mask behavior, and persistence compatibility.
 
+The settings UI discovers visible top-level application windows only when the
+user opens the application picker. Candidates are grouped by exact process
+name, and applications already protected, PrivacyMask itself, shell processes,
+and security-sensitive Windows surfaces are excluded. Browsing directly to an
+executable uses the same eligibility policy and does not start that program.
+
 Mask appearance is resolved independently from overlay geometry. Live blur
 captures the target window handle directly into a bounded in-memory frame,
 downsamples it off the UI thread, and reuses the existing WPF image elements

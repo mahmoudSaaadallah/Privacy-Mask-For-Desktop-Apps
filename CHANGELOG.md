@@ -2,6 +2,10 @@
 
 ## 2.0.0 - Unreleased
 
+- Add an application picker for visible desktop programs with executable icons, friendly names, process names, and window titles
+- Allow browsing directly to an executable so an application can be configured before it is running
+- Let custom profiles be renamed or removed while built-in WhatsApp and Telegram profiles remain protected from deletion
+- Exclude PrivacyMask, duplicate processes, Windows shell surfaces, and security-sensitive processes from custom targeting
 - Begin the user-defined application profile foundation for protecting desktop apps beyond WhatsApp and Telegram
 - Give every profile a stable identity so multiple custom applications can coexist and receive independent hotkey updates
 - Add safe custom-profile defaults, exact process-name matching, and a generic Windows adapter

@@ -2,9 +2,20 @@
 
 ## The mask does not appear
 
-- Confirm that WhatsApp Desktop or Telegram Desktop is running.
+- Confirm that the protected application is running with a visible top-level window.
 - Make sure protection is not paused from the tray menu.
-- Open the settings window and verify the supported app is enabled.
+- Open the settings window and verify the application profile is enabled.
+- For a custom profile, confirm that its executable still uses the process name
+  shown when it was added. Remove and add the profile again if an application
+  update changed that name.
+
+## An application is missing from Add application
+
+- Bring the application window onto the desktop, then select **Refresh**.
+- Use **Browse for executable** when the application is installed but not running.
+- Applications already protected do not appear again.
+- PrivacyMask, Windows shell surfaces, and security-sensitive system processes
+  are intentionally excluded.
 
 ## The published build folder is missing
 
