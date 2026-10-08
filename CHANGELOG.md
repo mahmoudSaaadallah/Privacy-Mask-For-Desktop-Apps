@@ -2,11 +2,14 @@
 
 ## Unreleased
 
-- Replace the translucent pseudo-blur with a fully opaque procedural frosted-glass surface
-- Keep protected content hidden at every surface-intensity level and remove the maximum-value visual jump
-- Replace the legacy 60–240% darkness control with a clear 0–100% surface-intensity scale
+- Replace the repeated procedural frost tiles with a live blur of the protected window
+- Make the 0–100% blur-strength scale progressively reveal or suppress underlying detail
+- Capture bounded window frames in memory, refresh them asynchronously, and clear them when protection is hidden
+- Keep a seamless opaque fallback when a protected window cannot be captured
+- Preserve solid-redact and opaque panic-mask options for maximum concealment
+- Replace the legacy 60–240% darkness control with a clear 0–100% blur-strength scale
 - Migrate existing profile and zone intensities to settings schema version 7
-- Present friendly mask-style names and percentage-based zone intensity in advanced settings
+- Present friendly mask-style names and percentage-based zone strength in advanced settings
 
 ## 1.1.0 - 2026-10-08
 
