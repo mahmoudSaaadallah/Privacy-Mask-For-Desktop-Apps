@@ -54,7 +54,7 @@ public sealed class AppSettingsValidatorTests
         Assert.Contains(errors, error => error.Message.StartsWith("X must be"));
         Assert.Contains(errors, error => error.Message.StartsWith("Width must be"));
         Assert.Contains(errors, error => error.Message.StartsWith("Y plus Height"));
-        Assert.Contains(errors, error => error.Message.StartsWith("Strength must be"));
+        Assert.Contains(errors, error => error.Message.StartsWith("Surface intensity must be"));
     }
 
     [Theory]

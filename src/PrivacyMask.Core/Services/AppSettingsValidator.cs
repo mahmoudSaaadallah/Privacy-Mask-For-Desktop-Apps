@@ -104,7 +104,7 @@ public static class AppSettingsValidator
         {
             errors.Add(new SettingsValidationError(
                 location,
-                $"Strength must be from {MinimumZoneStrength:0.00} to {MaximumZoneStrength:0.00}."));
+                $"Surface intensity must be from {MinimumZoneStrength:P0} to {MaximumZoneStrength:P0}."));
         }
     }
 

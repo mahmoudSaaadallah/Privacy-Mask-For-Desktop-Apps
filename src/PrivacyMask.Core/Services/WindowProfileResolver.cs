@@ -62,7 +62,7 @@ public sealed class WindowProfileResolver
             .Select(zone =>
             {
                 var clone = PresetCatalog.CloneZone(zone);
-                // The app-wide darkness slider is the final effective strength for the
+                // The app-wide surface slider is the final effective intensity for the
                 // current single-layer mask, so the runtime should not multiply it by
                 // the preset baseline or it will saturate too early.
                 clone.Strength = MaskIntensityScale.Clamp(profile.MaskIntensity);
