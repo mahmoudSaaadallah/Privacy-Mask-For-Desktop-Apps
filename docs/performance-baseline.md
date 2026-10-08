@@ -117,6 +117,33 @@ window inspection, cached process identity, reusable discovery and overlay
 collections, cached effective zones, render invalidation for unchanged
 overlays, and adaptive polling.
 
+## Secure frosted-renderer measurement
+
+The opaque rasterized frosted surface was measured on 2026-10-08 using the
+installed 1.1.0 single-file build at commit `4b097ff` as the baseline and the
+candidate single-file build at commit `4e48faf`. WhatsApp was visible and
+stationary, both builds used the same settings at the equivalent visual
+intensity, and the settings window remained closed. Each process received an
+8-second warm-up followed by one 30-second pass sampled every 500 ms on the
+same Windows machine with 20 logical processors.
+
+| Metric | Baseline | Rasterized frost | Change |
+| --- | ---: | ---: | ---: |
+| Working set average | 296.80 MB | 298.24 MB | +1.44 MB (+0.5%) |
+| Working set P95 | 296.82 MB | 298.27 MB | +1.45 MB (+0.5%) |
+| Private memory average | 192.53 MB | 193.70 MB | +1.17 MB (+0.6%) |
+| Private memory P95 | 192.62 MB | 193.80 MB | +1.18 MB (+0.6%) |
+| Whole-machine CPU average | 0.062% | 0.085% | +0.023 percentage points |
+| Whole-machine CPU P95 | 0.445% | 0.409% | -0.036 percentage points |
+| Handles average | 970 | 973 | +3 (+0.3%) |
+| Threads average | 38 | 38 | No change |
+
+The candidate remains well below the 0.5% average CPU budget for a stationary
+protected window. The small memory increase is the expected cost of retaining
+an opaque 192x192 BGRA texture and its WPF composition resource. This is a
+short directional comparison; movement, reveal, two-window, and long-duration
+stability scenarios remain required before the next stable release.
+
 ## Performance budgets
 
 The first optimization work should target these budgets on the reference

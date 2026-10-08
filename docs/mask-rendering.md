@@ -33,11 +33,12 @@ particular, 100% no longer switches to a different solid-color renderer.
 
 ## Rendering and resource use
 
-The frosted surface uses a small deterministic WPF drawing tile containing an
-opaque base, three radial color clouds, and frozen grain geometry. It has no
-animation, external bitmap, screen-capture buffer, or per-frame noise
-generation. The tile and brush are rebuilt only when the existing overlay
-render-state cache detects a relevant state change.
+The frosted surface uses a small deterministic BGRA tile containing an opaque
+base, three radial color clouds, and fine grain. The tile is generated in
+memory, verified as opaque by automated tests, and frozen into a WPF image
+brush. It has no animation, external bitmap, screen-capture buffer, or
+per-frame noise generation. The tile and brush are rebuilt only when the
+existing overlay render-state cache detects a relevant state change.
 
 The reference wet-glass image is visual direction only. It is not included in
 the repository or application. A richer water-droplet preset can be added later
