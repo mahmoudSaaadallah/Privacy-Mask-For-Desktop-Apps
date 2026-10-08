@@ -28,6 +28,7 @@ public sealed class PrivacyOverlayWindow : Window
 
     private readonly Canvas _canvas;
     private readonly List<WpfImage> _blurImages = [];
+    private readonly BlurCaptureLifecycle _blurCaptureLifecycle = new();
     private ScreenRect[] _lastOccludingBounds = [];
     private AppProfile? _lastProfile;
     private IReadOnlyList<PrivacyZone>? _lastEffectiveZones;
@@ -44,8 +45,6 @@ public sealed class PrivacyOverlayWindow : Window
     private BitmapSource? _blurFrame;
     private BlurCaptureRequest? _captureRequest;
     private DateTime _nextCaptureUtc;
-    private int _captureGeneration;
-    private bool _captureInProgress;
     private bool _isClosed;
 
     public PrivacyOverlayWindow()
@@ -263,26 +262,37 @@ public sealed class PrivacyOverlayWindow : Window
             captureStyle);
         if (_captureRequest != request)
         {
+            var canReuseFrame = _captureRequest is { } previousRequest
+                && CanReuseBlurFrame(previousRequest, request);
             _captureRequest = request;
-            _blurFrame = null;
-            _blurImages.Clear();
+            if (!canReuseFrame)
+            {
+                _blurFrame = null;
+                _blurImages.Clear();
+            }
+
             _hasRenderState = false;
-            _captureGeneration++;
+            _blurCaptureLifecycle.Invalidate();
             _nextCaptureUtc = DateTime.MinValue;
         }
 
         var now = DateTime.UtcNow;
-        if (_captureInProgress || now < _nextCaptureUtc)
+        if (now < _nextCaptureUtc || !_blurCaptureLifecycle.TryBegin(out var generation))
         {
             return;
         }
 
-        _captureInProgress = true;
         _nextCaptureUtc = now + (captureStyle == MaskStyle.WetGlass
             ? WetGlassCaptureInterval
             : BlurCaptureInterval);
-        var generation = _captureGeneration;
         _ = CaptureBlurFrameAsync(request, generation);
+    }
+
+    private static bool CanReuseBlurFrame(BlurCaptureRequest current, BlurCaptureRequest next)
+    {
+        return current.WindowHandle == next.WindowHandle
+            && current.Bounds == next.Bounds
+            && current.Style == next.Style;
     }
 
     private static bool TryGetLiveCaptureAppearance(
@@ -337,12 +347,18 @@ public sealed class PrivacyOverlayWindow : Window
             // A protected fallback remains visible when a window rejects capture.
         }
 
-        if (_isClosed || generation != _captureGeneration || _captureRequest != request)
+        var completion = _blurCaptureLifecycle.Complete(generation);
+        if (_isClosed || completion == BlurCaptureCompletion.Ignored)
         {
             return;
         }
 
-        _captureInProgress = false;
+        if (completion == BlurCaptureCompletion.Stale || _captureRequest != request)
+        {
+            _nextCaptureUtc = DateTime.MinValue;
+            return;
+        }
+
         if (frame is null)
         {
             _nextCaptureUtc = DateTime.UtcNow + TimeSpan.FromSeconds(1d);
@@ -364,16 +380,15 @@ public sealed class PrivacyOverlayWindow : Window
 
     private void ResetBlurCapture()
     {
-        if (_captureRequest is null && _blurFrame is null && !_captureInProgress)
+        if (_captureRequest is null && _blurFrame is null && !_blurCaptureLifecycle.IsCaptureInProgress)
         {
             return;
         }
 
         _captureRequest = null;
         _blurFrame = null;
-        _captureInProgress = false;
         _nextCaptureUtc = DateTime.MinValue;
-        _captureGeneration++;
+        _blurCaptureLifecycle.Reset();
     }
 
     private static bool IsCursorInsideZone(Point cursorScreenPoint, ScreenRect bounds, RelativeRect relativeRect)
