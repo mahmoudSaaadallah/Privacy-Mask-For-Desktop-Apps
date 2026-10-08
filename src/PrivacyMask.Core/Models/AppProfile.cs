@@ -4,6 +4,8 @@ namespace PrivacyMask.Core.Models;
 
 public sealed class AppProfile
 {
+    public string ProfileId { get; init; } = string.Empty;
+
     public AppId AppId { get; init; }
 
     public string DisplayName { get; init; } = string.Empty;

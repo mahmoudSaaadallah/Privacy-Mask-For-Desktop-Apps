@@ -23,6 +23,7 @@ public static class AppSettingsCloner
     {
         return new AppProfile
         {
+            ProfileId = profile.ProfileId,
             AppId = profile.AppId,
             DisplayName = profile.DisplayName,
             Enabled = profile.Enabled,
@@ -44,6 +45,7 @@ public static class AppSettingsCloner
         return new WindowMatcher
         {
             ProcessNames = [.. matcher.ProcessNames],
+            ProcessNameMatchMode = matcher.ProcessNameMatchMode,
             TitleContains = matcher.TitleContains,
             ClassNameContains = matcher.ClassNameContains,
         };

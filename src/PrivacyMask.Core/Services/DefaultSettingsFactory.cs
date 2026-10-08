@@ -62,8 +62,8 @@ public sealed class DefaultSettingsFactory
             ],
             AppProfiles =
             [
-                BuildProfile(AppId.WhatsApp, "WhatsApp Desktop", ["WhatsApp", "WhatsAppBeta"], "whatsapp-wide"),
-                BuildProfile(AppId.Telegram, "Telegram Desktop", ["Telegram"], "telegram-wide"),
+                BuildProfile(KnownProfileIds.WhatsApp, AppId.WhatsApp, "WhatsApp Desktop", ["WhatsApp", "WhatsAppBeta"], "whatsapp-wide"),
+                BuildProfile(KnownProfileIds.Telegram, AppId.Telegram, "Telegram Desktop", ["Telegram"], "telegram-wide"),
             ],
         };
     }
@@ -89,7 +89,9 @@ public sealed class DefaultSettingsFactory
 
         foreach (var defaultProfile in defaults.AppProfiles)
         {
-            var persistedProfile = persisted.AppProfiles.FirstOrDefault(profile => profile.AppId == defaultProfile.AppId);
+            var persistedProfile = persisted.AppProfiles.FirstOrDefault(profile =>
+                string.Equals(profile.ProfileId, defaultProfile.ProfileId, StringComparison.OrdinalIgnoreCase))
+                ?? persisted.AppProfiles.FirstOrDefault(profile => profile.AppId == defaultProfile.AppId);
             if (persistedProfile is null)
             {
                 continue;
@@ -124,16 +126,32 @@ public sealed class DefaultSettingsFactory
             defaultProfile.WindowMatchers = MergeWindowMatchers(defaultProfile.WindowMatchers, persistedProfile.WindowMatchers);
         }
 
+        var profileIds = defaults.AppProfiles
+            .Select(profile => profile.ProfileId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var customProfile in persisted.AppProfiles.Where(profile => profile.AppId == AppId.Custom))
+        {
+            var profileId = ResolveCustomProfileId(customProfile.ProfileId, profileIds);
+            defaults.AppProfiles.Add(NormalizeCustomProfile(customProfile, profileId));
+            profileIds.Add(profileId);
+        }
+
         return defaults;
     }
 
-    private static AppProfile BuildProfile(AppId appId, string displayName, IEnumerable<string> processNames, string selectedPresetId)
+    private static AppProfile BuildProfile(
+        string profileId,
+        AppId appId,
+        string displayName,
+        IEnumerable<string> processNames,
+        string selectedPresetId)
     {
         var presets = PresetCatalog.ClonePresets(PresetCatalog.GetDefaultPresets(appId)).ToList();
         var selectedPreset = presets.First(preset => preset.PresetId == selectedPresetId);
 
         return new AppProfile
         {
+            ProfileId = profileId,
             AppId = appId,
             DisplayName = displayName,
             Enabled = true,
@@ -155,6 +173,101 @@ public sealed class DefaultSettingsFactory
         };
     }
 
+    private static string ResolveCustomProfileId(string persistedProfileId, IReadOnlySet<string> existingProfileIds)
+    {
+        var candidate = string.IsNullOrWhiteSpace(persistedProfileId)
+            ? string.Empty
+            : persistedProfileId.Trim();
+        return candidate.Length > 0 && !existingProfileIds.Contains(candidate)
+            ? candidate
+            : $"custom-{Guid.NewGuid():N}";
+    }
+
+    private static AppProfile NormalizeCustomProfile(AppProfile persisted, string profileId)
+    {
+        var defaultProfile = CustomAppProfileFactory.Create(
+            string.IsNullOrWhiteSpace(persisted.DisplayName) ? "Custom app" : persisted.DisplayName,
+            persisted.WindowMatchers
+                .SelectMany(matcher => matcher.ProcessNames)
+                .FirstOrDefault(processName => !string.IsNullOrWhiteSpace(processName))
+                ?? "invalid-custom-profile",
+            profileId);
+        var matchers = persisted.WindowMatchers
+            .Where(matcher => matcher.ProcessNames.Any(processName => !string.IsNullOrWhiteSpace(processName)))
+            .Select(matcher => new WindowMatcher
+            {
+                ProcessNames = matcher.ProcessNames
+                    .Where(processName => !string.IsNullOrWhiteSpace(processName))
+                    .Select(processName => processName.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList(),
+                ProcessNameMatchMode = ProcessNameMatchMode.Exact,
+                TitleContains = string.IsNullOrWhiteSpace(matcher.TitleContains) ? null : matcher.TitleContains.Trim(),
+                ClassNameContains = string.IsNullOrWhiteSpace(matcher.ClassNameContains) ? null : matcher.ClassNameContains.Trim(),
+            })
+            .ToList();
+        var presets = persisted.Presets.Count > 0
+            ? persisted.Presets.Select(NormalizeCustomPreset).ToList()
+            : defaultProfile.Presets;
+        var selectedPresetId = presets.Any(preset => preset.PresetId == persisted.SelectedPresetId)
+            ? persisted.SelectedPresetId
+            : presets[0].PresetId;
+        var selectedPreset = presets.First(preset => preset.PresetId == selectedPresetId);
+        var zones = persisted.Zones.Count > 0
+            ? persisted.Zones.Select(zone => NormalizeCustomZone(zone, defaultProfile.Zones[0])).ToList()
+            : selectedPreset.Zones.Select(PresetCatalog.CloneZone).ToList();
+
+        return new AppProfile
+        {
+            ProfileId = profileId,
+            AppId = AppId.Custom,
+            DisplayName = defaultProfile.DisplayName,
+            Enabled = persisted.Enabled && matchers.Count > 0,
+            StartupMode = persisted.StartupMode,
+            MaskIntensity = MaskIntensityScale.Clamp(persisted.MaskIntensity),
+            MaskColor = NormalizeMaskColor(persisted.MaskColor, MaskColorOption.Black),
+            HoverRevealWidthPixels = int.Clamp(persisted.HoverRevealWidthPixels, 80, 1400),
+            HoverRevealHeightPixels = int.Clamp(persisted.HoverRevealHeightPixels, 20, 420),
+            WindowMatchers = matchers,
+            Zones = zones,
+            Hotkeys = persisted.Hotkeys.Select(CloneHotkey).ToList(),
+            Presets = presets,
+            SelectedPresetId = selectedPresetId,
+        };
+    }
+
+    private static LayoutPreset NormalizeCustomPreset(LayoutPreset preset)
+    {
+        var fallbackZone = PresetCatalog.GetDefaultPresets(AppId.Custom).Single().Zones.Single();
+        return new LayoutPreset
+        {
+            PresetId = string.IsNullOrWhiteSpace(preset.PresetId) ? $"custom-{Guid.NewGuid():N}" : preset.PresetId.Trim(),
+            AppId = AppId.Custom,
+            DisplayName = string.IsNullOrWhiteSpace(preset.DisplayName) ? "Custom layout" : preset.DisplayName.Trim(),
+            LayoutVariant = string.IsNullOrWhiteSpace(preset.LayoutVariant) ? "custom" : preset.LayoutVariant.Trim(),
+            MinWindowWidth = Math.Max(1d, preset.MinWindowWidth),
+            MinWindowHeight = Math.Max(1d, preset.MinWindowHeight),
+            Zones = preset.Zones.Count > 0
+                ? preset.Zones.Select(zone => NormalizeCustomZone(zone, fallbackZone)).ToList()
+                : [PresetCatalog.CloneZone(fallbackZone)],
+        };
+    }
+
+    private static PrivacyZone NormalizeCustomZone(PrivacyZone zone, PrivacyZone fallback)
+    {
+        return new PrivacyZone
+        {
+            ZoneId = string.IsNullOrWhiteSpace(zone.ZoneId) ? $"zone-{Guid.NewGuid():N}" : zone.ZoneId.Trim(),
+            DisplayName = string.IsNullOrWhiteSpace(zone.DisplayName) ? "Privacy zone" : zone.DisplayName.Trim(),
+            Anchor = zone.Anchor,
+            RelativeRect = zone.RelativeRect.Clamp(),
+            Style = NormalizeMaskStyle(zone.Style, fallback.Style),
+            Strength = MaskIntensityScale.Clamp(zone.Strength),
+            Behavior = zone.Behavior,
+            Enabled = zone.Enabled,
+        };
+    }
+
     private static List<WindowMatcher> MergeWindowMatchers(IEnumerable<WindowMatcher> defaults, IEnumerable<WindowMatcher>? persisted)
     {
         if (persisted is null)
@@ -171,6 +284,7 @@ public sealed class DefaultSettingsFactory
         return new WindowMatcher
         {
             ProcessNames = [.. matcher.ProcessNames],
+            ProcessNameMatchMode = matcher.ProcessNameMatchMode,
             TitleContains = matcher.TitleContains,
             ClassNameContains = matcher.ClassNameContains,
         };

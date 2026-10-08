@@ -29,7 +29,9 @@ public sealed class AppSettingsClonerTests
         Assert.Equal(source.LaunchAtLogin, clone.LaunchAtLogin);
         Assert.Equal(source.CurrentMode, clone.CurrentMode);
         Assert.Equal(source.GlobalHotkeys.Count, clone.GlobalHotkeys.Count);
+        Assert.Equal(sourceProfile.ProfileId, clonedProfile.ProfileId);
         Assert.Equal(sourceProfile.WindowMatchers.Single().ProcessNames, clonedProfile.WindowMatchers.Single().ProcessNames);
+        Assert.Equal(sourceProfile.WindowMatchers.Single().ProcessNameMatchMode, clonedProfile.WindowMatchers.Single().ProcessNameMatchMode);
         Assert.Equal(sourceProfile.Zones.Single().RelativeRect, clonedProfile.Zones.Single().RelativeRect);
         Assert.Equal(sourceProfile.Presets.Count, clonedProfile.Presets.Count);
         Assert.Equal(sourceProfile.Hotkeys.Single().DisplayName, clonedProfile.Hotkeys.Single().DisplayName);
