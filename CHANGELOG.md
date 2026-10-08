@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.1.0 - 2026-10-08
+
 - Start every app launch with protection enabled instead of restoring a paused or panic runtime state
 - Change panic mode to an opaque black full-window mask that disables reveal gestures
 - Prevent the pause hotkey from bypassing an active panic mask
@@ -23,6 +25,12 @@
 - Create Windows shortcuts correctly when the user profile path contains non-ASCII characters
 - Roll back live mask previews when settings are discarded and preserve in-progress edits on reactivation
 - Add keyboard shortcuts, access keys, and screen-reader metadata to the primary setup flows
+- Fit settings, onboarding, and About windows to the available monitor work area
+- Validate editable dimensions and privacy zones with actionable errors instead of silently changing values
+- Keep advanced privacy-zone editing behind a simpler expandable section
+- Make Windows updates transactional with settings preservation and automatic rollback
+- Use one product version across assemblies, About, build metadata, release assets, and Git tags
+- Smoke test release checksums, archive contents, executable versions, installation, shortcuts, and removal in CI
 
 ## 1.0.0
 
