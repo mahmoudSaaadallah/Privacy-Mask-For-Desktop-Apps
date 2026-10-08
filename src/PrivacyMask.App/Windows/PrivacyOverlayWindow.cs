@@ -413,7 +413,7 @@ public sealed class PrivacyOverlayWindow : Window
             ToRgbColor(surface),
             ToRgbColor(highlight),
             ToRgbColor(shadow),
-            appearance.TextureContrast);
+            appearance.TintOpacity);
         var bitmap = BitmapSource.Create(
             tile.Width,
             tile.Height,
@@ -433,8 +433,8 @@ public sealed class PrivacyOverlayWindow : Window
             Viewport = new Rect(
                 0d,
                 0d,
-                tile.Width * appearance.TextureScale,
-                tile.Height * appearance.TextureScale),
+                tile.Width * appearance.PixelScale,
+                tile.Height * appearance.PixelScale),
             ViewportUnits = BrushMappingMode.Absolute,
             Stretch = Stretch.Fill,
         };
@@ -448,7 +448,7 @@ public sealed class PrivacyOverlayWindow : Window
         var neutralFrost = MediaColor.FromRgb(216, 222, 225);
         var dark = Blend(baseColor, MediaColor.FromRgb(0, 0, 0), appearance.ShadowBlend);
         var light = Blend(baseColor, neutralFrost, appearance.HighlightBlend);
-        var tileSize = 16d * appearance.TextureScale;
+        var tileSize = 16d * appearance.PixelScale;
         var halfTileSize = tileSize / 2d;
 
         var drawingBrush = new DrawingBrush

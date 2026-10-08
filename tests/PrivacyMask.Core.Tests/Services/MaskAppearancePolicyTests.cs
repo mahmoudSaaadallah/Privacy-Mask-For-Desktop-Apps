@@ -30,8 +30,10 @@ public sealed class MaskAppearancePolicyTests
         Assert.True(balanced.HighlightBlend > strong.HighlightBlend);
         Assert.True(light.ShadowBlend < balanced.ShadowBlend);
         Assert.True(balanced.ShadowBlend < strong.ShadowBlend);
-        Assert.True(light.TextureContrast < balanced.TextureContrast);
-        Assert.True(balanced.TextureContrast < strong.TextureContrast);
+        Assert.True(light.BlurDownsampleFactor < balanced.BlurDownsampleFactor);
+        Assert.True(balanced.BlurDownsampleFactor < strong.BlurDownsampleFactor);
+        Assert.True(light.TintOpacity < balanced.TintOpacity);
+        Assert.True(balanced.TintOpacity < strong.TintOpacity);
     }
 
     [Fact]
@@ -42,7 +44,8 @@ public sealed class MaskAppearancePolicyTests
 
         Assert.InRange(Math.Abs(maximum.HighlightBlend - nearMaximum.HighlightBlend), 0d, 0.001d);
         Assert.InRange(Math.Abs(maximum.ShadowBlend - nearMaximum.ShadowBlend), 0d, 0.001d);
-        Assert.InRange(Math.Abs(maximum.TextureContrast - nearMaximum.TextureContrast), 0d, 0.001d);
+        Assert.InRange(Math.Abs(maximum.BlurDownsampleFactor - nearMaximum.BlurDownsampleFactor), 0d, 0.02d);
+        Assert.InRange(Math.Abs(maximum.TintOpacity - nearMaximum.TintOpacity), 0d, 0.001d);
     }
 
     [Theory]

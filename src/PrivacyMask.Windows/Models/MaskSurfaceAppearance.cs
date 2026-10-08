@@ -7,5 +7,6 @@ public readonly record struct MaskSurfaceAppearance(
     double HighlightBlend,
     double MidtoneBlend,
     double ShadowBlend,
-    double TextureContrast,
-    double TextureScale);
+    double TintOpacity,
+    double BlurDownsampleFactor,
+    double PixelScale);
