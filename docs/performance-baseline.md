@@ -172,6 +172,35 @@ stationary-window CPU and tail working set improved in this comparison. The
 result is directional rather than a release guarantee; movement, reveal,
 two-window, and long-duration stability scenarios are still required.
 
+## Wet-glass style measurement
+
+Live blur and wet glass were compared on 2026-10-08 using the same candidate
+single-file build corresponding to renderer commit `f36ceaa`. WhatsApp was
+visible and stationary at 30% strength, the settings window remained closed,
+and unrelated windows were moved off the target monitor. Each style received
+an 8-second warm-up followed by two 20-second passes sampled every 500 ms. The
+table averages the two stable per-pass summaries on the 20-logical-processor
+reference machine.
+
+| Metric | Live blur | Wet glass | Change |
+| --- | ---: | ---: | ---: |
+| Working set average | 285.63 MB | 295.69 MB | +10.06 MB (+3.5%) |
+| Working set P95 | 286.01 MB | 304.37 MB | +18.36 MB (+6.4%) |
+| Private memory average | 173.02 MB | 185.01 MB | +11.99 MB (+6.9%) |
+| Private memory P95 | 173.38 MB | 193.30 MB | +19.92 MB (+11.5%) |
+| Whole-machine CPU average | 0.073% | 0.577% | +0.504 percentage points |
+| Whole-machine CPU P95 | 0.455% | 1.441% | +0.986 percentage points |
+| Handles average | 956.5 | 958.5 | +2 (+0.2%) |
+| Threads average | 39 | 39 | No change |
+
+Wet glass is intentionally optional and costs more than clean live blur. The
+final implementation rasterizes all droplet vectors once into one shared
+transparent texture and refreshes captured content every 500 ms. An earlier
+direct-vector prototype retained roughly 20–31 MB more process memory and was
+rejected. Live blur remains the recommended style when minimum resource use is
+the priority. These short samples do not replace the required long-duration
+stability run.
+
 ## Performance budgets
 
 The first optimization work should target these budgets on the reference

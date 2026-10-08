@@ -36,6 +36,11 @@ between refreshes. Pixelate, solid redact, capture fallback, and panic mode use
 local WPF drawing resources. See [mask-rendering.md](mask-rendering.md) for the
 rendering behavior and blur-strength scale.
 
+Wet glass shares the same bounded capture path and adds one frozen transparent
+texture generated at process startup. The texture is shared by every overlay,
+contains no external asset, and is composited at a lower two-frame-per-second
+capture cadence to limit resource use.
+
 ## Settings durability
 
 - Opening the settings window starts an edit session from a deep snapshot of
