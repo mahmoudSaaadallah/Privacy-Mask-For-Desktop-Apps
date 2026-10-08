@@ -32,4 +32,32 @@ public sealed class BlurStrengthAdjustmentTests
         Assert.Equal(MaskIntensityScale.Maximum, adjusted);
         Assert.Equal(MaskIntensityScale.Maximum, profile.MaskIntensity);
     }
+
+    [Theory]
+    [InlineData(1.00d, 0.95d)]
+    [InlineData(0.55d, 0.50d)]
+    [InlineData(0.06d, 0.01d)]
+    [InlineData(0.02d, 0.00d)]
+    public void TryDecrease_SubtractsOneFivePercentStepAndClamps(double current, double expected)
+    {
+        var profile = new AppProfile { MaskIntensity = current };
+
+        var changed = BlurStrengthAdjustment.TryDecrease(profile, out var adjusted);
+
+        Assert.True(changed);
+        Assert.Equal(expected, adjusted, 2);
+        Assert.Equal(expected, profile.MaskIntensity, 2);
+    }
+
+    [Fact]
+    public void TryDecrease_DoesNotChangeMinimumStrength()
+    {
+        var profile = new AppProfile { MaskIntensity = MaskIntensityScale.Minimum };
+
+        var changed = BlurStrengthAdjustment.TryDecrease(profile, out var adjusted);
+
+        Assert.False(changed);
+        Assert.Equal(MaskIntensityScale.Minimum, adjusted);
+        Assert.Equal(MaskIntensityScale.Minimum, profile.MaskIntensity);
+    }
 }

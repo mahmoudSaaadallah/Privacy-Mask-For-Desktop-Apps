@@ -358,12 +358,15 @@ public sealed class ShellCoordinator : IAsyncDisposable
                 ShowSettingsWindow();
                 break;
             case HotkeyAction.IncreaseBlurStrength:
-                _ = IncreaseForegroundBlurStrengthAsync();
+                _ = AdjustForegroundBlurStrengthAsync(increase: true);
+                break;
+            case HotkeyAction.DecreaseBlurStrength:
+                _ = AdjustForegroundBlurStrengthAsync(increase: false);
                 break;
         }
     }
 
-    private async Task IncreaseForegroundBlurStrengthAsync()
+    private async Task AdjustForegroundBlurStrengthAsync(bool increase)
     {
         var foregroundSnapshot = _windowInspector.TryGetWindow(NativeMethods.GetForegroundWindow());
         var trackedWindow = foregroundSnapshot is null
@@ -372,7 +375,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         if (trackedWindow is null)
         {
             ShowBlurStrengthTip(
-                "Focus WhatsApp or Telegram first, then press Ctrl + Win + ↑.",
+                "Focus WhatsApp or Telegram first, then press Ctrl + Win + ↑ or ↓.",
                 ToolTipIcon.Info);
             return;
         }
@@ -389,9 +392,13 @@ public sealed class ShellCoordinator : IAsyncDisposable
                 return;
             }
 
-            if (!BlurStrengthAdjustment.TryIncrease(nextProfile, out var adjustedStrength))
+            var changed = increase
+                ? BlurStrengthAdjustment.TryIncrease(nextProfile, out var adjustedStrength)
+                : BlurStrengthAdjustment.TryDecrease(nextProfile, out adjustedStrength);
+            if (!changed)
             {
-                ShowBlurStrengthTip($"{nextProfile.DisplayName} blur is already at 100%.", ToolTipIcon.Info);
+                var endpoint = increase ? "100%" : "0%";
+                ShowBlurStrengthTip($"{nextProfile.DisplayName} blur is already at {endpoint}.", ToolTipIcon.Info);
                 return;
             }
 

@@ -131,6 +131,7 @@ public sealed class DefaultSettingsFactoryTests
                 HotkeyAction.OpenSettings,
                 HotkeyAction.TemporaryRevealHold,
                 HotkeyAction.IncreaseBlurStrength,
+                HotkeyAction.DecreaseBlurStrength,
             ],
             settings.GlobalHotkeys.Select(binding => binding.Action));
         Assert.All(settings.AppProfiles, profile => Assert.Single(profile.Zones));
@@ -141,14 +142,18 @@ public sealed class DefaultSettingsFactoryTests
         var increaseBlur = settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
         Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, increaseBlur.Modifiers);
         Assert.Equal(0x26, increaseBlur.VirtualKey);
+        var decreaseBlur = settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.DecreaseBlurStrength);
+        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, decreaseBlur.Modifiers);
+        Assert.Equal(0x28, decreaseBlur.VirtualKey);
     }
 
     [Fact]
-    public void MergeWithDefaults_AddsBlurShortcutToExistingSettings()
+    public void MergeWithDefaults_AddsBlurShortcutsToExistingSettings()
     {
         var factory = new DefaultSettingsFactory();
         var persisted = factory.Create();
         persisted.GlobalHotkeys.RemoveAll(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
+        persisted.GlobalHotkeys.RemoveAll(binding => binding.Action == HotkeyAction.DecreaseBlurStrength);
 
         var merged = factory.MergeWithDefaults(persisted);
 
@@ -156,6 +161,10 @@ public sealed class DefaultSettingsFactoryTests
         Assert.True(increaseBlur.Enabled);
         Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, increaseBlur.Modifiers);
         Assert.Equal(0x26, increaseBlur.VirtualKey);
+        var decreaseBlur = merged.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.DecreaseBlurStrength);
+        Assert.True(decreaseBlur.Enabled);
+        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, decreaseBlur.Modifiers);
+        Assert.Equal(0x28, decreaseBlur.VirtualKey);
     }
 
     [Fact]

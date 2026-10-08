@@ -7,4 +7,5 @@ public enum HotkeyAction
     OpenSettings = 3,
     TemporaryRevealHold = 4,
     IncreaseBlurStrength = 5,
+    DecreaseBlurStrength = 6,
 }
