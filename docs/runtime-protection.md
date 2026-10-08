@@ -26,10 +26,15 @@ that PrivacyMask does not cover other desktop applications.
 
 ## Persistence compatibility
 
-Settings schema version 6 retains the legacy `currentMode` JSON field so older
+Settings schema version 7 retains the legacy `currentMode` JSON field so older
 files remain readable. The field is normalized to the protected value whenever
 settings are loaded or saved. New runtime transitions do not write the settings
 file.
+
+Version 7 also migrates the old 0.15–2.40 mask-darkness values to the secure
+0.00–1.00 surface-intensity scale while preserving their relative visual
+position. Existing `Blur` enum values remain compatible and are presented as
+`Frosted glass` after migration.
 
 This separation also prevents repeated pause and panic hotkeys from creating
 overlapping asynchronous settings writes.

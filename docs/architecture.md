@@ -29,6 +29,11 @@ cursor position; unchanged frames do not rebuild WPF brushes or geometry.
 See [runtime-protection.md](runtime-protection.md) for runtime state transitions,
 panic-mask behavior, and persistence compatibility.
 
+Mask appearance is resolved independently from overlay geometry. The renderer
+uses fully opaque, frozen WPF drawing resources and never captures protected
+window pixels. See [mask-rendering.md](mask-rendering.md) for the rendering
+invariants and surface-intensity scale.
+
 ## Settings durability
 
 - Opening the settings window starts an edit session from a deep snapshot of
