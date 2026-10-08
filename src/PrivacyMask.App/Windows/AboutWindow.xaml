@@ -51,6 +51,10 @@
                                    Foreground="#51656E"
                                    TextWrapping="Wrap"
                                    Text="A note from the developer behind PrivacyMask and the privacy principles this app is built on." />
+                        <TextBlock Margin="0,6,0,0"
+                                   AutomationProperties.Name="PrivacyMask product version"
+                                   Foreground="#8A6A38"
+                                   Text="{Binding VersionText, RelativeSource={RelativeSource AncestorType=Window}}" />
                     </StackPanel>
                 </Grid>
 

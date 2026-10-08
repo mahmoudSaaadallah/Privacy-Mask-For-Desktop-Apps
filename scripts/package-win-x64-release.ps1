@@ -7,6 +7,8 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'PrivacyMask.Build.ps1')
+$productVersion = Get-PrivacyMaskProductVersion -RepoRoot $repoRoot
 $outputPath = if ([System.IO.Path]::IsPathRooted($OutputDirectory)) {
   [System.IO.Path]::GetFullPath($OutputDirectory)
 }
@@ -16,8 +18,9 @@ else {
 
 $distributionRoot = Join-Path $repoRoot 'desktop-app\windows\win-x64'
 $publishedExecutable = Join-Path $distributionRoot 'single-file\PrivacyMask.App.exe'
-$stagingPath = Join-Path $outputPath 'PrivacyMask-win-x64'
-$archivePath = Join-Path $outputPath 'PrivacyMask-win-x64.zip'
+$assetBaseName = "PrivacyMask-$productVersion-win-x64"
+$stagingPath = Join-Path $outputPath $assetBaseName
+$archivePath = Join-Path $outputPath "$assetBaseName.zip"
 $checksumPath = "$archivePath.sha256"
 
 & (Join-Path $PSScriptRoot 'publish-win-x64-single-file.ps1') -SkipTests:$SkipTests
@@ -58,7 +61,7 @@ Remove-Item -LiteralPath $checksumPath -Force -ErrorAction SilentlyContinue
 Compress-Archive -Path (Join-Path $stagingPath '*') -DestinationPath $archivePath -CompressionLevel Optimal
 
 $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
-Set-Content -LiteralPath $checksumPath -Value "$archiveHash  PrivacyMask-win-x64.zip" -Encoding ascii
+Set-Content -LiteralPath $checksumPath -Value "$archiveHash  $assetBaseName.zip" -Encoding ascii
 
 Remove-Item -LiteralPath $stagingPath -Recurse -Force
 

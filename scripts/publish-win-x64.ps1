@@ -6,6 +6,8 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
+. (Join-Path $PSScriptRoot 'PrivacyMask.Build.ps1')
+$productVersion = Get-PrivacyMaskProductVersion -RepoRoot $repoRoot
 
 if (-not $SkipTests) {
   dotnet test PrivacyMask.Desktop.slnx
@@ -24,7 +26,7 @@ if ($LASTEXITCODE -ne 0) {
 $buildInfoPath = Join-Path $repoRoot 'desktop-app/windows/win-x64/BUILD-INFO.txt'
 $buildInfo = @(
   "PrivacyMask Windows build"
-  "Version: 1.0.0"
+  "Version: $productVersion"
   "Built: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz')"
   "Runtime: win-x64 self-contained"
 )
