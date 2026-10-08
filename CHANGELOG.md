@@ -7,6 +7,7 @@
 - Preserve the selected mask style when window width activates another adaptive preset
 - Add `Ctrl + Win + ↑` and `Ctrl + Win + ↓` to adjust the focused protected app's blur strength by 5%
 - Save shortcut adjustments atomically and prevent key-repeat from issuing duplicate steps
+- Keep live capture running across blur-strength shortcut changes instead of getting stuck on the opaque fallback
 - Replace the repeated procedural frost tiles with a live blur of the protected window
 - Make the 0–100% blur-strength scale progressively reveal or suppress underlying detail
 - Capture bounded window frames in memory, refresh them asynchronously, and clear them when protection is hidden
