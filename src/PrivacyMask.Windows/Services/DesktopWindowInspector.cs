@@ -32,6 +32,7 @@ public sealed class DesktopWindowInspector
                 foregroundHandle,
                 zOrderIndex,
                 processFilter,
+                includeToolWindows: false,
                 out var desktopSnapshot,
                 out var candidateSnapshot);
             zOrderIndex++;
@@ -69,6 +70,7 @@ public sealed class DesktopWindowInspector
             NativeMethods.GetForegroundWindow(),
             int.MaxValue,
             processFilter: null,
+            includeToolWindows: true,
             out _,
             out var candidateSnapshot)
             ? candidateSnapshot
@@ -85,6 +87,7 @@ public sealed class DesktopWindowInspector
         nint foregroundHandle,
         int zOrderIndex,
         WindowProcessFilter? processFilter,
+        bool includeToolWindows,
         out DesktopWindowSnapshot desktopSnapshot,
         out WindowSnapshot? candidateSnapshot)
     {
@@ -96,7 +99,7 @@ public sealed class DesktopWindowInspector
         }
 
         var exStyle = NativeMethods.GetWindowLong(handle, NativeMethods.GwlExStyle);
-        if ((exStyle & NativeMethods.WsExToolWindow) == NativeMethods.WsExToolWindow)
+        if (!includeToolWindows && (exStyle & NativeMethods.WsExToolWindow) == NativeMethods.WsExToolWindow)
         {
             return false;
         }
