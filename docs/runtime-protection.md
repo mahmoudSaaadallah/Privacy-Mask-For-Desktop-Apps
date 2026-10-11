@@ -19,7 +19,8 @@ does not make the next launch start unprotected.
 - PrivacyMask always starts in `Protected`.
 - `Ctrl + Shift + P` toggles only the focused protected profile.
 - `Ctrl + Shift + H` toggles an opaque panic mask only for the focused protected
-  profile. Other profiles keep their normal protection appearance.
+  profile. Other profiles keep their normal protection appearance. Enabling it
+  does not require an unlock, but disabling it requires the configured PIN.
 - Hold reveal activates only after its key has remained down alone for 0.5
   seconds. Any other keyboard key cancels the current hold until the reveal key
   is released, preventing multi-key shortcuts from exposing content.
@@ -27,8 +28,15 @@ does not make the next launch start unprotected.
 - A profile pause cannot bypass a panic mask for that profile.
 - The tray **Panic mask all** command enters `Global panic mask` from any
   non-global-panic state and overrides all profile states.
-- Leaving global panic returns to `Protected`; any profile-specific panic or
-  pause state then becomes effective again.
+- Leaving global panic requires the configured PIN and then returns to
+  `Protected`; any profile-specific panic or pause state then becomes effective
+  again.
+
+The first panic action asks the user to create a 4–8 digit PIN and saves its
+credential before entering panic mode. Canceling setup cancels that panic
+action. An incorrect PIN or a canceled unlock dialog never changes the current
+panic state. The PIN can be changed from settings only after verifying the
+current PIN.
 
 Both panic masks ignore disabled zones and focus-aware activation for the
 profiles they cover. They still respect unrelated windows above the protected
@@ -45,6 +53,11 @@ Version 7 also migrates the old 0.15–2.40 mask-darkness values to the
 0.00–1.00 blur-strength scale while preserving their relative visual position.
 Existing numeric `Blur` enum values remain compatible and are presented as
 `Live blur` after migration.
+
+Settings schema version 11 enables hover reveal on existing custom-application
+zones and presets. It also adds an optional panic credential containing a
+random salt, PBKDF2-SHA256 iteration count, and derived hash. The plaintext PIN
+is never serialized.
 
 Profile pauses and panic masks are held in memory by stable profile identifier,
 so changing one application does not affect another. Removed profiles are

@@ -2,7 +2,10 @@
 
 ## Supported scope
 
-This project is a local-only Windows desktop utility for masking WhatsApp Desktop and Telegram Desktop windows.
+This project is a local-only Windows desktop utility for masking user-selected
+desktop applications. The panic unlock PIN is a local interaction safeguard,
+not encryption or an operating-system authentication boundary. Only a salted,
+computationally hardened PIN verifier is stored in the local settings file.
 
 ## Reporting a vulnerability
 

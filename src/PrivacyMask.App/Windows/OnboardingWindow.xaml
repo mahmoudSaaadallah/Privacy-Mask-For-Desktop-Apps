@@ -107,7 +107,7 @@
                             <TextBlock Margin="0,8,0,0"
                                        Foreground="#51656E"
                                        TextWrapping="Wrap"
-                                       Text="The tray utility watches for supported windows immediately. Focus a protected app and use Ctrl+Shift+P to pause or resume only that app, Ctrl+Shift+H to toggle its panic mask, and hold Alt alone for 0.5 seconds to reveal only the focused app. Panic mask all remains available from the tray." />
+                                       Text="The tray utility watches for protected windows immediately. Mouse-hover reveal works for every added app. Focus one and use Ctrl+Shift+P to pause or resume only that app, Ctrl+Shift+H to toggle its panic mask, and hold Alt alone for 0.5 seconds to reveal only the focused app. The first panic action asks you to create a PIN, which is required to unlock it. Panic mask all remains available from the tray." />
                         </StackPanel>
                     </Border>
                 </StackPanel>

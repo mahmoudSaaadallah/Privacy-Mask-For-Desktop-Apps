@@ -79,6 +79,9 @@ capture cadence to limit resource use.
   394×42 hover default to 600×70. Customized dimensions and the existing
   launch-at-sign-in choice are preserved; only new installations enable startup
   registration by default.
+- Settings schema version 11 enables hover reveal for existing custom profiles
+  and persists an optional salted PBKDF2-SHA256 verifier for the panic unlock
+  PIN. The PIN itself is never written to disk.
 
 ## Lifecycle and hotkeys
 

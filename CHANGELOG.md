@@ -2,14 +2,18 @@
 
 ## 2.0.0 - Unreleased
 
+- Enable mouse-hover reveal for every newly added application and migrate existing custom profiles to the same behavior
+- Add a local 4–8 digit panic unlock PIN that can be created or changed from settings
+- Require the PIN before disabling either a focused-application panic mask or the global tray panic mask
+- Store only a salted PBKDF2-SHA256 PIN verifier and never persist the PIN itself
 - Require holding `Alt` alone for 0.5 seconds before revealing the focused app; pressing any other key cancels that hold until Alt is released
 - Use a 600×70 pixel hover reveal window by default and migrate only profiles that still use the previous 394×42 default
 - Enable launch at sign-in by default for new installations while preserving the saved choice for existing users
-- Migrate the updated profile defaults through settings schema version 10
+- Migrate the updated profile defaults and panic PIN credential through settings schema version 11
 - Move blur adjustment to `Ctrl + Alt + Shift + ↑` and `Ctrl + Alt + Shift + ↓`, migrating the previous Windows-key bindings while preserving custom shortcuts
 - Scope `Ctrl + Shift + P`, `Ctrl + Shift + H`, and hold-Alt reveal to the focused protected application instead of changing every protected app
 - Keep tray pause and panic mask global so an explicit global control remains available
-- Remove mouse-hover reveal from new and existing custom profiles so clicks cannot expose an unfiltered area by default
+- Enable mouse-hover reveal for new and existing custom profiles while retaining the full-window privacy mask outside the reveal area
 - Resolve shortcuts from focused tool windows and bound unresponsive window capture so unsupported apps retain a safe fallback without repeated capture work
 - Migrate custom reveal behavior and shortcut defaults through settings schema version 9
 - Add an application picker for visible desktop programs with executable icons, friendly names, process names, and window titles

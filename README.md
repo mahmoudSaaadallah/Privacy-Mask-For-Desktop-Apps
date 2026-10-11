@@ -194,9 +194,10 @@ environment, initial measurements, performance budgets, and required scenarios.
    `Alt` is released, so blur shortcuts never expose the app. Press
    `Ctrl + Shift + P` to pause or resume only that application's profile.
    Press `Ctrl + Shift + H` to toggle an opaque panic mask for only the focused
-   application.
-   Custom applications do not reveal content on mouse hover by default. The
-   default hover reveal window for zones that enable it is 600×70 pixels.
+   application. The first panic action asks you to create a 4–8 digit unlock
+   PIN; disabling a focused or global panic mask always requires that PIN.
+   Mouse-hover reveal is enabled for built-in and custom applications by
+   default, using a 600×70 pixel reveal window.
 7. Use the tray icon to pause every profile, apply an opaque panic mask, reopen
    settings, or exit the app.
 
@@ -208,6 +209,12 @@ window. Both panic modes disable reveal for the windows they cover.
 New installations also enable launch at sign-in by default; this can be changed
 from onboarding, settings, or the tray without affecting existing users' saved
 choice during an update.
+
+The panic PIN can be added or changed from **General > Panic unlock PIN**.
+Changing it requires the current PIN. PrivacyMask stores only a salted,
+computationally hardened verifier in the local settings file, never the digits
+you entered. Canceling the unlock window or entering an incorrect PIN leaves
+the panic mask active.
 
 If another program has already reserved a configured global shortcut,
 PrivacyMask shows a tray warning and marks that shortcut as unavailable in the
