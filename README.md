@@ -186,15 +186,19 @@ environment, initial measurements, performance budgets, and required scenarios.
 4. Move the blur-strength slider to your preferred appearance. Lower values
    reveal progressively clearer shapes and colors; higher values remove more
    detail. Use solid redact or panic mode when no underlying detail may remain.
-5. While a protected application is focused, press `Ctrl + Win + ↑` to raise
-   its saved blur strength by 5%, or `Ctrl + Win + ↓` to lower it by 5%.
-6. Hover over the masked app to reveal a small reading window around the pointer.
-7. Use the tray icon to pause protection, apply an opaque panic mask, reopen settings, or exit the app.
+5. While a protected application is focused, press `Ctrl + Alt + Shift + ↑` to
+   raise its saved blur strength by 5%, or `Ctrl + Alt + Shift + ↓` to lower it
+   by 5%.
+6. Hold `Alt` to reveal only the focused protected application. Press
+   `Ctrl + Shift + P` to pause or resume only that application's profile.
+   Custom applications do not reveal content on mouse hover by default.
+7. Use the tray icon to pause every profile, apply an opaque panic mask, reopen
+   settings, or exit the app.
 
-Protection always starts enabled when PrivacyMask launches. Pausing protection
-is a runtime-only action and is not restored after an app restart. The panic
-mask covers every detected protected window in opaque black and disables reveal
-gestures until panic mode is turned off.
+Protection always starts enabled when PrivacyMask launches. Both a focused-app
+pause and the global tray pause are runtime-only actions and are not restored
+after an app restart. The panic mask covers every detected protected window in
+opaque black and disables reveal gestures until panic mode is turned off.
 
 If another program has already reserved a configured global shortcut,
 PrivacyMask shows a tray warning and marks that shortcut as unavailable in the

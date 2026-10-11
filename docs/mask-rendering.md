@@ -49,7 +49,11 @@ privacy-zone, reveal, and desktop-occlusion geometry as the other styles.
 The renderer updates the source of existing image elements between frames
 instead of rebuilding the overlay tree. It skips capture while one unrelated
 window fully covers the target. Native bitmap handles are released after each
-frame, and hiding or closing an overlay discards the retained frame.
+frame, and hiding or closing an overlay discards the retained frame. A capture
+that does not finish within 1.5 seconds disables further live capture for that
+window instance; three consecutive rejected frames do the same. The opaque
+fallback remains visible, which prevents an unsupported app from accumulating
+blocked capture workers or freezing its overlay refresh path.
 
 Wet glass generates a deterministic transparent 640x448 condensation texture
 once in memory. More than one hundred small droplets and a few short streaks

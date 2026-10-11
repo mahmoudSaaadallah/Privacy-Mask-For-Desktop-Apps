@@ -26,6 +26,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly string[] _args;
     private readonly DefaultSettingsFactory _defaultSettingsFactory;
     private readonly ProtectionStateMachine _protectionStateMachine;
+    private readonly ProfileProtectionState _profileProtectionState;
     private readonly JsonSettingsStore _settingsStore;
     private readonly DesktopWindowInspector _windowInspector;
     private readonly DesktopApplicationCatalog _applicationCatalog;
@@ -59,6 +60,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _args = args;
         _defaultSettingsFactory = new DefaultSettingsFactory();
         _protectionStateMachine = new ProtectionStateMachine();
+        _profileProtectionState = new ProfileProtectionState();
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
         _windowInspector = new DesktopWindowInspector();
         _applicationCatalog = new DesktopApplicationCatalog(_windowInspector);
@@ -210,6 +212,12 @@ public sealed class ShellCoordinator : IAsyncDisposable
                 }
 
                 if (currentMode != RuntimeMode.Panic
+                    && _profileProtectionState.IsPaused(trackedWindow.Profile.ProfileId))
+                {
+                    continue;
+                }
+
+                if (currentMode != RuntimeMode.Panic
                     && trackedWindow.Profile.StartupMode == AppActivationMode.FocusAware
                     && !snapshot.IsForeground)
                 {
@@ -226,8 +234,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
             PruneOccludingBoundsBuffers();
 
             var cursorPoint = GetCursorPoint();
-            var temporaryRevealHeld = EvaluateTemporaryReveal();
-            _overlayManager.Update(_trackedWindows, currentMode, temporaryRevealHeld, cursorPoint);
+            var temporaryRevealProfileId = GetTemporaryRevealProfileId();
+            _overlayManager.Update(_trackedWindows, currentMode, temporaryRevealProfileId, cursorPoint);
             UpdateRefreshInterval(OverlayRefreshCadence.Select(
                 currentMode,
                 discovery.CandidateWindows.Count > 0));
@@ -327,6 +335,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private void RebuildWindowProcessFilter()
     {
         _windowProcessFilter = new WindowProcessFilter(_settings.AppProfiles);
+        _profileProtectionState.Prune(_settings.AppProfiles.Select(profile => profile.ProfileId));
     }
 
     private void RegisterHotkeys()
@@ -353,7 +362,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         switch (action)
         {
             case HotkeyAction.ToggleProtection:
-                ToggleProtection();
+                ToggleForegroundProfileProtection();
                 break;
             case HotkeyAction.PanicHideAll:
                 TogglePanicMode();
@@ -372,14 +381,11 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task AdjustForegroundBlurStrengthAsync(bool increase)
     {
-        var foregroundSnapshot = _windowInspector.TryGetWindow(NativeMethods.GetForegroundWindow());
-        var trackedWindow = foregroundSnapshot is null
-            ? null
-            : _windowProfileResolver.Resolve(foregroundSnapshot, _settings.AppProfiles);
+        var trackedWindow = TryResolveForegroundProfile();
         if (trackedWindow is null)
         {
             ShowBlurStrengthTip(
-                "Focus a protected app first, then press Ctrl + Win + ↑ or ↓.",
+                "Focus a protected app first, then press Ctrl + Alt + Shift + ↑ or ↓.",
                 ToolTipIcon.Info);
             return;
         }
@@ -469,6 +475,43 @@ public sealed class ShellCoordinator : IAsyncDisposable
         RefreshOverlays();
     }
 
+    private void ToggleForegroundProfileProtection()
+    {
+        if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic)
+        {
+            ShowProtectionTip("Disable panic mode before changing protection for one app.", ToolTipIcon.Info);
+            return;
+        }
+
+        if (_protectionStateMachine.CurrentMode == RuntimeMode.Off)
+        {
+            ShowProtectionTip("Resume global protection from the tray before changing one app.", ToolTipIcon.Info);
+            return;
+        }
+
+        var trackedWindow = TryResolveForegroundProfile();
+        if (trackedWindow is null)
+        {
+            ShowProtectionTip("Focus a protected app first, then press Ctrl + Shift + P.", ToolTipIcon.Info);
+            return;
+        }
+
+        var paused = _profileProtectionState.Toggle(trackedWindow.Profile.ProfileId);
+        RefreshOverlays();
+        ShowProtectionTip(
+            $"{trackedWindow.Profile.DisplayName} protection {(paused ? "paused" : "resumed")}. Other apps are unchanged.",
+            ToolTipIcon.Info);
+    }
+
+    private void ShowProtectionTip(string message, ToolTipIcon icon)
+    {
+        _notifyIcon.ShowBalloonTip(
+            timeout: 3000,
+            tipTitle: "PrivacyMask protection",
+            tipText: message,
+            tipIcon: icon);
+    }
+
     private void TogglePanicMode()
     {
         _protectionStateMachine.TogglePanic();
@@ -542,47 +585,55 @@ public sealed class ShellCoordinator : IAsyncDisposable
         };
     }
 
-    private bool EvaluateTemporaryReveal()
+    private string? GetTemporaryRevealProfileId()
     {
         if (!_protectionStateMachine.IsTemporaryRevealAllowed)
         {
-            return false;
+            return null;
         }
 
         var holdBinding = _settings.GlobalHotkeys.FirstOrDefault(binding => binding.Action == HotkeyAction.TemporaryRevealHold && binding.Enabled);
         if (holdBinding is null)
         {
-            return false;
+            return null;
         }
 
         if (!_windowInspector.IsKeyDown(holdBinding.VirtualKey))
         {
-            return false;
+            return null;
         }
 
         if (holdBinding.Modifiers.HasFlag(HotkeyModifiers.Control) && !_windowInspector.IsKeyDown(0x11))
         {
-            return false;
+            return null;
         }
 
         if (holdBinding.Modifiers.HasFlag(HotkeyModifiers.Shift) && !_windowInspector.IsKeyDown(0x10))
         {
-            return false;
+            return null;
         }
 
         if (holdBinding.Modifiers.HasFlag(HotkeyModifiers.Alt) && !_windowInspector.IsKeyDown(0x12))
         {
-            return false;
+            return null;
         }
 
         if (holdBinding.Modifiers.HasFlag(HotkeyModifiers.Windows)
             && !_windowInspector.IsKeyDown(0x5B)
             && !_windowInspector.IsKeyDown(0x5C))
         {
-            return false;
+            return null;
         }
 
-        return true;
+        return TryResolveForegroundProfile()?.Profile.ProfileId;
+    }
+
+    private TrackedWindow? TryResolveForegroundProfile()
+    {
+        var foregroundSnapshot = _windowInspector.TryGetWindow(NativeMethods.GetForegroundWindow());
+        return foregroundSnapshot is null
+            ? null
+            : _windowProfileResolver.Resolve(foregroundSnapshot, _settings.AppProfiles);
     }
 
     private static Point GetCursorPoint()

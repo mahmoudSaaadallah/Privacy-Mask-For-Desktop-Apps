@@ -12,7 +12,11 @@ public sealed class OverlayManager : IDisposable
     private readonly HashSet<nint> _activeHandles = [];
     private readonly List<nint> _staleHandles = [];
 
-    public void Update(IReadOnlyList<TrackedWindow> windows, RuntimeMode mode, bool temporaryRevealHeld, Point cursorScreenPoint)
+    public void Update(
+        IReadOnlyList<TrackedWindow> windows,
+        RuntimeMode mode,
+        string? temporaryRevealProfileId,
+        Point cursorScreenPoint)
     {
         _activeHandles.Clear();
 
@@ -25,6 +29,10 @@ public sealed class OverlayManager : IDisposable
                 _overlays[window.Snapshot.Handle] = overlay;
             }
 
+            var temporaryRevealHeld = string.Equals(
+                window.Profile.ProfileId,
+                temporaryRevealProfileId,
+                StringComparison.OrdinalIgnoreCase);
             overlay.UpdateOverlay(window, mode, temporaryRevealHeld, cursorScreenPoint);
         }
 
