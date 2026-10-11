@@ -82,6 +82,47 @@ public sealed class DesktopWindowInspector
         return (NativeMethods.GetAsyncKeyState(virtualKey) & 0x8000) != 0;
     }
 
+    public bool IsAnyOtherKeyboardKeyDown(HotkeyBinding binding)
+    {
+        for (var virtualKey = 0x08; virtualKey <= 0xFE; virtualKey++)
+        {
+            if (IsBindingKey(virtualKey, binding))
+            {
+                continue;
+            }
+
+            if (IsKeyDown(virtualKey))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsBindingKey(int virtualKey, HotkeyBinding binding)
+    {
+        if (virtualKey == binding.VirtualKey)
+        {
+            return true;
+        }
+
+        return (binding.Modifiers.HasFlag(HotkeyModifiers.Shift) || IsShiftKey(binding.VirtualKey))
+                && IsShiftKey(virtualKey)
+            || (binding.Modifiers.HasFlag(HotkeyModifiers.Control) || IsControlKey(binding.VirtualKey))
+                && IsControlKey(virtualKey)
+            || (binding.Modifiers.HasFlag(HotkeyModifiers.Alt) || IsAltKey(binding.VirtualKey))
+                && IsAltKey(virtualKey)
+            || binding.Modifiers.HasFlag(HotkeyModifiers.Windows)
+                && virtualKey is 0x5B or 0x5C;
+    }
+
+    private static bool IsShiftKey(int virtualKey) => virtualKey is 0x10 or 0xA0 or 0xA1;
+
+    private static bool IsControlKey(int virtualKey) => virtualKey is 0x11 or 0xA2 or 0xA3;
+
+    private static bool IsAltKey(int virtualKey) => virtualKey is 0x12 or 0xA4 or 0xA5;
+
     private bool TryCreateSnapshot(
         nint handle,
         nint foregroundHandle,

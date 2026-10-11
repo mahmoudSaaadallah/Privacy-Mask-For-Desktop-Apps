@@ -27,6 +27,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly DefaultSettingsFactory _defaultSettingsFactory;
     private readonly ProtectionStateMachine _protectionStateMachine;
     private readonly ProfileProtectionState _profileProtectionState;
+    private readonly ExclusiveHoldGesture _temporaryRevealGesture;
     private readonly JsonSettingsStore _settingsStore;
     private readonly DesktopWindowInspector _windowInspector;
     private readonly DesktopApplicationCatalog _applicationCatalog;
@@ -61,6 +62,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _defaultSettingsFactory = new DefaultSettingsFactory();
         _protectionStateMachine = new ProtectionStateMachine();
         _profileProtectionState = new ProfileProtectionState();
+        _temporaryRevealGesture = new ExclusiveHoldGesture(TimeSpan.FromSeconds(1.5d));
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
         _windowInspector = new DesktopWindowInspector();
         _applicationCatalog = new DesktopApplicationCatalog(_windowInspector);
@@ -589,43 +591,36 @@ public sealed class ShellCoordinator : IAsyncDisposable
     {
         if (!_protectionStateMachine.IsTemporaryRevealAllowed)
         {
+            _temporaryRevealGesture.Reset();
             return null;
         }
 
         var holdBinding = _settings.GlobalHotkeys.FirstOrDefault(binding => binding.Action == HotkeyAction.TemporaryRevealHold && binding.Enabled);
         if (holdBinding is null)
         {
+            _temporaryRevealGesture.Reset();
             return null;
         }
 
-        if (!_windowInspector.IsKeyDown(holdBinding.VirtualKey))
-        {
-            return null;
-        }
-
-        if (holdBinding.Modifiers.HasFlag(HotkeyModifiers.Control) && !_windowInspector.IsKeyDown(0x11))
-        {
-            return null;
-        }
-
-        if (holdBinding.Modifiers.HasFlag(HotkeyModifiers.Shift) && !_windowInspector.IsKeyDown(0x10))
-        {
-            return null;
-        }
-
-        if (holdBinding.Modifiers.HasFlag(HotkeyModifiers.Alt) && !_windowInspector.IsKeyDown(0x12))
-        {
-            return null;
-        }
-
-        if (holdBinding.Modifiers.HasFlag(HotkeyModifiers.Windows)
-            && !_windowInspector.IsKeyDown(0x5B)
-            && !_windowInspector.IsKeyDown(0x5C))
+        var gestureKeyDown = IsHoldBindingDown(holdBinding);
+        var anotherKeyDown = gestureKeyDown && _windowInspector.IsAnyOtherKeyboardKeyDown(holdBinding);
+        if (!_temporaryRevealGesture.Update(gestureKeyDown, anotherKeyDown, DateTimeOffset.UtcNow))
         {
             return null;
         }
 
         return TryResolveForegroundProfile()?.Profile.ProfileId;
+    }
+
+    private bool IsHoldBindingDown(HotkeyBinding binding)
+    {
+        return _windowInspector.IsKeyDown(binding.VirtualKey)
+            && (!binding.Modifiers.HasFlag(HotkeyModifiers.Control) || _windowInspector.IsKeyDown(0x11))
+            && (!binding.Modifiers.HasFlag(HotkeyModifiers.Shift) || _windowInspector.IsKeyDown(0x10))
+            && (!binding.Modifiers.HasFlag(HotkeyModifiers.Alt) || _windowInspector.IsKeyDown(0x12))
+            && (!binding.Modifiers.HasFlag(HotkeyModifiers.Windows)
+                || _windowInspector.IsKeyDown(0x5B)
+                || _windowInspector.IsKeyDown(0x5C));
     }
 
     private TrackedWindow? TryResolveForegroundProfile()
