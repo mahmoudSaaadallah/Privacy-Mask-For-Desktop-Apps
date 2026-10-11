@@ -249,7 +249,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task ShowOnboardingAsync()
     {
-        var onboarding = new OnboardingWindow(_settings.StartMinimized);
+        var onboarding = new OnboardingWindow(_settings.LaunchAtLogin, _settings.StartMinimized);
         var completed = onboarding.ShowDialog();
         if (completed == true)
         {

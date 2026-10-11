@@ -5,10 +5,11 @@ namespace PrivacyMask.App.Windows;
 
 public partial class OnboardingWindow : Window
 {
-    public OnboardingWindow(bool startMinimized)
+    public OnboardingWindow(bool launchAtLogin, bool startMinimized)
     {
         InitializeComponent();
         WindowWorkAreaSizer.Fit(this);
+        LaunchAtLoginCheckBox.IsChecked = launchAtLogin;
         StartMinimizedCheckBox.IsChecked = startMinimized;
     }
 

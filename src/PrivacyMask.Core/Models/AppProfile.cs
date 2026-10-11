@@ -18,9 +18,9 @@ public sealed class AppProfile
 
     public MaskColorOption MaskColor { get; set; } = MaskColorOption.Black;
 
-    public int HoverRevealWidthPixels { get; set; } = 394;
+    public int HoverRevealWidthPixels { get; set; } = 600;
 
-    public int HoverRevealHeightPixels { get; set; } = 42;
+    public int HoverRevealHeightPixels { get; set; } = 70;
 
     public List<WindowMatcher> WindowMatchers { get; set; } = [];
 

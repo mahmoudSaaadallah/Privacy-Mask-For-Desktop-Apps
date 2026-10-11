@@ -101,8 +101,8 @@ public sealed class DefaultSettingsFactoryTests
         var merged = factory.MergeWithDefaults(persisted);
         var mergedProfile = merged.AppProfiles.Single(profile => profile.AppId == AppId.WhatsApp);
 
-        Assert.Equal(394, mergedProfile.HoverRevealWidthPixels);
-        Assert.Equal(42, mergedProfile.HoverRevealHeightPixels);
+        Assert.Equal(600, mergedProfile.HoverRevealWidthPixels);
+        Assert.Equal(70, mergedProfile.HoverRevealHeightPixels);
     }
 
     [Fact]
@@ -142,6 +142,12 @@ public sealed class DefaultSettingsFactoryTests
         Assert.Equal(
             "Panic mask all",
             settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.PanicHideAll).DisplayName);
+        Assert.True(settings.LaunchAtLogin);
+        Assert.All(settings.AppProfiles, profile =>
+        {
+            Assert.Equal(600, profile.HoverRevealWidthPixels);
+            Assert.Equal(70, profile.HoverRevealHeightPixels);
+        });
         var increaseBlur = settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
         Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift, increaseBlur.Modifiers);
         Assert.Equal(0x26, increaseBlur.VirtualKey);
@@ -246,6 +252,40 @@ public sealed class DefaultSettingsFactoryTests
         Assert.Equal(MaskIntensityScale.Maximum, mergedProfile.MaskIntensity);
         Assert.Equal(80, mergedProfile.HoverRevealWidthPixels);
         Assert.Equal(420, mergedProfile.HoverRevealHeightPixels);
+    }
+
+    [Fact]
+    public void MergeWithDefaults_MigratesOnlyPreviousDefaultHoverRevealSize()
+    {
+        var factory = new DefaultSettingsFactory();
+        var current = factory.Create();
+        var whatsApp = current.AppProfiles.Single(profile => profile.AppId == AppId.WhatsApp);
+        whatsApp.HoverRevealWidthPixels = 394;
+        whatsApp.HoverRevealHeightPixels = 42;
+        var telegram = current.AppProfiles.Single(profile => profile.AppId == AppId.Telegram);
+        telegram.HoverRevealWidthPixels = 720;
+        telegram.HoverRevealHeightPixels = 90;
+        var custom = CustomAppProfileFactory.Create("Notes", "Notepad", "custom-notes");
+        custom.HoverRevealWidthPixels = 394;
+        custom.HoverRevealHeightPixels = 42;
+        current.AppProfiles.Add(custom);
+        var persisted = new AppSettings
+        {
+            Version = 9,
+            LaunchAtLogin = false,
+            GlobalHotkeys = current.GlobalHotkeys,
+            AppProfiles = current.AppProfiles,
+        };
+
+        var merged = factory.MergeWithDefaults(persisted);
+
+        Assert.Equal(600, merged.AppProfiles.Single(profile => profile.AppId == AppId.WhatsApp).HoverRevealWidthPixels);
+        Assert.Equal(70, merged.AppProfiles.Single(profile => profile.AppId == AppId.WhatsApp).HoverRevealHeightPixels);
+        Assert.Equal(720, merged.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).HoverRevealWidthPixels);
+        Assert.Equal(90, merged.AppProfiles.Single(profile => profile.AppId == AppId.Telegram).HoverRevealHeightPixels);
+        Assert.Equal(600, merged.AppProfiles.Single(profile => profile.ProfileId == "custom-notes").HoverRevealWidthPixels);
+        Assert.Equal(70, merged.AppProfiles.Single(profile => profile.ProfileId == "custom-notes").HoverRevealHeightPixels);
+        Assert.False(merged.LaunchAtLogin);
     }
 
     [Fact]
