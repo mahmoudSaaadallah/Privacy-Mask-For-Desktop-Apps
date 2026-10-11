@@ -47,6 +47,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly List<nint> _staleOcclusionHandles = [];
     private readonly SemaphoreSlim _blurStrengthUpdateGate = new(1, 1);
     private readonly SemaphoreSlim _panicOperationGate = new(1, 1);
+    private readonly SemaphoreSlim _profileProtectionOperationGate = new(1, 1);
 
     private AppSettings _settings = new();
     private AppSettings _savedSettings = new();
@@ -373,7 +374,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         switch (action)
         {
             case HotkeyAction.ToggleProtection:
-                ToggleForegroundProfileProtection();
+                _ = ToggleOrAddForegroundProfileProtectionAsync();
                 break;
             case HotkeyAction.PanicHideAll:
                 _ = ToggleForegroundProfilePanicAsync();
@@ -486,27 +487,78 @@ public sealed class ShellCoordinator : IAsyncDisposable
         RefreshOverlays();
     }
 
-    private void ToggleForegroundProfileProtection()
+    private async Task ToggleOrAddForegroundProfileProtectionAsync()
     {
-        if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic)
+        if (!await _profileProtectionOperationGate.WaitAsync(0))
         {
-            ShowProtectionTip("Disable panic mode before changing protection for one app.", ToolTipIcon.Info);
             return;
         }
 
-        if (_protectionStateMachine.CurrentMode == RuntimeMode.Off)
+        try
         {
-            ShowProtectionTip("Resume global protection from the tray before changing one app.", ToolTipIcon.Info);
-            return;
-        }
+            if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic)
+            {
+                ShowProtectionTip("Disable panic mode before changing protection for one app.", ToolTipIcon.Info);
+                return;
+            }
 
-        var trackedWindow = TryResolveForegroundProfile();
-        if (trackedWindow is null)
+            if (_protectionStateMachine.CurrentMode == RuntimeMode.Off)
+            {
+                ShowProtectionTip("Resume global protection from the tray before changing one app.", ToolTipIcon.Info);
+                return;
+            }
+
+            var foregroundSnapshot = _windowInspector.TryGetWindow(NativeMethods.GetForegroundWindow());
+            if (foregroundSnapshot is null)
+            {
+                ShowProtectionTip("Focus a visible desktop application, then press Ctrl + Shift + P.", ToolTipIcon.Info);
+                return;
+            }
+
+            var trackedWindow = _windowProfileResolver.Resolve(foregroundSnapshot, _settings.AppProfiles);
+            if (trackedWindow is not null)
+            {
+                ToggleProfileProtection(trackedWindow);
+                return;
+            }
+
+            var disabledWindow = _windowProfileResolver.Resolve(
+                foregroundSnapshot,
+                _settings.AppProfiles,
+                includeDisabled: true);
+            if (disabledWindow is not null)
+            {
+                await EnableExistingProfileAsync(disabledWindow.Profile);
+                return;
+            }
+
+            var configuredProcessNames = _settings.AppProfiles
+                .Concat(_savedSettings.AppProfiles)
+                .SelectMany(profile => profile.WindowMatchers)
+                .SelectMany(matcher => matcher.ProcessNames)
+                .Where(processName => !string.IsNullOrWhiteSpace(processName))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            if (!_applicationCatalog.TryCreateFromForegroundWindow(
+                    foregroundSnapshot,
+                    configuredProcessNames,
+                    out var candidate,
+                    out var failureReason)
+                || candidate is null)
+            {
+                ShowProtectionTip(failureReason, ToolTipIcon.Warning);
+                return;
+            }
+
+            await AddAndProtectForegroundApplicationAsync(candidate);
+        }
+        finally
         {
-            ShowProtectionTip("Focus a protected app first, then press Ctrl + Shift + P.", ToolTipIcon.Info);
-            return;
+            _profileProtectionOperationGate.Release();
         }
+    }
 
+    private void ToggleProfileProtection(TrackedWindow trackedWindow)
+    {
         if (_profileProtectionState.IsPanic(trackedWindow.Profile.ProfileId))
         {
             ShowProtectionTip(
@@ -519,6 +571,85 @@ public sealed class ShellCoordinator : IAsyncDisposable
         RefreshOverlays();
         ShowProtectionTip(
             $"{trackedWindow.Profile.DisplayName} protection {(paused ? "paused" : "resumed")}. Other apps are unchanged.",
+            ToolTipIcon.Info);
+    }
+
+    private async Task EnableExistingProfileAsync(AppProfile profile)
+    {
+        var nextSettings = AppSettingsCloner.Clone(_savedSettings);
+        var savedProfile = nextSettings.AppProfiles.FirstOrDefault(candidate =>
+            string.Equals(candidate.ProfileId, profile.ProfileId, StringComparison.OrdinalIgnoreCase));
+        if (savedProfile is null)
+        {
+            ShowProtectionTip(
+                $"Save the pending settings for {profile.DisplayName}, then use the shortcut again.",
+                ToolTipIcon.Info);
+            return;
+        }
+
+        savedProfile.Enabled = true;
+        try
+        {
+            await _settingsStore.SaveAsync(nextSettings);
+        }
+        catch (Exception exception)
+        {
+            ShowProtectionTip($"{profile.DisplayName} could not be enabled. {exception.Message}", ToolTipIcon.Error);
+            return;
+        }
+
+        _savedSettings = AppSettingsCloner.Clone(nextSettings);
+        profile.Enabled = true;
+        var visibleProfile = _mainWindow?.ViewModel.AppProfiles.FirstOrDefault(candidate =>
+            string.Equals(candidate.ProfileId, profile.ProfileId, StringComparison.OrdinalIgnoreCase));
+        if (visibleProfile is not null)
+        {
+            visibleProfile.Enabled = true;
+        }
+
+        if (_profileProtectionState.IsPaused(profile.ProfileId))
+        {
+            _profileProtectionState.TogglePause(profile.ProfileId);
+        }
+
+        RebuildWindowProcessFilter();
+        RefreshOverlays();
+        ShowProtectionTip(
+            $"{profile.DisplayName} protection is enabled and its mask is active.",
+            ToolTipIcon.Info);
+    }
+
+    private async Task AddAndProtectForegroundApplicationAsync(DesktopApplicationCandidate candidate)
+    {
+        var nextSettings = AppSettingsCloner.Clone(_savedSettings);
+        var profile = CustomAppProfileFactory.Create(candidate.DisplayName, candidate.ProcessName);
+        nextSettings.AppProfiles.Add(profile);
+        try
+        {
+            await _settingsStore.SaveAsync(nextSettings);
+        }
+        catch (Exception exception)
+        {
+            ShowProtectionTip($"{candidate.DisplayName} could not be added. {exception.Message}", ToolTipIcon.Error);
+            return;
+        }
+
+        _savedSettings = AppSettingsCloner.Clone(nextSettings);
+        var runtimeProfile = CustomAppProfileFactory.Create(
+            profile.DisplayName,
+            candidate.ProcessName,
+            profile.ProfileId);
+        _settings.AppProfiles.Add(runtimeProfile);
+        if (_mainWindow?.ViewModel.AppProfiles.Any(existing =>
+                string.Equals(existing.ProfileId, profile.ProfileId, StringComparison.OrdinalIgnoreCase)) == false)
+        {
+            _mainWindow.ViewModel.AppProfiles.Add(new AppProfileViewModel(runtimeProfile));
+        }
+
+        RebuildWindowProcessFilter();
+        RefreshOverlays();
+        ShowProtectionTip(
+            $"{profile.DisplayName} was added with the default blur settings and is now protected.",
             ToolTipIcon.Info);
     }
 
