@@ -82,6 +82,10 @@ capture cadence to limit resource use.
 - Settings schema version 11 enables hover reveal for existing custom profiles
   and persists an optional salted PBKDF2-SHA256 verifier for the panic unlock
   PIN. The PIN itself is never written to disk.
+- Settings schema version 12 records an optional executable path for custom
+  profiles. Older profiles remain valid without one; newly added and relinked
+  profiles use it to distinguish a stopped application from a missing or moved
+  target.
 
 ## Lifecycle and hotkeys
 

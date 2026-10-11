@@ -2,6 +2,9 @@
 
 ## 2.0.0 - Unreleased
 
+- Show live per-profile states for protected, paused, focus-waiting, disabled, stopped, and missing-target applications
+- Add a custom-profile relink flow that changes the target executable while preserving mask appearance, strength, zones, hover settings, and profile identity
+- Persist executable paths for newly selected applications and migrate the optional field through settings schema version 12
 - Let `Ctrl + Shift + P` automatically add and immediately protect the focused desktop application when it has no profile yet
 - Restore a disabled matching profile from the same shortcut instead of creating a duplicate, while retaining system and security-process exclusions
 - Enable mouse-hover reveal for every newly added application and migrate existing custom profiles to the same behavior

@@ -204,6 +204,14 @@ environment, initial measurements, performance budgets, and required scenarios.
 8. Use the tray icon to pause every profile, apply an opaque panic mask, reopen
    settings, or exit the app.
 
+Each profile card reports whether its application is protected now, waiting for
+focus, paused, disabled, not running, or no longer detected at its saved path.
+For a custom application that moved or changed its executable after an update,
+choose **Relink** and select the current running application or `.exe` file.
+Relinking changes only the application target; the profile name, blur strength,
+mask style, zones, hover reveal dimensions, and other privacy settings remain
+unchanged until you save or discard the edit.
+
 Protection always starts enabled when PrivacyMask launches. Both a focused-app
 pause, focused-app panic, and global tray controls are runtime-only actions and
 are not restored after an app restart. A focused panic mask covers only that
