@@ -2,7 +2,7 @@
 
 ## 2.0.0 - Unreleased
 
-- Require holding `Alt` alone for 1.5 seconds before revealing the focused app; pressing any other key cancels that hold until Alt is released
+- Require holding `Alt` alone for 0.5 seconds before revealing the focused app; pressing any other key cancels that hold until Alt is released
 - Use a 600×70 pixel hover reveal window by default and migrate only profiles that still use the previous 394×42 default
 - Enable launch at sign-in by default for new installations while preserving the saved choice for existing users
 - Migrate the updated profile defaults through settings schema version 10

@@ -189,7 +189,7 @@ environment, initial measurements, performance budgets, and required scenarios.
 5. While a protected application is focused, press `Ctrl + Alt + Shift + ↑` to
    raise its saved blur strength by 5%, or `Ctrl + Alt + Shift + ↓` to lower it
    by 5%.
-6. Hold `Alt` by itself for 1.5 seconds to reveal only the focused protected
+6. Hold `Alt` by itself for 0.5 seconds to reveal only the focused protected
    application. Pressing any other key during that hold cancels reveal until
    `Alt` is released, so blur shortcuts never expose the app. Press
    `Ctrl + Shift + P` to pause or resume only that application's profile.
