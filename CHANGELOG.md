@@ -7,7 +7,7 @@
 - Enable launch at sign-in by default for new installations while preserving the saved choice for existing users
 - Migrate the updated profile defaults through settings schema version 10
 - Move blur adjustment to `Ctrl + Alt + Shift + ↑` and `Ctrl + Alt + Shift + ↓`, migrating the previous Windows-key bindings while preserving custom shortcuts
-- Scope `Ctrl + Shift + P` and hold-Alt reveal to the focused protected application instead of changing every protected app
+- Scope `Ctrl + Shift + P`, `Ctrl + Shift + H`, and hold-Alt reveal to the focused protected application instead of changing every protected app
 - Keep tray pause and panic mask global so an explicit global control remains available
 - Remove mouse-hover reveal from new and existing custom profiles so clicks cannot expose an unfiltered area by default
 - Resolve shortcuts from focused tool windows and bound unresponsive window capture so unsupported apps retain a safe fallback without repeated capture work
