@@ -24,6 +24,48 @@ public sealed class DesktopApplicationCatalog(DesktopWindowInspector windowInspe
             _currentProcessName);
     }
 
+    public bool TryCreateFromForegroundWindow(
+        WindowSnapshot snapshot,
+        IEnumerable<string> protectedProcessNames,
+        out DesktopApplicationCandidate? candidate,
+        out string failureReason)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(protectedProcessNames);
+
+        candidate = null;
+        failureReason = string.Empty;
+        if (snapshot.Handle == nint.Zero
+            || !snapshot.IsVisible
+            || snapshot.IsMinimized
+            || string.IsNullOrWhiteSpace(snapshot.ProcessName))
+        {
+            failureReason = "Focus a visible desktop application and try again.";
+            return false;
+        }
+
+        var unavailableReason = DesktopApplicationSelectionPolicy.GetUnavailabilityReason(
+            snapshot.ProcessName,
+            protectedProcessNames,
+            _currentProcessName);
+        if (unavailableReason is not null)
+        {
+            failureReason = unavailableReason;
+            return false;
+        }
+
+        candidate = CreateRunningCandidate(snapshot) ?? new DesktopApplicationCandidate
+        {
+            ProcessName = snapshot.ProcessName.Trim(),
+            DisplayName = snapshot.ProcessName.Trim(),
+            WindowTitle = snapshot.Title,
+            IsForeground = true,
+            ZOrderIndex = snapshot.ZOrderIndex,
+            IsRunning = true,
+        };
+        return true;
+    }
+
     public bool TryCreateFromExecutable(
         string executablePath,
         IEnumerable<string> protectedProcessNames,

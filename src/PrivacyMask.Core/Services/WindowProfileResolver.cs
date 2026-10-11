@@ -16,9 +16,12 @@ public sealed class WindowProfileResolver
         _adapters = adapters.ToDictionary(adapter => adapter.AppId);
     }
 
-    public TrackedWindow? Resolve(WindowSnapshot snapshot, IReadOnlyList<AppProfile> profiles)
+    public TrackedWindow? Resolve(
+        WindowSnapshot snapshot,
+        IReadOnlyList<AppProfile> profiles,
+        bool includeDisabled = false)
     {
-        foreach (var profile in profiles.Where(candidate => candidate.Enabled))
+        foreach (var profile in profiles.Where(candidate => includeDisabled || candidate.Enabled))
         {
             if (!_adapters.TryGetValue(profile.AppId, out var adapter))
             {
