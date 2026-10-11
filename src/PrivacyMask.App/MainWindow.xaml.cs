@@ -203,8 +203,34 @@ public partial class MainWindow : Window
 
         var profile = CustomAppProfileFactory.Create(
             picker.ProfileDisplayName,
-            picker.SelectedApplication.ProcessName);
+            picker.SelectedApplication.ProcessName,
+            executablePath: picker.SelectedApplication.ExecutablePath);
         ViewModel.AppProfiles.Add(new AppProfileViewModel(profile));
+        PreviewRequested?.Invoke(ViewModel.ToModel());
+    }
+
+    private void RelinkApplication_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not AppProfileViewModel { IsCustom: true } profile)
+        {
+            return;
+        }
+
+        var picker = new AddApplicationWindow(
+            _applicationCatalog,
+            GetProtectedProcessNames(profile),
+            profile.DisplayName)
+        {
+            Owner = this,
+        };
+        if (picker.ShowDialog() != true || picker.SelectedApplication is null)
+        {
+            return;
+        }
+
+        profile.Relink(
+            picker.SelectedApplication.ProcessName,
+            picker.SelectedApplication.ExecutablePath);
         PreviewRequested?.Invoke(ViewModel.ToModel());
     }
 
@@ -231,9 +257,15 @@ public partial class MainWindow : Window
         PreviewRequested?.Invoke(ViewModel.ToModel());
     }
 
-    private IReadOnlySet<string> GetProtectedProcessNames()
+    private void ProfileEnabled_Click(object sender, RoutedEventArgs e)
+    {
+        PreviewRequested?.Invoke(ViewModel.ToModel());
+    }
+
+    private IReadOnlySet<string> GetProtectedProcessNames(AppProfileViewModel? excludedProfile = null)
     {
         return ViewModel.AppProfiles
+            .Where(profile => !ReferenceEquals(profile, excludedProfile))
             .SelectMany(profile => profile.WindowMatchers)
             .SelectMany(matcher => matcher.ProcessNames)
             .Where(processName => !string.IsNullOrWhiteSpace(processName))

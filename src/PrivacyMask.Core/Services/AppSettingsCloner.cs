@@ -27,6 +27,7 @@ public static class AppSettingsCloner
             ProfileId = profile.ProfileId,
             AppId = profile.AppId,
             DisplayName = profile.DisplayName,
+            ExecutablePath = profile.ExecutablePath,
             Enabled = profile.Enabled,
             StartupMode = profile.StartupMode,
             MaskIntensity = profile.MaskIntensity,

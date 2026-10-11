@@ -4,7 +4,11 @@ namespace PrivacyMask.Core.Services;
 
 public static class CustomAppProfileFactory
 {
-    public static AppProfile Create(string displayName, string processName, string? profileId = null)
+    public static AppProfile Create(
+        string displayName,
+        string processName,
+        string? profileId = null,
+        string? executablePath = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
         ArgumentException.ThrowIfNullOrWhiteSpace(processName);
@@ -19,6 +23,9 @@ public static class CustomAppProfileFactory
                 : profileId.Trim(),
             AppId = AppId.Custom,
             DisplayName = displayName.Trim(),
+            ExecutablePath = string.IsNullOrWhiteSpace(executablePath)
+                ? null
+                : executablePath.Trim(),
             Enabled = true,
             StartupMode = AppActivationMode.Manual,
             MaskIntensity = MaskIntensityScale.Default,

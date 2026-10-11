@@ -101,7 +101,8 @@ public sealed class JsonSettingsStoreTests
             settings.AppProfiles.Add(CustomAppProfileFactory.Create(
                 "Windows Notepad",
                 "Notepad",
-                "custom-windows-notepad"));
+                "custom-windows-notepad",
+                "C:\\Windows\\System32\\notepad.exe"));
 
             await store.SaveAsync(settings);
             var reloaded = await store.LoadAsync();
@@ -111,6 +112,7 @@ public sealed class JsonSettingsStoreTests
                 profile => profile.ProfileId == "custom-windows-notepad");
             Assert.Equal(AppId.Custom, customProfile.AppId);
             Assert.Equal("Windows Notepad", customProfile.DisplayName);
+            Assert.Equal("C:\\Windows\\System32\\notepad.exe", customProfile.ExecutablePath);
             var matcher = Assert.Single(customProfile.WindowMatchers);
             Assert.Equal("Notepad", Assert.Single(matcher.ProcessNames));
             Assert.Equal(ProcessNameMatchMode.Exact, matcher.ProcessNameMatchMode);

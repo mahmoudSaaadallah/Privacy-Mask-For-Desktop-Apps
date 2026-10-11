@@ -51,6 +51,12 @@ application picker. PrivacyMask itself, Windows shell surfaces, security
 processes, and an already configured process cannot be added as a new custom
 profile.
 
+While settings are visible, PrivacyMask reports each profile as protected,
+panic-protected, paused, waiting for focus, disabled, not running, or missing
+its saved executable. A custom profile can be relinked to a running application
+or executable without replacing its identity or mask configuration. The relink
+is previewed immediately and remains undo-friendly until settings are saved.
+
 ## Persistence compatibility
 
 Settings schema version 7 retains the legacy `currentMode` JSON field so older

@@ -57,7 +57,8 @@ through the existing advanced editor.
 
 - Update onboarding and empty states to explain custom application protection.
 - Provide actionable states when an added application is not running or its
-  executable name changes after an update.
+  executable name changes after an update. Implemented with live profile
+  status and an undo-friendly relink action that preserves mask settings.
 - Add confirmation and undo-friendly behavior for profile removal.
 - Update installation, upgrade, and troubleshooting documentation for 2.0.
 
