@@ -189,16 +189,19 @@ environment, initial measurements, performance budgets, and required scenarios.
 5. While a protected application is focused, press `Ctrl + Alt + Shift + ↑` to
    raise its saved blur strength by 5%, or `Ctrl + Alt + Shift + ↓` to lower it
    by 5%.
-6. Hold `Alt` by itself for 0.5 seconds to reveal only the focused protected
+6. Focus any normal desktop application and press `Ctrl + Shift + P`. If the
+   application has not been configured yet, PrivacyMask adds it with all custom
+   profile defaults, saves it, and activates its mask immediately. Repeating
+   the shortcut pauses or resumes that application's existing profile.
+7. Hold `Alt` by itself for 0.5 seconds to reveal only the focused protected
    application. Pressing any other key during that hold cancels reveal until
-   `Alt` is released, so blur shortcuts never expose the app. Press
-   `Ctrl + Shift + P` to pause or resume only that application's profile.
-   Press `Ctrl + Shift + H` to toggle an opaque panic mask for only the focused
-   application. The first panic action asks you to create a 4–8 digit unlock
+   `Alt` is released, so blur shortcuts never expose the app. Press `Ctrl + Shift + H`
+   to toggle an opaque panic mask for only the focused application. The first
+   panic action asks you to create a 4–8 digit unlock
    PIN; disabling a focused or global panic mask always requires that PIN.
    Mouse-hover reveal is enabled for built-in and custom applications by
    default, using a 600×70 pixel reveal window.
-7. Use the tray icon to pause every profile, apply an opaque panic mask, reopen
+8. Use the tray icon to pause every profile, apply an opaque panic mask, reopen
    settings, or exit the app.
 
 Protection always starts enabled when PrivacyMask launches. Both a focused-app

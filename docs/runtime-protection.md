@@ -17,7 +17,11 @@ does not make the next launch start unprotected.
 ## Transitions
 
 - PrivacyMask always starts in `Protected`.
-- `Ctrl + Shift + P` toggles only the focused protected profile.
+- `Ctrl + Shift + P` toggles only the focused protected profile. When the
+  foreground application has no profile, the same command creates and saves a
+  custom profile with the complete default mask configuration, then activates
+  it immediately. A matching disabled profile is re-enabled instead of being
+  duplicated.
 - `Ctrl + Shift + H` toggles an opaque panic mask only for the focused protected
   profile. Other profiles keep their normal protection appearance. Enabling it
   does not require an unlock, but disabling it requires the configured PIN.
@@ -41,6 +45,11 @@ current PIN.
 Both panic masks ignore disabled zones and focus-aware activation for the
 profiles they cover. They still respect unrelated windows above the protected
 app so that PrivacyMask does not cover other desktop applications.
+
+Automatic foreground-app enrollment uses the same eligibility policy as the
+application picker. PrivacyMask itself, Windows shell surfaces, security
+processes, and an already configured process cannot be added as a new custom
+profile.
 
 ## Persistence compatibility
 
