@@ -143,10 +143,10 @@ public sealed class DefaultSettingsFactoryTests
             "Panic mask all",
             settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.PanicHideAll).DisplayName);
         var increaseBlur = settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
-        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, increaseBlur.Modifiers);
+        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift, increaseBlur.Modifiers);
         Assert.Equal(0x26, increaseBlur.VirtualKey);
         var decreaseBlur = settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.DecreaseBlurStrength);
-        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, decreaseBlur.Modifiers);
+        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift, decreaseBlur.Modifiers);
         Assert.Equal(0x28, decreaseBlur.VirtualKey);
     }
 
@@ -162,12 +162,72 @@ public sealed class DefaultSettingsFactoryTests
 
         var increaseBlur = merged.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
         Assert.True(increaseBlur.Enabled);
-        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, increaseBlur.Modifiers);
+        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift, increaseBlur.Modifiers);
         Assert.Equal(0x26, increaseBlur.VirtualKey);
         var decreaseBlur = merged.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.DecreaseBlurStrength);
         Assert.True(decreaseBlur.Enabled);
-        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Windows, decreaseBlur.Modifiers);
+        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift, decreaseBlur.Modifiers);
         Assert.Equal(0x28, decreaseBlur.VirtualKey);
+    }
+
+    [Fact]
+    public void MergeWithDefaults_MigratesLegacyWindowsBlurShortcuts()
+    {
+        var factory = new DefaultSettingsFactory();
+        var current = factory.Create();
+        var legacyHotkeys = current.GlobalHotkeys.Select(binding => new HotkeyBinding
+        {
+            Action = binding.Action,
+            DisplayName = binding.DisplayName,
+            Modifiers = binding.Action is HotkeyAction.IncreaseBlurStrength or HotkeyAction.DecreaseBlurStrength
+                ? HotkeyModifiers.Control | HotkeyModifiers.Windows
+                : binding.Modifiers,
+            VirtualKey = binding.VirtualKey,
+            Enabled = binding.Enabled,
+            IsHoldGesture = binding.IsHoldGesture,
+        }).ToList();
+        var persisted = new AppSettings
+        {
+            Version = 8,
+            GlobalHotkeys = legacyHotkeys,
+            AppProfiles = current.AppProfiles,
+        };
+
+        var merged = factory.MergeWithDefaults(persisted);
+
+        Assert.All(
+            merged.GlobalHotkeys.Where(binding => binding.Action is HotkeyAction.IncreaseBlurStrength or HotkeyAction.DecreaseBlurStrength),
+            binding => Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift, binding.Modifiers));
+    }
+
+    [Fact]
+    public void MergeWithDefaults_PreservesCustomizedBlurShortcut()
+    {
+        var factory = new DefaultSettingsFactory();
+        var persisted = factory.Create();
+        var customizedHotkeys = persisted.GlobalHotkeys.Select(binding => binding.Action == HotkeyAction.IncreaseBlurStrength
+            ? new HotkeyBinding
+            {
+                Action = binding.Action,
+                DisplayName = binding.DisplayName,
+                Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Shift,
+                VirtualKey = 0x6B,
+                Enabled = binding.Enabled,
+                IsHoldGesture = binding.IsHoldGesture,
+            }
+            : binding).ToList();
+        persisted = new AppSettings
+        {
+            Version = 8,
+            GlobalHotkeys = customizedHotkeys,
+            AppProfiles = persisted.AppProfiles,
+        };
+
+        var merged = factory.MergeWithDefaults(persisted);
+        var restored = merged.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.IncreaseBlurStrength);
+
+        Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Shift, restored.Modifiers);
+        Assert.Equal(0x6B, restored.VirtualKey);
     }
 
     [Fact]
@@ -286,6 +346,29 @@ public sealed class DefaultSettingsFactoryTests
         Assert.Equal(MaskStyle.WetGlass, restored.Zones.Single().Style);
         Assert.Equal("Notepad", restored.WindowMatchers.Single().ProcessNames.Single());
         Assert.Equal(ProcessNameMatchMode.Exact, restored.WindowMatchers.Single().ProcessNameMatchMode);
+    }
+
+    [Fact]
+    public void MergeWithDefaults_RemovesMouseRevealFromLegacyCustomProfiles()
+    {
+        var factory = new DefaultSettingsFactory();
+        var current = factory.Create();
+        var custom = CustomAppProfileFactory.Create("Notes", "Notepad", "custom-notes");
+        custom.Zones.Single().Behavior = ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal;
+        custom.Presets.Single().Zones.Single().Behavior = ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal;
+        current.AppProfiles.Add(custom);
+        var persisted = new AppSettings
+        {
+            Version = 8,
+            GlobalHotkeys = current.GlobalHotkeys,
+            AppProfiles = current.AppProfiles,
+        };
+
+        var merged = factory.MergeWithDefaults(persisted);
+        var restored = merged.AppProfiles.Single(profile => profile.ProfileId == "custom-notes");
+
+        Assert.Equal(ZoneBehavior.HideDuringTemporaryReveal, restored.Zones.Single().Behavior);
+        Assert.Equal(ZoneBehavior.HideDuringTemporaryReveal, restored.Presets.Single().Zones.Single().Behavior);
     }
 
     [Fact]

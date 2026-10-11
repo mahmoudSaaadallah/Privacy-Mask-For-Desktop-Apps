@@ -49,14 +49,14 @@ public sealed class DefaultSettingsFactory
                 {
                     Action = HotkeyAction.IncreaseBlurStrength,
                     DisplayName = "Increase blur strength",
-                    Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Windows,
+                    Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift,
                     VirtualKey = 0x26,
                 },
                 new HotkeyBinding
                 {
                     Action = HotkeyAction.DecreaseBlurStrength,
                     DisplayName = "Decrease blur strength",
-                    Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Windows,
+                    Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift,
                     VirtualKey = 0x28,
                 },
             ],
@@ -80,12 +80,14 @@ public sealed class DefaultSettingsFactory
         defaults.LaunchAtLogin = persisted.LaunchAtLogin;
         defaults.StartMinimized = persisted.StartMinimized;
         defaults.CurrentMode = RuntimeMode.Standard;
-        defaults.GlobalHotkeys = MergeHotkeys(defaults.GlobalHotkeys, persisted.GlobalHotkeys);
+        var migrateLegacyBlurHotkeys = persisted.Version < 9;
+        defaults.GlobalHotkeys = MergeHotkeys(defaults.GlobalHotkeys, persisted.GlobalHotkeys, migrateLegacyBlurHotkeys);
         var migrateLegacyFocusAwareProfiles = persisted.Version < 2;
         var migrateLegacyMaskIntensity = persisted.Version < 3;
         var migrateLegacyHoverReveal = persisted.Version < 4;
         var migrateLegacyMaskColor = persisted.Version < 5;
         var migrateLegacySurfaceIntensity = persisted.Version < 7;
+        var migrateCustomHoverReveal = persisted.Version < 9;
 
         foreach (var defaultProfile in defaults.AppProfiles)
         {
@@ -132,7 +134,7 @@ public sealed class DefaultSettingsFactory
         foreach (var customProfile in persisted.AppProfiles.Where(profile => profile.AppId == AppId.Custom))
         {
             var profileId = ResolveCustomProfileId(customProfile.ProfileId, profileIds);
-            defaults.AppProfiles.Add(NormalizeCustomProfile(customProfile, profileId));
+            defaults.AppProfiles.Add(NormalizeCustomProfile(customProfile, profileId, migrateCustomHoverReveal));
             profileIds.Add(profileId);
         }
 
@@ -183,7 +185,10 @@ public sealed class DefaultSettingsFactory
             : $"custom-{Guid.NewGuid():N}";
     }
 
-    private static AppProfile NormalizeCustomProfile(AppProfile persisted, string profileId)
+    private static AppProfile NormalizeCustomProfile(
+        AppProfile persisted,
+        string profileId,
+        bool migrateLegacyHoverReveal)
     {
         var defaultProfile = CustomAppProfileFactory.Create(
             string.IsNullOrWhiteSpace(persisted.DisplayName) ? "Custom app" : persisted.DisplayName,
@@ -207,14 +212,14 @@ public sealed class DefaultSettingsFactory
             })
             .ToList();
         var presets = persisted.Presets.Count > 0
-            ? persisted.Presets.Select(NormalizeCustomPreset).ToList()
+            ? persisted.Presets.Select(preset => NormalizeCustomPreset(preset, migrateLegacyHoverReveal)).ToList()
             : defaultProfile.Presets;
         var selectedPresetId = presets.Any(preset => preset.PresetId == persisted.SelectedPresetId)
             ? persisted.SelectedPresetId
             : presets[0].PresetId;
         var selectedPreset = presets.First(preset => preset.PresetId == selectedPresetId);
         var zones = persisted.Zones.Count > 0
-            ? persisted.Zones.Select(zone => NormalizeCustomZone(zone, defaultProfile.Zones[0])).ToList()
+            ? persisted.Zones.Select(zone => NormalizeCustomZone(zone, defaultProfile.Zones[0], migrateLegacyHoverReveal)).ToList()
             : selectedPreset.Zones.Select(PresetCatalog.CloneZone).ToList();
 
         return new AppProfile
@@ -236,7 +241,7 @@ public sealed class DefaultSettingsFactory
         };
     }
 
-    private static LayoutPreset NormalizeCustomPreset(LayoutPreset preset)
+    private static LayoutPreset NormalizeCustomPreset(LayoutPreset preset, bool migrateLegacyHoverReveal)
     {
         var fallbackZone = PresetCatalog.GetDefaultPresets(AppId.Custom).Single().Zones.Single();
         return new LayoutPreset
@@ -248,12 +253,15 @@ public sealed class DefaultSettingsFactory
             MinWindowWidth = Math.Max(1d, preset.MinWindowWidth),
             MinWindowHeight = Math.Max(1d, preset.MinWindowHeight),
             Zones = preset.Zones.Count > 0
-                ? preset.Zones.Select(zone => NormalizeCustomZone(zone, fallbackZone)).ToList()
+                ? preset.Zones.Select(zone => NormalizeCustomZone(zone, fallbackZone, migrateLegacyHoverReveal)).ToList()
                 : [PresetCatalog.CloneZone(fallbackZone)],
         };
     }
 
-    private static PrivacyZone NormalizeCustomZone(PrivacyZone zone, PrivacyZone fallback)
+    private static PrivacyZone NormalizeCustomZone(
+        PrivacyZone zone,
+        PrivacyZone fallback,
+        bool migrateLegacyHoverReveal)
     {
         return new PrivacyZone
         {
@@ -263,7 +271,9 @@ public sealed class DefaultSettingsFactory
             RelativeRect = zone.RelativeRect.Clamp(),
             Style = NormalizeMaskStyle(zone.Style, fallback.Style),
             Strength = MaskIntensityScale.Clamp(zone.Strength),
-            Behavior = zone.Behavior,
+            Behavior = migrateLegacyHoverReveal
+                ? (zone.Behavior & ~ZoneBehavior.RevealOnHover) | ZoneBehavior.HideDuringTemporaryReveal
+                : zone.Behavior,
             Enabled = zone.Enabled,
         };
     }
@@ -335,7 +345,10 @@ public sealed class DefaultSettingsFactory
             .ToList();
     }
 
-    private static List<HotkeyBinding> MergeHotkeys(IEnumerable<HotkeyBinding> defaults, IEnumerable<HotkeyBinding>? persisted)
+    private static List<HotkeyBinding> MergeHotkeys(
+        IEnumerable<HotkeyBinding> defaults,
+        IEnumerable<HotkeyBinding>? persisted,
+        bool migrateLegacyBlurHotkeys = false)
     {
         var persistedMap = persisted?.ToDictionary(binding => binding.Action) ?? [];
         return defaults.Select(binding =>
@@ -345,16 +358,31 @@ public sealed class DefaultSettingsFactory
                 return CloneHotkey(binding);
             }
 
+            var shouldMigrateLegacyBlurHotkey = migrateLegacyBlurHotkeys
+                && IsLegacyBlurHotkey(saved);
+
             return new HotkeyBinding
             {
                 Action = binding.Action,
                 DisplayName = binding.DisplayName,
-                Modifiers = saved.Modifiers,
-                VirtualKey = saved.VirtualKey,
+                Modifiers = shouldMigrateLegacyBlurHotkey ? binding.Modifiers : saved.Modifiers,
+                VirtualKey = shouldMigrateLegacyBlurHotkey ? binding.VirtualKey : saved.VirtualKey,
                 Enabled = saved.Enabled,
                 IsHoldGesture = binding.IsHoldGesture,
             };
         }).ToList();
+    }
+
+    private static bool IsLegacyBlurHotkey(HotkeyBinding binding)
+    {
+        return binding.Action switch
+        {
+            HotkeyAction.IncreaseBlurStrength => binding.Modifiers == (HotkeyModifiers.Control | HotkeyModifiers.Windows)
+                && binding.VirtualKey == 0x26,
+            HotkeyAction.DecreaseBlurStrength => binding.Modifiers == (HotkeyModifiers.Control | HotkeyModifiers.Windows)
+                && binding.VirtualKey == 0x28,
+            _ => false,
+        };
     }
 
     private static HotkeyBinding CloneHotkey(HotkeyBinding binding)
