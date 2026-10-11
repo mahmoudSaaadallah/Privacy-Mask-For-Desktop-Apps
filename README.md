@@ -193,15 +193,18 @@ environment, initial measurements, performance budgets, and required scenarios.
    application. Pressing any other key during that hold cancels reveal until
    `Alt` is released, so blur shortcuts never expose the app. Press
    `Ctrl + Shift + P` to pause or resume only that application's profile.
+   Press `Ctrl + Shift + H` to toggle an opaque panic mask for only the focused
+   application.
    Custom applications do not reveal content on mouse hover by default. The
    default hover reveal window for zones that enable it is 600×70 pixels.
 7. Use the tray icon to pause every profile, apply an opaque panic mask, reopen
    settings, or exit the app.
 
 Protection always starts enabled when PrivacyMask launches. Both a focused-app
-pause and the global tray pause are runtime-only actions and are not restored
-after an app restart. The panic mask covers every detected protected window in
-opaque black and disables reveal gestures until panic mode is turned off.
+pause, focused-app panic, and global tray controls are runtime-only actions and
+are not restored after an app restart. A focused panic mask covers only that
+application; **Panic mask all** from the tray covers every detected protected
+window. Both panic modes disable reveal for the windows they cover.
 New installations also enable launch at sign-in by default; this can be changed
 from onboarding, settings, or the tray without affecting existing users' saved
 choice during an update.
