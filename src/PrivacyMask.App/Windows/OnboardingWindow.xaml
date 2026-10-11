@@ -107,7 +107,7 @@
                             <TextBlock Margin="0,8,0,0"
                                        Foreground="#51656E"
                                        TextWrapping="Wrap"
-                                       Text="The tray utility watches for supported windows immediately. Focus a protected app and use Ctrl+Shift+P to pause or resume only that app, Ctrl+Shift+H for a full panic mask, and hold Alt alone for 1.5 seconds to reveal only the focused app." />
+                                       Text="The tray utility watches for supported windows immediately. Focus a protected app and use Ctrl+Shift+P to pause or resume only that app, Ctrl+Shift+H for a full panic mask, and hold Alt alone for 0.5 seconds to reveal only the focused app." />
                         </StackPanel>
                     </Border>
                 </StackPanel>

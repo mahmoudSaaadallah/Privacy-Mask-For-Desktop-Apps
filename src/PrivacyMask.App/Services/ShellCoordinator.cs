@@ -62,7 +62,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _defaultSettingsFactory = new DefaultSettingsFactory();
         _protectionStateMachine = new ProtectionStateMachine();
         _profileProtectionState = new ProfileProtectionState();
-        _temporaryRevealGesture = new ExclusiveHoldGesture(TimeSpan.FromSeconds(1.5d));
+        _temporaryRevealGesture = new ExclusiveHoldGesture(TimeSpan.FromMilliseconds(500d));
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
         _windowInspector = new DesktopWindowInspector();
         _applicationCatalog = new DesktopApplicationCatalog(_windowInspector);
