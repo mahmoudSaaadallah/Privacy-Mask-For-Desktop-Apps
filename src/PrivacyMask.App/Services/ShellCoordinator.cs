@@ -483,6 +483,12 @@ public sealed class ShellCoordinator : IAsyncDisposable
             return;
         }
 
+        if (_protectionStateMachine.CurrentMode == RuntimeMode.Off)
+        {
+            ShowProtectionTip("Resume global protection from the tray before changing one app.", ToolTipIcon.Info);
+            return;
+        }
+
         var trackedWindow = TryResolveForegroundProfile();
         if (trackedWindow is null)
         {
