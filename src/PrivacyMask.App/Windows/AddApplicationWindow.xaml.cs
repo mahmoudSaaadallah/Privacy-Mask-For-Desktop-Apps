@@ -12,16 +12,30 @@ public partial class AddApplicationWindow : Window
 {
     private readonly DesktopApplicationCatalog _catalog;
     private readonly IReadOnlySet<string> _protectedProcessNames;
+    private readonly string? _relinkProfileName;
 
     public AddApplicationWindow(
         DesktopApplicationCatalog catalog,
-        IReadOnlySet<string> protectedProcessNames)
+        IReadOnlySet<string> protectedProcessNames,
+        string? relinkProfileName = null)
     {
         _catalog = catalog;
         _protectedProcessNames = protectedProcessNames;
+        _relinkProfileName = string.IsNullOrWhiteSpace(relinkProfileName)
+            ? null
+            : relinkProfileName.Trim();
         InitializeComponent();
         WindowWorkAreaSizer.Fit(this);
         DataContext = this;
+        if (_relinkProfileName is not null)
+        {
+            Title = $"Relink {_relinkProfileName}";
+            HeadingText.Text = "Relink application";
+            DescriptionText.Text = $"Choose the current executable for {_relinkProfileName}. Its mask appearance and privacy settings will be preserved.";
+            ProfileNamePanel.Visibility = Visibility.Collapsed;
+            ConfirmButton.Content = "_Relink application";
+        }
+
         RefreshApplications();
     }
 
@@ -60,7 +74,7 @@ public partial class AddApplicationWindow : Window
             System.Windows.MessageBox.Show(
                 this,
                 failureReason,
-                "Application cannot be added",
+                _relinkProfileName is null ? "Application cannot be added" : "Application cannot be relinked",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
             return;
@@ -87,13 +101,13 @@ public partial class AddApplicationWindow : Window
             System.Windows.MessageBox.Show(
                 this,
                 "Choose an application first.",
-                "No application selected",
+                _relinkProfileName is null ? "No application selected" : "No replacement selected",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
             return;
         }
 
-        var displayName = ProfileNameTextBox.Text.Trim();
+        var displayName = _relinkProfileName ?? ProfileNameTextBox.Text.Trim();
         if (displayName.Length == 0)
         {
             System.Windows.MessageBox.Show(

@@ -196,16 +196,25 @@ public sealed class ShellCoordinator : IAsyncDisposable
         try
         {
             var currentMode = _protectionStateMachine.CurrentMode;
-            if (currentMode == RuntimeMode.Off)
+            var settingsVisible = _mainWindow?.IsVisible == true;
+            if (currentMode == RuntimeMode.Off && !settingsVisible)
             {
                 _overlayManager.HideAll();
                 UpdateRefreshInterval(OverlayRefreshCadence.Select(currentMode, hasCandidateWindows: false));
                 return;
             }
 
-            var discovery = _windowInspector.Capture(_windowProcessFilter);
+            var discovery = _windowInspector.Capture(settingsVisible ? null : _windowProcessFilter);
             _trackedWindows.Clear();
             _activeOcclusionHandles.Clear();
+
+            if (currentMode == RuntimeMode.Off)
+            {
+                UpdateProfileRuntimeStatuses(discovery, currentMode);
+                _overlayManager.HideAll();
+                UpdateRefreshInterval(OverlayRefreshCadence.Select(currentMode, hasCandidateWindows: false));
+                return;
+            }
 
             foreach (var snapshot in discovery.CandidateWindows)
             {
@@ -239,6 +248,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             }
 
             PruneOccludingBoundsBuffers();
+            UpdateProfileRuntimeStatuses(discovery, currentMode);
 
             var cursorPoint = GetCursorPoint();
             var temporaryRevealProfileId = GetTemporaryRevealProfileId();
@@ -250,7 +260,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
                 cursorPoint);
             UpdateRefreshInterval(OverlayRefreshCadence.Select(
                 currentMode,
-                discovery.CandidateWindows.Count > 0));
+                settingsVisible ? _trackedWindows.Count > 0 : discovery.CandidateWindows.Count > 0));
         }
         catch
         {
@@ -294,6 +304,45 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _mainWindow.Show();
         _mainWindow.WindowState = WindowState.Normal;
         _mainWindow.Activate();
+        RefreshOverlays();
+    }
+
+    private void UpdateProfileRuntimeStatuses(WindowDiscoveryResult discovery, RuntimeMode currentMode)
+    {
+        if (_mainWindow?.IsVisible != true)
+        {
+            return;
+        }
+
+        IReadOnlySet<string> runningProcessNames = discovery.CandidateWindows
+            .Select(snapshot => snapshot.ProcessName)
+            .Where(processName => !string.IsNullOrWhiteSpace(processName))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        IReadOnlySet<string> protectedProfileIds = _trackedWindows
+            .Select(window => window.Profile.ProfileId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var profileViewModel in _mainWindow.ViewModel.AppProfiles)
+        {
+            var profile = _settings.AppProfiles.FirstOrDefault(candidate =>
+                string.Equals(candidate.ProfileId, profileViewModel.ProfileId, StringComparison.OrdinalIgnoreCase));
+            if (profile is null)
+            {
+                continue;
+            }
+
+            var executableExists = string.IsNullOrWhiteSpace(profile.ExecutablePath)
+                || File.Exists(profile.ExecutablePath);
+            var status = ProfileRuntimeStatusResolver.Resolve(
+                profile,
+                runningProcessNames,
+                protectedProfileIds,
+                currentMode,
+                _profileProtectionState.IsPaused(profile.ProfileId),
+                _profileProtectionState.IsPanic(profile.ProfileId),
+                executableExists);
+            profileViewModel.UpdateRuntimeStatus(status);
+        }
     }
 
     private async Task SaveSettingsAsync(AppSettings updatedSettings)
@@ -622,7 +671,10 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private async Task AddAndProtectForegroundApplicationAsync(DesktopApplicationCandidate candidate)
     {
         var nextSettings = AppSettingsCloner.Clone(_savedSettings);
-        var profile = CustomAppProfileFactory.Create(candidate.DisplayName, candidate.ProcessName);
+        var profile = CustomAppProfileFactory.Create(
+            candidate.DisplayName,
+            candidate.ProcessName,
+            executablePath: candidate.ExecutablePath);
         nextSettings.AppProfiles.Add(profile);
         try
         {
@@ -638,7 +690,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
         var runtimeProfile = CustomAppProfileFactory.Create(
             profile.DisplayName,
             candidate.ProcessName,
-            profile.ProfileId);
+            profile.ProfileId,
+            candidate.ExecutablePath);
         _settings.AppProfiles.Add(runtimeProfile);
         if (_mainWindow?.ViewModel.AppProfiles.Any(existing =>
                 string.Equals(existing.ProfileId, profile.ProfileId, StringComparison.OrdinalIgnoreCase)) == false)

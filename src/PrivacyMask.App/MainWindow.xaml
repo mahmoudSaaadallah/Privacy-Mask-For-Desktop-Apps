@@ -298,10 +298,23 @@
                                                 <TextBlock Margin="0,6,0,0"
                                                            Foreground="#51656E"
                                                            Text="{Binding Summary}" />
+                                                <TextBlock Margin="0,6,0,0"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{Binding RuntimeStatusColor}"
+                                                           AutomationProperties.Name="{Binding RuntimeStatusSummary, StringFormat=Application status: {0}}"
+                                                           Text="{Binding RuntimeStatusSummary}" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="1"
                                                         VerticalAlignment="Top"
                                                         Orientation="Horizontal">
+                                                <Button Margin="0,0,10,0"
+                                                        Padding="10,5"
+                                                        VerticalAlignment="Center"
+                                                        Visibility="{Binding IsCustom, Converter={StaticResource BooleanToVisibility}}"
+                                                        AutomationProperties.HelpText="Choose a replacement executable while preserving this profile's mask settings."
+                                                        Click="RelinkApplication_Click"
+                                                        Content="_Relink"
+                                                        Tag="{Binding}" />
                                                 <Button Margin="0,0,14,0"
                                                         Padding="10,5"
                                                         VerticalAlignment="Center"
@@ -315,6 +328,7 @@
                                                 <CheckBox VerticalAlignment="Center"
                                                           AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0} masking}"
                                                           Content="Enabled"
+                                                          Click="ProfileEnabled_Click"
                                                           IsChecked="{Binding Enabled, Mode=TwoWay}" />
                                             </StackPanel>
                                         </Grid>

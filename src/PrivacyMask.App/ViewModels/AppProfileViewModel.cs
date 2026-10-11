@@ -9,6 +9,7 @@ namespace PrivacyMask.App.ViewModels;
 public sealed class AppProfileViewModel : ObservableObject
 {
     private string _displayName;
+    private string? _executablePath;
     private bool _enabled;
     private AppActivationMode _startupMode;
     private string _selectedPresetId;
@@ -16,6 +17,7 @@ public sealed class AppProfileViewModel : ObservableObject
     private MaskColorOption _maskColor;
     private int _hoverRevealWidthPixels;
     private int _hoverRevealHeightPixels;
+    private ProfileRuntimeStatus _runtimeStatus = ProfileRuntimeStatus.Checking;
     private ObservableCollection<PrivacyZoneViewModel> _zones;
 
     public AppProfileViewModel(AppProfile profile)
@@ -23,6 +25,7 @@ public sealed class AppProfileViewModel : ObservableObject
         ProfileId = profile.ProfileId;
         AppId = profile.AppId;
         _displayName = profile.DisplayName;
+        _executablePath = profile.ExecutablePath;
         _enabled = profile.Enabled;
         _startupMode = profile.StartupMode;
         _selectedPresetId = profile.SelectedPresetId;
@@ -57,6 +60,41 @@ public sealed class AppProfileViewModel : ObservableObject
 
     public bool IsBuiltIn => !IsCustom;
 
+    public string? ExecutablePath => _executablePath;
+
+    public ProfileRuntimeStatus RuntimeStatus
+    {
+        get => _runtimeStatus;
+        private set
+        {
+            if (SetProperty(ref _runtimeStatus, value))
+            {
+                RaisePropertyChanged(nameof(RuntimeStatusSummary));
+                RaisePropertyChanged(nameof(RuntimeStatusColor));
+            }
+        }
+    }
+
+    public string RuntimeStatusSummary => RuntimeStatus switch
+    {
+        ProfileRuntimeStatus.Disabled => "Disabled",
+        ProfileRuntimeStatus.Protected => "Protected now",
+        ProfileRuntimeStatus.PanicProtected => "Protected now — panic mask active",
+        ProfileRuntimeStatus.ProtectionPaused => "Running — protection paused",
+        ProfileRuntimeStatus.WaitingForFocus => "Running — waiting for focus",
+        ProfileRuntimeStatus.NotRunning => "Not running",
+        ProfileRuntimeStatus.TargetMissing => "Not detected — relink may be required",
+        _ => "Checking application status…",
+    };
+
+    public string RuntimeStatusColor => RuntimeStatus switch
+    {
+        ProfileRuntimeStatus.Protected or ProfileRuntimeStatus.PanicProtected => "#1F6E6C",
+        ProfileRuntimeStatus.TargetMissing => "#A33A2B",
+        ProfileRuntimeStatus.ProtectionPaused or ProfileRuntimeStatus.WaitingForFocus => "#8A6A38",
+        _ => "#51656E",
+    };
+
     public string Summary => StartupMode == AppActivationMode.FocusAware
         ? "Masks only while the supported app is focused."
         : "Covers the whole app window even when it is visible but inactive.";
@@ -76,7 +114,13 @@ public sealed class AppProfileViewModel : ObservableObject
     public bool Enabled
     {
         get => _enabled;
-        set => SetProperty(ref _enabled, value);
+        set
+        {
+            if (SetProperty(ref _enabled, value) && !value)
+            {
+                RuntimeStatus = ProfileRuntimeStatus.Disabled;
+            }
+        }
     }
 
     public AppActivationMode StartupMode
@@ -203,6 +247,28 @@ public sealed class AppProfileViewModel : ObservableObject
         RaisePropertyChanged(nameof(MaskStyleSummary));
     }
 
+    public void Relink(string processName, string? executablePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(processName);
+
+        WindowMatchers.Clear();
+        WindowMatchers.Add(new WindowMatcher
+        {
+            ProcessNames = [processName.Trim()],
+            ProcessNameMatchMode = ProcessNameMatchMode.Exact,
+        });
+        _executablePath = string.IsNullOrWhiteSpace(executablePath)
+            ? null
+            : executablePath.Trim();
+        RuntimeStatus = ProfileRuntimeStatus.Checking;
+        RaisePropertyChanged(nameof(ExecutablePath));
+    }
+
+    public void UpdateRuntimeStatus(ProfileRuntimeStatus status)
+    {
+        RuntimeStatus = status;
+    }
+
     public AppProfile ToModel()
     {
         return new AppProfile
@@ -210,6 +276,7 @@ public sealed class AppProfileViewModel : ObservableObject
             ProfileId = ProfileId,
             AppId = AppId,
             DisplayName = DisplayName,
+            ExecutablePath = ExecutablePath,
             Enabled = Enabled,
             StartupMode = StartupMode,
             MaskIntensity = MaskIntensity,
