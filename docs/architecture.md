@@ -71,6 +71,10 @@ capture cadence to limit resource use.
   1.x WhatsApp and Telegram settings receive their built-in identifiers during
   normalization, while user-defined profiles retain their own identities and
   survive save/reload cycles.
+- Settings schema version 9 migrates the original Windows-key blur shortcuts to
+  `Ctrl + Alt + Shift + ↑/↓` unless the user already chose a custom binding. It
+  also removes mouse-hover reveal from legacy custom profiles while retaining
+  explicit hold-to-reveal behavior.
 
 ## Lifecycle and hotkeys
 
@@ -78,7 +82,8 @@ Shell shutdown is idempotent and explicitly releases the refresh timer,
 registered hotkeys, overlay windows, settings window, and tray icon. Global
 hotkey registration returns per-binding failures so a conflict can be shown in
 the tray and settings UI without disabling shortcuts that registered
-successfully.
+successfully. Focused-app commands resolve the foreground HWND independently of
+overlay enumeration, including owned tool windows used by some desktop apps.
 
 ## Design boundaries
 

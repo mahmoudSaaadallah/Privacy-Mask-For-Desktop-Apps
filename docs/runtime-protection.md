@@ -8,15 +8,17 @@ does not make the next launch start unprotected.
 
 | State | Overlay behavior | Hover or hold reveal |
 | --- | --- | --- |
-| Protected | Uses the configured profile zones and mask appearance | Allowed when enabled by the zone and hotkey settings |
-| Paused | Hides all PrivacyMask overlays | Disabled |
+| Protected | Uses the configured profile zones and mask appearance | Hold reveal applies only to the focused profile; hover applies only to zones that explicitly enable it |
+| Profile paused | Hides overlays belonging to one focused profile | Disabled for that profile |
+| Globally paused | Hides all PrivacyMask overlays | Disabled |
 | Panic mask | Covers the complete bounds of every detected protected window with an opaque black mask | Disabled |
 
 ## Transitions
 
 - PrivacyMask always starts in `Protected`.
-- Toggle protection changes `Protected` to `Paused` and `Paused` to `Protected`.
-- Toggle protection cannot bypass an active panic mask.
+- `Ctrl + Shift + P` toggles only the focused protected profile.
+- The tray pause command changes `Protected` to `Globally paused` and back.
+- Neither profile nor global pause can bypass an active panic mask.
 - Toggle panic enters `Panic mask` from any non-panic state.
 - Leaving `Panic mask` always returns to `Protected`, even when protection was paused before panic was activated.
 
@@ -36,5 +38,7 @@ Version 7 also migrates the old 0.15–2.40 mask-darkness values to the
 Existing numeric `Blur` enum values remain compatible and are presented as
 `Live blur` after migration.
 
-This separation also prevents repeated pause and panic hotkeys from creating
-overlapping asynchronous settings writes.
+Profile pauses are held in memory by stable profile identifier, so pausing one
+application does not reveal another. Removed profiles are pruned from this
+runtime state. This separation also prevents repeated pause and panic hotkeys
+from creating overlapping asynchronous settings writes.

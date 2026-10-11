@@ -2,6 +2,12 @@
 
 ## 2.0.0 - Unreleased
 
+- Move blur adjustment to `Ctrl + Alt + Shift + ↑` and `Ctrl + Alt + Shift + ↓`, migrating the previous Windows-key bindings while preserving custom shortcuts
+- Scope `Ctrl + Shift + P` and hold-Alt reveal to the focused protected application instead of changing every protected app
+- Keep tray pause and panic mask global so an explicit global control remains available
+- Remove mouse-hover reveal from new and existing custom profiles so clicks cannot expose an unfiltered area by default
+- Resolve shortcuts from focused tool windows and bound unresponsive window capture so unsupported apps retain a safe fallback without repeated capture work
+- Migrate custom reveal behavior and shortcut defaults through settings schema version 9
 - Add an application picker for visible desktop programs with executable icons, friendly names, process names, and window titles
 - Allow browsing directly to an executable so an application can be configured before it is running
 - Let custom profiles be renamed or removed while built-in WhatsApp and Telegram profiles remain protected from deletion
@@ -13,7 +19,7 @@
 - Add a lightweight wet-glass mask with transparent condensation droplets over live blur
 - Expose mask-style selection in the primary per-application settings
 - Preserve the selected mask style when window width activates another adaptive preset
-- Add `Ctrl + Win + ↑` and `Ctrl + Win + ↓` to adjust the focused protected app's blur strength by 5%
+- Add focused-app shortcuts to adjust blur strength by 5%
 - Save shortcut adjustments atomically and prevent key-repeat from issuing duplicate steps
 - Keep live capture running across blur-strength shortcut changes instead of getting stuck on the opaque fallback
 - Replace the repeated procedural frost tiles with a live blur of the protected window
