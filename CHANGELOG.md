@@ -2,6 +2,8 @@
 
 ## 2.0.0 - Unreleased
 
+- Let `Ctrl + Shift + P` automatically add and immediately protect the focused desktop application when it has no profile yet
+- Restore a disabled matching profile from the same shortcut instead of creating a duplicate, while retaining system and security-process exclusions
 - Enable mouse-hover reveal for every newly added application and migrate existing custom profiles to the same behavior
 - Add a local 4–8 digit panic unlock PIN that can be created or changed from settings
 - Require the PIN before disabling either a focused-application panic mask or the global tray panic mask

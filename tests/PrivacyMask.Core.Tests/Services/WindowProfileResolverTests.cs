@@ -111,6 +111,23 @@ public sealed class WindowProfileResolverTests
     }
 
     [Fact]
+    public void Resolve_CanReturnDisabledMatch_WhenExplicitlyRequested()
+    {
+        var settings = new DefaultSettingsFactory().Create();
+        var profile = settings.AppProfiles.Single(candidate => candidate.AppId == AppId.WhatsApp);
+        profile.Enabled = false;
+        var resolver = new WindowProfileResolver([new FakeWhatsAppAdapter()]);
+
+        var tracked = resolver.Resolve(
+            CreateWhatsAppSnapshot(width: 1200),
+            settings.AppProfiles,
+            includeDisabled: true);
+
+        Assert.NotNull(tracked);
+        Assert.Same(profile, tracked!.Profile);
+    }
+
+    [Fact]
     public void Resolve_UsesProfileZones_WhenAutomaticallySelectedPresetMatchesUserSelection()
     {
         var factory = new DefaultSettingsFactory();
