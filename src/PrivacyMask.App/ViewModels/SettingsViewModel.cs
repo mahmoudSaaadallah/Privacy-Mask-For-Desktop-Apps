@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using PrivacyMask.Core.Models;
+using PrivacyMask.Core.Services;
 
 namespace PrivacyMask.App.ViewModels;
 
@@ -9,6 +10,7 @@ public sealed class SettingsViewModel : ObservableObject
 {
     private bool _launchAtLogin;
     private bool _startMinimized;
+    private PanicPinCredential? _panicPin;
 
     public static SettingsViewModel FromModel(
         AppSettings settings,
@@ -20,6 +22,7 @@ public sealed class SettingsViewModel : ObservableObject
         {
             _launchAtLogin = settings.LaunchAtLogin,
             _startMinimized = settings.StartMinimized,
+            _panicPin = PanicPinService.Clone(settings.PanicPin),
             CurrentModeSummary = currentMode switch
             {
                 RuntimeMode.Standard => "Standard masking is active when a supported app is detected.",
@@ -55,6 +58,26 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _startMinimized, value);
     }
 
+    public PanicPinCredential? PanicPin => PanicPinService.Clone(_panicPin);
+
+    public bool HasPanicPin => _panicPin is not null;
+
+    public string PanicPinStatus => HasPanicPin
+        ? "PIN configured. It is required to disable any panic mask."
+        : "No PIN configured. The first panic action will ask you to create one.";
+
+    public string PanicPinActionLabel => HasPanicPin ? "Change PIN" : "Add PIN";
+
+    public void SetPanicPin(PanicPinCredential credential)
+    {
+        ArgumentNullException.ThrowIfNull(credential);
+        _panicPin = PanicPinService.Clone(credential);
+        RaisePropertyChanged(nameof(PanicPin));
+        RaisePropertyChanged(nameof(HasPanicPin));
+        RaisePropertyChanged(nameof(PanicPinStatus));
+        RaisePropertyChanged(nameof(PanicPinActionLabel));
+    }
+
     public AppSettings ToModel()
     {
         return new AppSettings
@@ -63,6 +86,7 @@ public sealed class SettingsViewModel : ObservableObject
             LaunchAtLogin = LaunchAtLogin,
             StartMinimized = StartMinimized,
             CurrentMode = RuntimeMode.Standard,
+            PanicPin = PanicPinService.Clone(_panicPin),
             GlobalHotkeys = Hotkeys.Select(binding => binding.ToModel()).ToList(),
             AppProfiles = AppProfiles.Select(profile => profile.ToModel()).ToList(),
         };

@@ -46,6 +46,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly HashSet<nint> _activeOcclusionHandles = [];
     private readonly List<nint> _staleOcclusionHandles = [];
     private readonly SemaphoreSlim _blurStrengthUpdateGate = new(1, 1);
+    private readonly SemaphoreSlim _panicOperationGate = new(1, 1);
 
     private AppSettings _settings = new();
     private AppSettings _savedSettings = new();
@@ -98,7 +99,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             Enabled = false,
         };
         _toggleProtectionItem = new ToolStripMenuItem("Toggle protection", null, (_, _) => ToggleProtection());
-        _panicItem = new ToolStripMenuItem("Panic mask all", null, (_, _) => TogglePanicMode());
+        _panicItem = new ToolStripMenuItem("Panic mask all", null, async (_, _) => await ToggleGlobalPanicModeAsync());
         _launchAtLoginItem = new ToolStripMenuItem("Launch at sign in", null, async (_, _) => await ToggleLaunchAtLoginAsync())
         {
             CheckOnClick = true,
@@ -375,7 +376,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
                 ToggleForegroundProfileProtection();
                 break;
             case HotkeyAction.PanicHideAll:
-                ToggleForegroundProfilePanic();
+                _ = ToggleForegroundProfilePanicAsync();
                 break;
             case HotkeyAction.OpenSettings:
                 ShowSettingsWindow();
@@ -530,39 +531,141 @@ public sealed class ShellCoordinator : IAsyncDisposable
             tipIcon: icon);
     }
 
-    private void TogglePanicMode()
+    private async Task ToggleGlobalPanicModeAsync()
     {
-        _protectionStateMachine.TogglePanic();
-        UpdateTrayState();
-        RefreshOverlays();
+        if (!await _panicOperationGate.WaitAsync(0))
+        {
+            return;
+        }
+
+        try
+        {
+            if (!await EnsurePanicPinConfiguredAsync())
+            {
+                return;
+            }
+
+            if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic
+                && !RequestPanicUnlock("all protected applications"))
+            {
+                return;
+            }
+
+            _protectionStateMachine.TogglePanic();
+            UpdateTrayState();
+            RefreshOverlays();
+        }
+        finally
+        {
+            _panicOperationGate.Release();
+        }
     }
 
-    private void ToggleForegroundProfilePanic()
+    private async Task ToggleForegroundProfilePanicAsync()
     {
-        if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic)
+        if (!await _panicOperationGate.WaitAsync(0))
         {
-            ShowProtectionTip("Disable the global panic mask from the tray before changing one app.", ToolTipIcon.Info);
             return;
         }
 
-        if (_protectionStateMachine.CurrentMode == RuntimeMode.Off)
+        try
         {
-            ShowProtectionTip("Resume global protection from the tray before changing one app.", ToolTipIcon.Info);
-            return;
+            if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic)
+            {
+                ShowProtectionTip("Disable the global panic mask from the tray before changing one app.", ToolTipIcon.Info);
+                return;
+            }
+
+            if (_protectionStateMachine.CurrentMode == RuntimeMode.Off)
+            {
+                ShowProtectionTip("Resume global protection from the tray before changing one app.", ToolTipIcon.Info);
+                return;
+            }
+
+            var trackedWindow = TryResolveForegroundProfile();
+            if (trackedWindow is null)
+            {
+                ShowProtectionTip("Focus a protected app first, then press Ctrl + Shift + H.", ToolTipIcon.Info);
+                return;
+            }
+
+            if (!await EnsurePanicPinConfiguredAsync())
+            {
+                return;
+            }
+
+            var profileId = trackedWindow.Profile.ProfileId;
+            var isCurrentlyPanic = _profileProtectionState.IsPanic(profileId);
+            if (isCurrentlyPanic && !RequestPanicUnlock(trackedWindow.Profile.DisplayName))
+            {
+                return;
+            }
+
+            var panicEnabled = _profileProtectionState.TogglePanic(profileId);
+            RefreshOverlays();
+            ShowProtectionTip(
+                $"{trackedWindow.Profile.DisplayName} panic mask {(panicEnabled ? "enabled" : "disabled")}. Other apps are unchanged.",
+                ToolTipIcon.Info);
+        }
+        finally
+        {
+            _panicOperationGate.Release();
+        }
+    }
+
+    private async Task<bool> EnsurePanicPinConfiguredAsync()
+    {
+        if (PanicPinService.IsCredentialValid(_savedSettings.PanicPin))
+        {
+            return true;
         }
 
-        var trackedWindow = TryResolveForegroundProfile();
-        if (trackedWindow is null)
+        var dialog = new PanicPinSetupWindow(currentCredential: null);
+        SetDialogOwner(dialog);
+        if (dialog.ShowDialog() != true || dialog.CreatedCredential is null)
         {
-            ShowProtectionTip("Focus a protected app first, then press Ctrl + Shift + H.", ToolTipIcon.Info);
-            return;
+            return false;
         }
 
-        var panicEnabled = _profileProtectionState.TogglePanic(trackedWindow.Profile.ProfileId);
-        RefreshOverlays();
-        ShowProtectionTip(
-            $"{trackedWindow.Profile.DisplayName} panic mask {(panicEnabled ? "enabled" : "disabled")}. Other apps are unchanged.",
-            ToolTipIcon.Info);
+        var nextSettings = AppSettingsCloner.Clone(_savedSettings);
+        nextSettings.PanicPin = PanicPinService.Clone(dialog.CreatedCredential);
+        try
+        {
+            await _settingsStore.SaveAsync(nextSettings);
+        }
+        catch (Exception exception)
+        {
+            ShowProtectionTip($"The PIN could not be saved. {exception.Message}", ToolTipIcon.Error);
+            return false;
+        }
+
+        _savedSettings = AppSettingsCloner.Clone(nextSettings);
+        _settings.PanicPin = PanicPinService.Clone(nextSettings.PanicPin);
+        _mainWindow?.ViewModel.SetPanicPin(nextSettings.PanicPin!);
+        return true;
+    }
+
+    private bool RequestPanicUnlock(string targetName)
+    {
+        var credential = _savedSettings.PanicPin;
+        if (!PanicPinService.IsCredentialValid(credential))
+        {
+            ShowProtectionTip("Configure a valid panic unlock PIN before disabling panic mode.", ToolTipIcon.Error);
+            return false;
+        }
+
+        var dialog = new PanicPinUnlockWindow(credential!, targetName);
+        SetDialogOwner(dialog);
+        return dialog.ShowDialog() == true;
+    }
+
+    private void SetDialogOwner(Window dialog)
+    {
+        if (_mainWindow?.IsVisible == true)
+        {
+            dialog.Owner = _mainWindow;
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        }
     }
 
     private async Task ToggleLaunchAtLoginAsync()

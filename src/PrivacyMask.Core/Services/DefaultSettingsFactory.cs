@@ -80,6 +80,9 @@ public sealed class DefaultSettingsFactory
         defaults.LaunchAtLogin = persisted.LaunchAtLogin;
         defaults.StartMinimized = persisted.StartMinimized;
         defaults.CurrentMode = RuntimeMode.Standard;
+        defaults.PanicPin = PanicPinService.IsCredentialValid(persisted.PanicPin)
+            ? PanicPinService.Clone(persisted.PanicPin)
+            : null;
         var migrateLegacyBlurHotkeys = persisted.Version < 9;
         defaults.GlobalHotkeys = MergeHotkeys(defaults.GlobalHotkeys, persisted.GlobalHotkeys, migrateLegacyBlurHotkeys);
         var migrateLegacyFocusAwareProfiles = persisted.Version < 2;
@@ -87,7 +90,7 @@ public sealed class DefaultSettingsFactory
         var migrateLegacyHoverReveal = persisted.Version < 4;
         var migrateLegacyMaskColor = persisted.Version < 5;
         var migrateLegacySurfaceIntensity = persisted.Version < 7;
-        var migrateCustomHoverReveal = persisted.Version < 9;
+        var migrateCustomHoverReveal = persisted.Version < 11;
         var migrateDefaultHoverRevealSize = persisted.Version < 10;
 
         foreach (var defaultProfile in defaults.AppProfiles)
@@ -290,7 +293,7 @@ public sealed class DefaultSettingsFactory
             Style = NormalizeMaskStyle(zone.Style, fallback.Style),
             Strength = MaskIntensityScale.Clamp(zone.Strength),
             Behavior = migrateLegacyHoverReveal
-                ? (zone.Behavior & ~ZoneBehavior.RevealOnHover) | ZoneBehavior.HideDuringTemporaryReveal
+                ? zone.Behavior | ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal
                 : zone.Behavior,
             Enabled = zone.Enabled,
         };

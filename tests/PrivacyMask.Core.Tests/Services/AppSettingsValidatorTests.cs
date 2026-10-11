@@ -16,6 +16,22 @@ public sealed class AppSettingsValidatorTests
         Assert.Empty(errors);
     }
 
+    [Fact]
+    public void Validate_RejectsMalformedPanicPinCredential()
+    {
+        var settings = new DefaultSettingsFactory().Create();
+        settings.PanicPin = new PanicPinCredential
+        {
+            Iterations = 1,
+            Salt = "invalid",
+            Hash = "invalid",
+        };
+
+        var error = Assert.Single(AppSettingsValidator.Validate(settings));
+
+        Assert.Equal("Panic unlock PIN", error.Location);
+    }
+
     [Theory]
     [InlineData(79, 42, "Hover width")]
     [InlineData(1401, 42, "Hover width")]

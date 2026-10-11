@@ -14,6 +14,7 @@ public sealed class AppSettingsClonerTests
         source.OnboardingCompleted = true;
         source.LaunchAtLogin = true;
         source.CurrentMode = RuntimeMode.Panic;
+        source.PanicPin = PanicPinService.Create("2468");
         sourceProfile.Hotkeys.Add(new HotkeyBinding
         {
             Action = HotkeyAction.OpenSettings,
@@ -28,6 +29,8 @@ public sealed class AppSettingsClonerTests
         Assert.Equal(source.OnboardingCompleted, clone.OnboardingCompleted);
         Assert.Equal(source.LaunchAtLogin, clone.LaunchAtLogin);
         Assert.Equal(source.CurrentMode, clone.CurrentMode);
+        Assert.NotSame(source.PanicPin, clone.PanicPin);
+        Assert.True(PanicPinService.Verify("2468", clone.PanicPin));
         Assert.Equal(source.GlobalHotkeys.Count, clone.GlobalHotkeys.Count);
         Assert.Equal(sourceProfile.ProfileId, clonedProfile.ProfileId);
         Assert.Equal(sourceProfile.WindowMatchers.Single().ProcessNames, clonedProfile.WindowMatchers.Single().ProcessNames);
