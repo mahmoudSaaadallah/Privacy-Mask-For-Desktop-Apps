@@ -24,11 +24,13 @@ public sealed class PrivacyOverlayWindow : Window
 {
     private static readonly TimeSpan BlurCaptureInterval = TimeSpan.FromMilliseconds(250d);
     private static readonly TimeSpan WetGlassCaptureInterval = TimeSpan.FromMilliseconds(500d);
+    private static readonly TimeSpan BlurCaptureTimeout = TimeSpan.FromMilliseconds(1500d);
     private static readonly Brush WetGlassTextureBrush = CreateWetGlassTextureBrush();
 
     private readonly Canvas _canvas;
     private readonly List<WpfImage> _blurImages = [];
     private readonly BlurCaptureLifecycle _blurCaptureLifecycle = new();
+    private readonly BlurCaptureHealth _blurCaptureHealth = new();
     private ScreenRect[] _lastOccludingBounds = [];
     private AppProfile? _lastProfile;
     private IReadOnlyList<PrivacyZone>? _lastEffectiveZones;
@@ -277,7 +279,9 @@ public sealed class PrivacyOverlayWindow : Window
         }
 
         var now = DateTime.UtcNow;
-        if (now < _nextCaptureUtc || !_blurCaptureLifecycle.TryBegin(out var generation))
+        if (_blurCaptureHealth.IsDisabled
+            || now < _nextCaptureUtc
+            || !_blurCaptureLifecycle.TryBegin(out var generation))
         {
             return;
         }
@@ -335,12 +339,22 @@ public sealed class PrivacyOverlayWindow : Window
     private async Task CaptureBlurFrameAsync(BlurCaptureRequest request, int generation)
     {
         BitmapSource? frame = null;
+        var captureTask = Task.Run(() => WindowCaptureService.TryCapture(
+            request.WindowHandle,
+            request.Bounds,
+            request.DownsampleFactor));
+        if (await Task.WhenAny(captureTask, Task.Delay(BlurCaptureTimeout)) != captureTask)
+        {
+            _blurCaptureHealth.RecordTimeout();
+            _nextCaptureUtc = DateTime.MaxValue;
+            _blurCaptureLifecycle.Complete(generation);
+            _ = ObserveLateCaptureAsync(captureTask);
+            return;
+        }
+
         try
         {
-            frame = await Task.Run(() => WindowCaptureService.TryCapture(
-                request.WindowHandle,
-                request.Bounds,
-                request.DownsampleFactor));
+            frame = await captureTask;
         }
         catch
         {
@@ -361,10 +375,13 @@ public sealed class PrivacyOverlayWindow : Window
 
         if (frame is null)
         {
-            _nextCaptureUtc = DateTime.UtcNow + TimeSpan.FromSeconds(1d);
+            _nextCaptureUtc = _blurCaptureHealth.RecordFailure()
+                ? DateTime.MaxValue
+                : DateTime.UtcNow + TimeSpan.FromSeconds(1d);
             return;
         }
 
+        _blurCaptureHealth.RecordSuccess();
         _blurFrame = frame;
         if (_blurImages.Count == 0)
         {
@@ -375,6 +392,18 @@ public sealed class PrivacyOverlayWindow : Window
         foreach (var image in _blurImages)
         {
             image.Source = frame;
+        }
+    }
+
+    private static async Task ObserveLateCaptureAsync(Task<BitmapSource?> captureTask)
+    {
+        try
+        {
+            _ = await captureTask;
+        }
+        catch
+        {
+            // The opaque fallback remains active; observing prevents an unobserved task exception.
         }
     }
 
