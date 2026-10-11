@@ -75,6 +75,10 @@ capture cadence to limit resource use.
   `Ctrl + Alt + Shift + ↑/↓` unless the user already chose a custom binding. It
   also removes mouse-hover reveal from legacy custom profiles while retaining
   explicit hold-to-reveal behavior.
+- Settings schema version 10 migrates profiles that still use the previous
+  394×42 hover default to 600×70. Customized dimensions and the existing
+  launch-at-sign-in choice are preserved; only new installations enable startup
+  registration by default.
 
 ## Lifecycle and hotkeys
 

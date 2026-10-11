@@ -39,7 +39,9 @@ Windows allows only one application to register a particular global shortcut.
 PrivacyMask shows a tray warning and marks any failed shortcut in the settings
 window. Close the other application using that shortcut, then save PrivacyMask
 settings again to retry registration. Hold-to-reveal is detected directly and
-does not use a global shortcut registration. The default blur controls are
+does not use a global shortcut registration. Hold `Alt` alone for 1.5 seconds;
+pressing another key cancels that reveal attempt until Alt is released. The
+default blur controls are
 `Ctrl + Alt + Shift + ↑` and `Ctrl + Alt + Shift + ↓`; settings created with
 the former `Ctrl + Win + ↑/↓` defaults are migrated automatically.
 

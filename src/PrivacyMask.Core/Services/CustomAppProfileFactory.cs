@@ -23,8 +23,8 @@ public static class CustomAppProfileFactory
             StartupMode = AppActivationMode.Manual,
             MaskIntensity = MaskIntensityScale.Default,
             MaskColor = MaskColorOption.Black,
-            HoverRevealWidthPixels = 394,
-            HoverRevealHeightPixels = 42,
+            HoverRevealWidthPixels = 600,
+            HoverRevealHeightPixels = 70,
             WindowMatchers =
             [
                 new WindowMatcher

@@ -2,6 +2,10 @@
 
 ## 2.0.0 - Unreleased
 
+- Require holding `Alt` alone for 1.5 seconds before revealing the focused app; pressing any other key cancels that hold until Alt is released
+- Use a 600×70 pixel hover reveal window by default and migrate only profiles that still use the previous 394×42 default
+- Enable launch at sign-in by default for new installations while preserving the saved choice for existing users
+- Migrate the updated profile defaults through settings schema version 10
 - Move blur adjustment to `Ctrl + Alt + Shift + ↑` and `Ctrl + Alt + Shift + ↓`, migrating the previous Windows-key bindings while preserving custom shortcuts
 - Scope `Ctrl + Shift + P` and hold-Alt reveal to the focused protected application instead of changing every protected app
 - Keep tray pause and panic mask global so an explicit global control remains available

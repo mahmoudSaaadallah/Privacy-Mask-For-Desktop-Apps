@@ -11,7 +11,7 @@ public sealed class DefaultSettingsFactory
         return new AppSettings
         {
             OnboardingCompleted = false,
-            LaunchAtLogin = false,
+            LaunchAtLogin = true,
             StartMinimized = true,
             CurrentMode = RuntimeMode.Standard,
             GlobalHotkeys =
@@ -88,6 +88,7 @@ public sealed class DefaultSettingsFactory
         var migrateLegacyMaskColor = persisted.Version < 5;
         var migrateLegacySurfaceIntensity = persisted.Version < 7;
         var migrateCustomHoverReveal = persisted.Version < 9;
+        var migrateDefaultHoverRevealSize = persisted.Version < 10;
 
         foreach (var defaultProfile in defaults.AppProfiles)
         {
@@ -112,10 +113,15 @@ public sealed class DefaultSettingsFactory
             defaultProfile.MaskColor = migrateLegacyMaskColor
                 ? defaultProfile.MaskColor
                 : NormalizeMaskColor(persistedProfile.MaskColor, defaultProfile.MaskColor);
-            defaultProfile.HoverRevealWidthPixels = migrateLegacyHoverReveal && persistedProfile.HoverRevealWidthPixels <= 0
+            var migrateProfileHoverRevealSize = migrateDefaultHoverRevealSize
+                && persistedProfile.HoverRevealWidthPixels == 394
+                && persistedProfile.HoverRevealHeightPixels == 42;
+            defaultProfile.HoverRevealWidthPixels = (migrateLegacyHoverReveal && persistedProfile.HoverRevealWidthPixels <= 0)
+                || migrateProfileHoverRevealSize
                 ? defaultProfile.HoverRevealWidthPixels
                 : int.Clamp(persistedProfile.HoverRevealWidthPixels, 80, 1400);
-            defaultProfile.HoverRevealHeightPixels = migrateLegacyHoverReveal && persistedProfile.HoverRevealHeightPixels <= 0
+            defaultProfile.HoverRevealHeightPixels = (migrateLegacyHoverReveal && persistedProfile.HoverRevealHeightPixels <= 0)
+                || migrateProfileHoverRevealSize
                 ? defaultProfile.HoverRevealHeightPixels
                 : int.Clamp(persistedProfile.HoverRevealHeightPixels, 20, 420);
             defaultProfile.SelectedPresetId = ResolvePresetId(defaultProfile, persistedProfile.SelectedPresetId);
@@ -134,7 +140,11 @@ public sealed class DefaultSettingsFactory
         foreach (var customProfile in persisted.AppProfiles.Where(profile => profile.AppId == AppId.Custom))
         {
             var profileId = ResolveCustomProfileId(customProfile.ProfileId, profileIds);
-            defaults.AppProfiles.Add(NormalizeCustomProfile(customProfile, profileId, migrateCustomHoverReveal));
+            defaults.AppProfiles.Add(NormalizeCustomProfile(
+                customProfile,
+                profileId,
+                migrateCustomHoverReveal,
+                migrateDefaultHoverRevealSize));
             profileIds.Add(profileId);
         }
 
@@ -160,8 +170,8 @@ public sealed class DefaultSettingsFactory
             StartupMode = AppActivationMode.Manual,
             MaskIntensity = MaskIntensityScale.Default,
             MaskColor = MaskColorOption.Black,
-            HoverRevealWidthPixels = 394,
-            HoverRevealHeightPixels = 42,
+            HoverRevealWidthPixels = 600,
+            HoverRevealHeightPixels = 70,
             WindowMatchers =
             [
                 new WindowMatcher
@@ -188,7 +198,8 @@ public sealed class DefaultSettingsFactory
     private static AppProfile NormalizeCustomProfile(
         AppProfile persisted,
         string profileId,
-        bool migrateLegacyHoverReveal)
+        bool migrateLegacyHoverReveal,
+        bool migrateDefaultHoverRevealSize)
     {
         var defaultProfile = CustomAppProfileFactory.Create(
             string.IsNullOrWhiteSpace(persisted.DisplayName) ? "Custom app" : persisted.DisplayName,
@@ -221,6 +232,9 @@ public sealed class DefaultSettingsFactory
         var zones = persisted.Zones.Count > 0
             ? persisted.Zones.Select(zone => NormalizeCustomZone(zone, defaultProfile.Zones[0], migrateLegacyHoverReveal)).ToList()
             : selectedPreset.Zones.Select(PresetCatalog.CloneZone).ToList();
+        var useDefaultHoverRevealSize = migrateDefaultHoverRevealSize
+            && persisted.HoverRevealWidthPixels == 394
+            && persisted.HoverRevealHeightPixels == 42;
 
         return new AppProfile
         {
@@ -231,8 +245,12 @@ public sealed class DefaultSettingsFactory
             StartupMode = persisted.StartupMode,
             MaskIntensity = MaskIntensityScale.Clamp(persisted.MaskIntensity),
             MaskColor = NormalizeMaskColor(persisted.MaskColor, MaskColorOption.Black),
-            HoverRevealWidthPixels = int.Clamp(persisted.HoverRevealWidthPixels, 80, 1400),
-            HoverRevealHeightPixels = int.Clamp(persisted.HoverRevealHeightPixels, 20, 420),
+            HoverRevealWidthPixels = useDefaultHoverRevealSize
+                ? defaultProfile.HoverRevealWidthPixels
+                : int.Clamp(persisted.HoverRevealWidthPixels, 80, 1400),
+            HoverRevealHeightPixels = useDefaultHoverRevealSize
+                ? defaultProfile.HoverRevealHeightPixels
+                : int.Clamp(persisted.HoverRevealHeightPixels, 20, 420),
             WindowMatchers = matchers,
             Zones = zones,
             Hotkeys = persisted.Hotkeys.Select(CloneHotkey).ToList(),
