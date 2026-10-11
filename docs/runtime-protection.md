@@ -8,7 +8,7 @@ does not make the next launch start unprotected.
 
 | State | Overlay behavior | Hover or hold reveal |
 | --- | --- | --- |
-| Protected | Uses the configured profile zones and mask appearance | Hold reveal applies only to the focused profile; hover applies only to zones that explicitly enable it |
+| Protected | Uses the configured profile zones and mask appearance | Holding the reveal key alone for 1.5 seconds applies only to the focused profile; hover applies only to zones that explicitly enable it |
 | Profile paused | Hides overlays belonging to one focused profile | Disabled for that profile |
 | Globally paused | Hides all PrivacyMask overlays | Disabled |
 | Panic mask | Covers the complete bounds of every detected protected window with an opaque black mask | Disabled |
@@ -17,6 +17,9 @@ does not make the next launch start unprotected.
 
 - PrivacyMask always starts in `Protected`.
 - `Ctrl + Shift + P` toggles only the focused protected profile.
+- Hold reveal activates only after its key has remained down alone for 1.5
+  seconds. Any other keyboard key cancels the current hold until the reveal key
+  is released, preventing multi-key shortcuts from exposing content.
 - The tray pause command changes `Protected` to `Globally paused` and back.
 - Neither profile nor global pause can bypass an active panic mask.
 - Toggle panic enters `Panic mask` from any non-panic state.

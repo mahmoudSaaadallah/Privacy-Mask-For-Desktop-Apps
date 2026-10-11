@@ -189,9 +189,12 @@ environment, initial measurements, performance budgets, and required scenarios.
 5. While a protected application is focused, press `Ctrl + Alt + Shift + ↑` to
    raise its saved blur strength by 5%, or `Ctrl + Alt + Shift + ↓` to lower it
    by 5%.
-6. Hold `Alt` to reveal only the focused protected application. Press
+6. Hold `Alt` by itself for 1.5 seconds to reveal only the focused protected
+   application. Pressing any other key during that hold cancels reveal until
+   `Alt` is released, so blur shortcuts never expose the app. Press
    `Ctrl + Shift + P` to pause or resume only that application's profile.
-   Custom applications do not reveal content on mouse hover by default.
+   Custom applications do not reveal content on mouse hover by default. The
+   default hover reveal window for zones that enable it is 600×70 pixels.
 7. Use the tray icon to pause every profile, apply an opaque panic mask, reopen
    settings, or exit the app.
 
@@ -199,6 +202,9 @@ Protection always starts enabled when PrivacyMask launches. Both a focused-app
 pause and the global tray pause are runtime-only actions and are not restored
 after an app restart. The panic mask covers every detected protected window in
 opaque black and disables reveal gestures until panic mode is turned off.
+New installations also enable launch at sign-in by default; this can be changed
+from onboarding, settings, or the tray without affecting existing users' saved
+choice during an update.
 
 If another program has already reserved a configured global shortcut,
 PrivacyMask shows a tray warning and marks that shortcut as unavailable in the
