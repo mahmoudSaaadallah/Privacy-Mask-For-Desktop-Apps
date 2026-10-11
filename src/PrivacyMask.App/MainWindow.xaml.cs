@@ -175,6 +175,21 @@ public partial class MainWindow : Window
         aboutWindow.ShowDialog();
     }
 
+    private void ConfigurePanicPin_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new PanicPinSetupWindow(ViewModel.PanicPin)
+        {
+            Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+        };
+        if (dialog.ShowDialog() != true || dialog.CreatedCredential is null)
+        {
+            return;
+        }
+
+        ViewModel.SetPanicPin(dialog.CreatedCredential);
+    }
+
     private void AddApplication_Click(object sender, RoutedEventArgs e)
     {
         var picker = new AddApplicationWindow(_applicationCatalog, GetProtectedProcessNames())
