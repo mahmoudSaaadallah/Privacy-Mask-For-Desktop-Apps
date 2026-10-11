@@ -10,6 +10,8 @@ public sealed class AppProfile
 
     public string DisplayName { get; init; } = string.Empty;
 
+    public string? ExecutablePath { get; set; }
+
     public bool Enabled { get; set; } = true;
 
     public AppActivationMode StartupMode { get; set; } = AppActivationMode.Manual;

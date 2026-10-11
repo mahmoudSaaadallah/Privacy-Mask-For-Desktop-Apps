@@ -244,6 +244,9 @@ public sealed class DefaultSettingsFactory
             ProfileId = profileId,
             AppId = AppId.Custom,
             DisplayName = defaultProfile.DisplayName,
+            ExecutablePath = string.IsNullOrWhiteSpace(persisted.ExecutablePath)
+                ? null
+                : persisted.ExecutablePath.Trim(),
             Enabled = persisted.Enabled && matchers.Count > 0,
             StartupMode = persisted.StartupMode,
             MaskIntensity = MaskIntensityScale.Clamp(persisted.MaskIntensity),

@@ -8,11 +8,16 @@ public sealed class CustomAppProfileFactoryTests
     [Fact]
     public void Create_BuildsSafeFullWindowProfile()
     {
-        var profile = CustomAppProfileFactory.Create("  Notes  ", "  Notepad  ", "custom-notes");
+        var profile = CustomAppProfileFactory.Create(
+            "  Notes  ",
+            "  Notepad  ",
+            "custom-notes",
+            "  C:\\Apps\\Notepad.exe  ");
 
         Assert.Equal("custom-notes", profile.ProfileId);
         Assert.Equal(AppId.Custom, profile.AppId);
         Assert.Equal("Notes", profile.DisplayName);
+        Assert.Equal("C:\\Apps\\Notepad.exe", profile.ExecutablePath);
         Assert.Equal("Notepad", profile.WindowMatchers.Single().ProcessNames.Single());
         Assert.Equal(ProcessNameMatchMode.Exact, profile.WindowMatchers.Single().ProcessNameMatchMode);
         Assert.Equal("custom-full-window", profile.SelectedPresetId);

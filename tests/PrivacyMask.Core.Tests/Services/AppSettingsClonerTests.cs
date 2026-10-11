@@ -15,6 +15,7 @@ public sealed class AppSettingsClonerTests
         source.LaunchAtLogin = true;
         source.CurrentMode = RuntimeMode.Panic;
         source.PanicPin = PanicPinService.Create("2468");
+        sourceProfile.ExecutablePath = "C:\\Apps\\WhatsApp.exe";
         sourceProfile.Hotkeys.Add(new HotkeyBinding
         {
             Action = HotkeyAction.OpenSettings,
@@ -33,6 +34,7 @@ public sealed class AppSettingsClonerTests
         Assert.True(PanicPinService.Verify("2468", clone.PanicPin));
         Assert.Equal(source.GlobalHotkeys.Count, clone.GlobalHotkeys.Count);
         Assert.Equal(sourceProfile.ProfileId, clonedProfile.ProfileId);
+        Assert.Equal(sourceProfile.ExecutablePath, clonedProfile.ExecutablePath);
         Assert.Equal(sourceProfile.WindowMatchers.Single().ProcessNames, clonedProfile.WindowMatchers.Single().ProcessNames);
         Assert.Equal(sourceProfile.WindowMatchers.Single().ProcessNameMatchMode, clonedProfile.WindowMatchers.Single().ProcessNameMatchMode);
         Assert.Equal(sourceProfile.Zones.Single().RelativeRect, clonedProfile.Zones.Single().RelativeRect);

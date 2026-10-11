@@ -265,7 +265,11 @@ public sealed class DefaultSettingsFactoryTests
         var telegram = current.AppProfiles.Single(profile => profile.AppId == AppId.Telegram);
         telegram.HoverRevealWidthPixels = 720;
         telegram.HoverRevealHeightPixels = 90;
-        var custom = CustomAppProfileFactory.Create("Notes", "Notepad", "custom-notes");
+        var custom = CustomAppProfileFactory.Create(
+            "Notes",
+            "Notepad",
+            "custom-notes",
+            "  C:\\Apps\\Notepad.exe  ");
         custom.HoverRevealWidthPixels = 394;
         custom.HoverRevealHeightPixels = 42;
         current.AppProfiles.Add(custom);
@@ -370,7 +374,11 @@ public sealed class DefaultSettingsFactoryTests
     {
         var factory = new DefaultSettingsFactory();
         var persisted = factory.Create();
-        var custom = CustomAppProfileFactory.Create("Notes", "Notepad", "custom-notes");
+        var custom = CustomAppProfileFactory.Create(
+            "Notes",
+            "Notepad",
+            "custom-notes",
+            "  C:\\Apps\\Notepad.exe  ");
         custom.MaskIntensity = 0.72d;
         custom.MaskColor = MaskColorOption.Blue;
         custom.Zones.Single().Style = MaskStyle.WetGlass;
@@ -381,6 +389,7 @@ public sealed class DefaultSettingsFactoryTests
 
         Assert.Equal(AppId.Custom, restored.AppId);
         Assert.Equal("Notes", restored.DisplayName);
+        Assert.Equal("C:\\Apps\\Notepad.exe", restored.ExecutablePath);
         Assert.Equal(0.72d, restored.MaskIntensity);
         Assert.Equal(MaskColorOption.Blue, restored.MaskColor);
         Assert.Equal(MaskStyle.WetGlass, restored.Zones.Single().Style);
