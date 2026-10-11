@@ -31,7 +31,7 @@ public static class PresetCatalog
                 MinWindowHeight = 1,
                 Zones =
                 [
-                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0d, 0d, 1d, 1d), MaskStyle.Blur, MaskIntensityScale.Default, ZoneBehavior.HideDuringTemporaryReveal),
+                    Zone("full-window", "Full app mask", ZoneAnchor.Window, new RelativeRect(0d, 0d, 1d, 1d), MaskStyle.Blur, MaskIntensityScale.Default, ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal),
                 ],
             },
         ];

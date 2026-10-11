@@ -389,17 +389,17 @@ public sealed class DefaultSettingsFactoryTests
     }
 
     [Fact]
-    public void MergeWithDefaults_RemovesMouseRevealFromLegacyCustomProfiles()
+    public void MergeWithDefaults_EnablesMouseRevealForExistingCustomProfiles()
     {
         var factory = new DefaultSettingsFactory();
         var current = factory.Create();
         var custom = CustomAppProfileFactory.Create("Notes", "Notepad", "custom-notes");
-        custom.Zones.Single().Behavior = ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal;
-        custom.Presets.Single().Zones.Single().Behavior = ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal;
+        custom.Zones.Single().Behavior = ZoneBehavior.HideDuringTemporaryReveal;
+        custom.Presets.Single().Zones.Single().Behavior = ZoneBehavior.HideDuringTemporaryReveal;
         current.AppProfiles.Add(custom);
         var persisted = new AppSettings
         {
-            Version = 8,
+            Version = 10,
             GlobalHotkeys = current.GlobalHotkeys,
             AppProfiles = current.AppProfiles,
         };
@@ -407,8 +407,34 @@ public sealed class DefaultSettingsFactoryTests
         var merged = factory.MergeWithDefaults(persisted);
         var restored = merged.AppProfiles.Single(profile => profile.ProfileId == "custom-notes");
 
-        Assert.Equal(ZoneBehavior.HideDuringTemporaryReveal, restored.Zones.Single().Behavior);
-        Assert.Equal(ZoneBehavior.HideDuringTemporaryReveal, restored.Presets.Single().Zones.Single().Behavior);
+        Assert.Equal(
+            ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal,
+            restored.Zones.Single().Behavior);
+        Assert.Equal(
+            ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal,
+            restored.Presets.Single().Zones.Single().Behavior);
+    }
+
+    [Fact]
+    public void MergeWithDefaults_PreservesValidPanicPinAndDropsMalformedCredential()
+    {
+        var factory = new DefaultSettingsFactory();
+        var persisted = factory.Create();
+        persisted.PanicPin = PanicPinService.Create("2468");
+
+        var merged = factory.MergeWithDefaults(persisted);
+
+        Assert.NotNull(merged.PanicPin);
+        Assert.NotSame(persisted.PanicPin, merged.PanicPin);
+        Assert.True(PanicPinService.Verify("2468", merged.PanicPin));
+
+        persisted.PanicPin = new PanicPinCredential
+        {
+            Iterations = 1,
+            Salt = "invalid",
+            Hash = "invalid",
+        };
+        Assert.Null(factory.MergeWithDefaults(persisted).PanicPin);
     }
 
     [Fact]

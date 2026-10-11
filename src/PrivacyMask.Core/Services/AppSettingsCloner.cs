@@ -14,6 +14,7 @@ public static class AppSettingsCloner
             LaunchAtLogin = settings.LaunchAtLogin,
             StartMinimized = settings.StartMinimized,
             CurrentMode = settings.CurrentMode,
+            PanicPin = PanicPinService.Clone(settings.PanicPin),
             GlobalHotkeys = settings.GlobalHotkeys.Select(CloneHotkey).ToList(),
             AppProfiles = settings.AppProfiles.Select(CloneProfile).ToList(),
         };

@@ -20,6 +20,13 @@ public static class AppSettingsValidator
         ArgumentNullException.ThrowIfNull(settings);
 
         var errors = new List<SettingsValidationError>();
+        if (settings.PanicPin is not null && !PanicPinService.IsCredentialValid(settings.PanicPin))
+        {
+            errors.Add(new SettingsValidationError(
+                "Panic unlock PIN",
+                "The saved PIN credential is invalid. Configure the PIN again."));
+        }
+
         var profileIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var processOwners = new Dictionary<string, AppProfile>(StringComparer.OrdinalIgnoreCase);
         foreach (var profile in settings.AppProfiles)

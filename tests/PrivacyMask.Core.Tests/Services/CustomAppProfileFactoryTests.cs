@@ -18,7 +18,9 @@ public sealed class CustomAppProfileFactoryTests
         Assert.Equal("custom-full-window", profile.SelectedPresetId);
         Assert.Equal(new RelativeRect(0d, 0d, 1d, 1d), profile.Zones.Single().RelativeRect);
         Assert.Equal(MaskStyle.Blur, profile.Zones.Single().Style);
-        Assert.Equal(ZoneBehavior.HideDuringTemporaryReveal, profile.Zones.Single().Behavior);
+        Assert.Equal(
+            ZoneBehavior.RevealOnHover | ZoneBehavior.HideDuringTemporaryReveal,
+            profile.Zones.Single().Behavior);
         Assert.Equal(600, profile.HoverRevealWidthPixels);
         Assert.Equal(70, profile.HoverRevealHeightPixels);
     }

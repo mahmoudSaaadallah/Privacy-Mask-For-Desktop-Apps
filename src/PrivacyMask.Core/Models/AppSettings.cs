@@ -4,7 +4,7 @@ namespace PrivacyMask.Core.Models;
 
 public sealed class AppSettings
 {
-    public const int CurrentVersion = 10;
+    public const int CurrentVersion = 11;
 
     public int Version { get; init; } = CurrentVersion;
 
@@ -17,6 +17,8 @@ public sealed class AppSettings
     // Retained in the serialized schema for backward compatibility. Runtime
     // protection state is transient and is normalized to Standard on load.
     public RuntimeMode CurrentMode { get; set; } = RuntimeMode.Standard;
+
+    public PanicPinCredential? PanicPin { get; set; }
 
     public List<HotkeyBinding> GlobalHotkeys { get; set; } = [];
 

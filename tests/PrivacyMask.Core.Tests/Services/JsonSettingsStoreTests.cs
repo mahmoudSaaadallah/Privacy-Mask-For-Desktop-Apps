@@ -61,6 +61,33 @@ public sealed class JsonSettingsStoreTests
     }
 
     [Fact]
+    public async Task SaveAsync_RoundTripsPanicPinWithoutPersistingPlaintext()
+    {
+        var factory = new DefaultSettingsFactory();
+        var tempDirectory = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            var settingsPath = Path.Combine(tempDirectory.FullName, "settings.v1.json");
+            var store = new JsonSettingsStore(factory, settingsPath);
+            var settings = factory.Create();
+            settings.PanicPin = PanicPinService.Create("2468");
+
+            await store.SaveAsync(settings);
+            var persistedText = await File.ReadAllTextAsync(settingsPath);
+            var reloaded = await store.LoadAsync();
+
+            Assert.DoesNotContain("2468", persistedText, StringComparison.Ordinal);
+            Assert.Contains("panicPin", persistedText, StringComparison.Ordinal);
+            Assert.True(PanicPinService.Verify("2468", reloaded.PanicPin));
+        }
+        finally
+        {
+            tempDirectory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task SaveAsync_RoundTripsCustomAppProfiles()
     {
         var factory = new DefaultSettingsFactory();
