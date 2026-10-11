@@ -140,7 +140,7 @@ public sealed class DefaultSettingsFactoryTests
         Assert.All(settings.AppProfiles, profile => Assert.Single(profile.Zones));
         Assert.All(settings.AppProfiles, profile => Assert.Equal("full-window", profile.Zones.Single().ZoneId));
         Assert.Equal(
-            "Panic mask all",
+            "Toggle focused app panic mask",
             settings.GlobalHotkeys.Single(binding => binding.Action == HotkeyAction.PanicHideAll).DisplayName);
         Assert.True(settings.LaunchAtLogin);
         Assert.All(settings.AppProfiles, profile =>

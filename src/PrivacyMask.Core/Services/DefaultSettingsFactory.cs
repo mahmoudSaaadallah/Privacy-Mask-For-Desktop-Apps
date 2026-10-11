@@ -26,7 +26,7 @@ public sealed class DefaultSettingsFactory
                 new HotkeyBinding
                 {
                     Action = HotkeyAction.PanicHideAll,
-                    DisplayName = "Panic mask all",
+                    DisplayName = "Toggle focused app panic mask",
                     Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Shift,
                     VirtualKey = 0x48,
                 },

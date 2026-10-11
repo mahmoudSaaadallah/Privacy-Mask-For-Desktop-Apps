@@ -213,13 +213,16 @@ public sealed class ShellCoordinator : IAsyncDisposable
                     continue;
                 }
 
+                var profilePanic = _profileProtectionState.IsPanic(trackedWindow.Profile.ProfileId);
                 if (currentMode != RuntimeMode.Panic
+                    && !profilePanic
                     && _profileProtectionState.IsPaused(trackedWindow.Profile.ProfileId))
                 {
                     continue;
                 }
 
                 if (currentMode != RuntimeMode.Panic
+                    && !profilePanic
                     && trackedWindow.Profile.StartupMode == AppActivationMode.FocusAware
                     && !snapshot.IsForeground)
                 {
@@ -237,7 +240,12 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
             var cursorPoint = GetCursorPoint();
             var temporaryRevealProfileId = GetTemporaryRevealProfileId();
-            _overlayManager.Update(_trackedWindows, currentMode, temporaryRevealProfileId, cursorPoint);
+            _overlayManager.Update(
+                _trackedWindows,
+                currentMode,
+                _profileProtectionState,
+                temporaryRevealProfileId,
+                cursorPoint);
             UpdateRefreshInterval(OverlayRefreshCadence.Select(
                 currentMode,
                 discovery.CandidateWindows.Count > 0));
@@ -367,7 +375,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
                 ToggleForegroundProfileProtection();
                 break;
             case HotkeyAction.PanicHideAll:
-                TogglePanicMode();
+                ToggleForegroundProfilePanic();
                 break;
             case HotkeyAction.OpenSettings:
                 ShowSettingsWindow();
@@ -498,7 +506,15 @@ public sealed class ShellCoordinator : IAsyncDisposable
             return;
         }
 
-        var paused = _profileProtectionState.Toggle(trackedWindow.Profile.ProfileId);
+        if (_profileProtectionState.IsPanic(trackedWindow.Profile.ProfileId))
+        {
+            ShowProtectionTip(
+                $"Disable the panic mask for {trackedWindow.Profile.DisplayName} before pausing its protection.",
+                ToolTipIcon.Info);
+            return;
+        }
+
+        var paused = _profileProtectionState.TogglePause(trackedWindow.Profile.ProfileId);
         RefreshOverlays();
         ShowProtectionTip(
             $"{trackedWindow.Profile.DisplayName} protection {(paused ? "paused" : "resumed")}. Other apps are unchanged.",
@@ -519,6 +535,34 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _protectionStateMachine.TogglePanic();
         UpdateTrayState();
         RefreshOverlays();
+    }
+
+    private void ToggleForegroundProfilePanic()
+    {
+        if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic)
+        {
+            ShowProtectionTip("Disable the global panic mask from the tray before changing one app.", ToolTipIcon.Info);
+            return;
+        }
+
+        if (_protectionStateMachine.CurrentMode == RuntimeMode.Off)
+        {
+            ShowProtectionTip("Resume global protection from the tray before changing one app.", ToolTipIcon.Info);
+            return;
+        }
+
+        var trackedWindow = TryResolveForegroundProfile();
+        if (trackedWindow is null)
+        {
+            ShowProtectionTip("Focus a protected app first, then press Ctrl + Shift + H.", ToolTipIcon.Info);
+            return;
+        }
+
+        var panicEnabled = _profileProtectionState.TogglePanic(trackedWindow.Profile.ProfileId);
+        RefreshOverlays();
+        ShowProtectionTip(
+            $"{trackedWindow.Profile.DisplayName} panic mask {(panicEnabled ? "enabled" : "disabled")}. Other apps are unchanged.",
+            ToolTipIcon.Info);
     }
 
     private async Task ToggleLaunchAtLoginAsync()
@@ -609,7 +653,10 @@ public sealed class ShellCoordinator : IAsyncDisposable
             return null;
         }
 
-        return TryResolveForegroundProfile()?.Profile.ProfileId;
+        var trackedWindow = TryResolveForegroundProfile();
+        return trackedWindow is not null && !_profileProtectionState.IsPanic(trackedWindow.Profile.ProfileId)
+            ? trackedWindow.Profile.ProfileId
+            : null;
     }
 
     private bool IsHoldBindingDown(HotkeyBinding binding)

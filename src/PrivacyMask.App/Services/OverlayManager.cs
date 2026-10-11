@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using PrivacyMask.App.Windows;
 using PrivacyMask.Core.Models;
+using PrivacyMask.Core.Services;
 using Point = System.Windows.Point;
 
 namespace PrivacyMask.App.Services;
@@ -15,6 +16,7 @@ public sealed class OverlayManager : IDisposable
     public void Update(
         IReadOnlyList<TrackedWindow> windows,
         RuntimeMode mode,
+        ProfileProtectionState profileProtectionState,
         string? temporaryRevealProfileId,
         Point cursorScreenPoint)
     {
@@ -29,11 +31,12 @@ public sealed class OverlayManager : IDisposable
                 _overlays[window.Snapshot.Handle] = overlay;
             }
 
-            var temporaryRevealHeld = string.Equals(
+            var effectiveMode = profileProtectionState.ResolveMode(window.Profile.ProfileId, mode);
+            var temporaryRevealHeld = effectiveMode != RuntimeMode.Panic && string.Equals(
                 window.Profile.ProfileId,
                 temporaryRevealProfileId,
                 StringComparison.OrdinalIgnoreCase);
-            overlay.UpdateOverlay(window, mode, temporaryRevealHeld, cursorScreenPoint);
+            overlay.UpdateOverlay(window, effectiveMode, temporaryRevealHeld, cursorScreenPoint);
         }
 
         _staleHandles.Clear();
