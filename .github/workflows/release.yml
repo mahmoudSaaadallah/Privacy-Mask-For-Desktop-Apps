@@ -33,6 +33,14 @@ jobs:
       - name: Test
         run: dotnet test PrivacyMask.Desktop.slnx --no-build --configuration Release
 
+      - name: Test source and release installer dispatch
+        shell: powershell
+        run: .\scripts\test-installer-entrypoint.ps1
+
+      - name: Test compiled WPF layouts and edit sessions
+        shell: powershell
+        run: .\scripts\test-gui-smoke.ps1
+
       - name: Package Windows release
         shell: powershell
         run: .\scripts\package-win-x64-release.ps1 -SkipTests
