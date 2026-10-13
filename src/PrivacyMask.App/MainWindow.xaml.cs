@@ -99,6 +99,9 @@ public partial class MainWindow : Window
 
         if (!CommitFocusedEditor() || !CommitGridEditors(this))
         {
+            System.Windows.MessageBox.Show(this,
+                "Correct the highlighted value before changing pages. Your edits are retained.",
+                "Check this value", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
