@@ -2,6 +2,10 @@
 
 ## 2.0.0 - Unreleased
 
+- Add a protection overview with live profile counts, bounded quick blur controls, and navigation to all configured applications
+- Connect Overview global pause and panic actions to existing runtime handlers and PIN verification without persisting runtime state
+- Explain shortcut scope, hold delay, registration conflicts, and pending enable changes on the dedicated Shortcuts page
+- Add startup preferences and a copyable local settings path with an open-folder action
 - Add searchable compact application cards with bounded executable-icon caching and contextual pointer/keyboard help
 - Move profile appearance and hover controls into a focused detail page while retaining all advanced zone fields and presets
 - Open newly enrolled profiles directly, preserve profile navigation across Save/Discard, and expose missing-target relink recovery

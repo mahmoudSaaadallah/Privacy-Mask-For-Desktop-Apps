@@ -107,6 +107,26 @@ renders are not evidence that those interactive scenarios have passed.
 
 ### PR 4: Overview, shortcuts, and startup settings
 
+Implemented on `codex/v2-overview-shortcuts-settings`. Overview shares profile
+references with Applications, counts every configured profile, and renders at
+most six quick-control cards. It reuses existing runtime status updates rather
+than discovering windows again. Global actions call the tray's existing
+handlers; panic unlock uses saved credentials and repeated UI requests are
+blocked while an operation is pending. Runtime actions are explicitly separate
+from Save/Discard. Shortcut gestures are not remappable; pending changes are
+not presented as registered. Settings exposes startup preferences and the local
+configuration path with a read-only open-folder action. Version remains the
+unreleased 2.0.0; no settings-schema migration is needed.
+
+Verification (2026-10-13): 194 tests passed, zero build warnings/errors, and 15
+PowerShell scripts passed syntax validation. The transactional installer and
+isolated release-package smoke tests passed. The offline WPF harness rendered
+the six compiled pages and checked shared Save/Discard state, profile detail
+navigation, pending-action gating, and prevention of a global pause during
+panic using synthetic callbacks. Production PIN entry, Explorer interaction,
+live overlay performance, screen-reader output, and multi-DPI qualification
+are not established by this harness and remain part of final qualification.
+
 | Commit title | Scope |
 | --- | --- |
 | `feat: add protection overview dashboard` | Compact application summaries, quick strength adjustment, and Add/Manage navigation. Avoid expensive duplicate discovery. |
