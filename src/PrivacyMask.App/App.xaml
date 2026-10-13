@@ -3,6 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
+        <Style TargetType="Window">
+            <Setter Property="Icon" Value="pack://application:,,,/Assets/PrivacyMask.ico" />
+        </Style>
         <SolidColorBrush x:Key="CanvasBrush" Color="#F2ECE3" />
         <SolidColorBrush x:Key="InkBrush" Color="#17313D" />
         <SolidColorBrush x:Key="AccentBrush" Color="#1F6E6C" />
