@@ -39,7 +39,7 @@ public sealed class HotkeyBindingViewModel : ObservableObject
     public string RegistrationStatus => Enabled != _savedEnabled
         ? "Pending change — save to apply and check availability."
         : !Enabled ? "Disabled"
-        : HasRegistrationFailure ? "Unavailable — close the conflicting app, then save to retry. Other shortcuts still work."
+        : HasRegistrationFailure ? "Unavailable — close the conflicting app, then restart PrivacyMask to retry. Other shortcuts still work."
         : IsHoldGesture ? "Hold gesture enabled" : "Registered";
     public string ScopeSummary => Action switch
     {
