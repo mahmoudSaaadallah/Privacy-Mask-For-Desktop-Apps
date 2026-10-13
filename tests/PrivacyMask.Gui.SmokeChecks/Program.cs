@@ -90,6 +90,20 @@ internal static class Program
                     Console.WriteLine($"Six pages and profile detail passed at simulated {scale:P0} DIP layout.");
                 }
                 Check(session.OverviewAppProfiles.Count == 6, "Dashboard is not bounded.");
+                session.SelectedPage = DesktopPage.Security;
+                Layout(root, new Size(960, 520));
+                var globalHelp = Find<RadioButton>(root).Single(radio => AutomationProperties.GetName(radio) == "Explain global panic");
+                globalHelp.IsChecked = true;
+                Drain();
+                Check(session.PanicHelpScope == PanicHelpScope.AllApps && !session.HasPendingChanges, "Panic explanation changed persisted settings.");
+                session.SelectedPage = DesktopPage.Settings;
+                Layout(root, new Size(960, 520));
+                var minimized = Find<CheckBox>(root).Single(box => AutomationProperties.GetName(box) == "Start minimized to tray");
+                var previousStartup = session.StartMinimized;
+                minimized.IsChecked = !previousStartup;
+                Drain();
+                Check(session.ToModel().StartMinimized != previousStartup && session.HasPendingChanges, "Startup switch did not edit the shared session.");
+                session.SetSavedBaseline(session.ToModel());
                 session.ApplicationSearch = "synthetic17";
                 Check(session.FilteredAppProfiles.Count == 1 && !session.HasPendingChanges, "Search changed settings.");
                 var saved = AppSettingsCloner.Clone(settings);
@@ -102,6 +116,7 @@ internal static class Program
                 window.ViewModel.SelectedApplication!.MaskIntensityPercent = 20;
                 Invoke(window, "CloseToTray_Click");
                 Check(window.ViewModel.SelectedApplication?.MaskIntensityPercent == 80, "Discard did not restore the selected profile.");
+                Check(window.ViewModel.PanicHelpScope == PanicHelpScope.AllApps, "Discard lost the selected explanation tab.");
                 var setup = new PrivacyMask.App.Windows.PanicPinSetupWindow(null);
                 ((PasswordBox)setup.FindName("NewPinBox")).Password = "12";
                 Invoke(setup, "Save_Click");
