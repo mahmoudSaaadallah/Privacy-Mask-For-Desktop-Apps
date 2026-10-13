@@ -20,8 +20,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -39,7 +39,10 @@
                        Text="Choose a running desktop app, or browse to its executable. PrivacyMask protects every visible window created by the selected process." />
         </StackPanel>
 
-        <TextBox x:Name="SearchTextBox" Grid.Row="1" Margin="0,18,0,0" Padding="12,10" FontSize="14" AutomationProperties.Name="Search running applications" ToolTip="Search by application or process name" TextChanged="Search_TextChanged"/>
+        <StackPanel Grid.Row="1" Margin="0,18,0,0">
+            <Label Target="{Binding ElementName=SearchTextBox}" Content="_Search applications" Padding="0,0,0,6" />
+            <TextBox x:Name="SearchTextBox" Padding="12,10" FontSize="14" AutomationProperties.Name="Search running applications" ToolTip="Search by application or process name" TextChanged="Search_TextChanged"/>
+        </StackPanel>
         <Grid Grid.Row="2"
               Margin="0,18,0,14">
             <Grid.ColumnDefinitions>
