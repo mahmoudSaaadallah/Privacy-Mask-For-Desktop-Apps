@@ -41,6 +41,12 @@ to increase the count. Every completed commit must build.
 
 ### PR 1: Icon and shared visual resources
 
+Implemented on `codex/v2-brand-and-ui-resources`. The current pages retain
+their structure while the new keyed resources are available for later PRs.
+Window icons are assigned explicitly because an implicit base `Window` style
+does not reliably style the application's derived window types. Text inherits
+its containing control's foreground to preserve action-button contrast.
+
 | Commit title | Scope |
 | --- | --- |
 | `feat: add PrivacyMask private-view icon assets` | Create clean master artwork for approved concept B and a multi-resolution ICO; check readability at 16, 20, 24, 32, 48, 64, 128, and 256 pixels. |
