@@ -17,6 +17,7 @@
     MinWidth="860"
     MinHeight="640"
     FontFamily="Segoe UI Variable Text"
+    FontSize="14"
     Background="{StaticResource CanvasBrush}"
     AutomationProperties.Name="PrivacyMask settings"
     AutomationProperties.HelpText="Configure startup, hotkeys, application profiles, masks, and privacy zones."
@@ -104,12 +105,12 @@
    <TextBlock Text="Blur strength" VerticalAlignment="Center"/>
    <DockPanel Grid.Column="1"><TextBlock DockPanel.Dock="Right" Text="{Binding MaskIntensityPercent,StringFormat={}{0:0}%}" VerticalAlignment="Center" Margin="18,0,0,0" MinWidth="44"/><Slider Style="{StaticResource BlurSlider}" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding MaskIntensityPercent}" AutomationProperties.Name="Blur strength"/></DockPanel>
    <TextBlock Grid.Row="1" Text="Mask style" VerticalAlignment="Center" Margin="0,24,0,0"/>
-   <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,24,0,0" Width="230" HorizontalAlignment="Left" Padding="8" Background="White" ItemsSource="{Binding MaskStylesSource,ElementName=SettingsWindow}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding PrimaryMaskStyle}" AutomationProperties.Name="Mask style"/>
+   <ComboBox Style="{StaticResource ReferenceCombo}" Grid.Row="1" Grid.Column="1" Margin="0,24,0,0" Width="230" HorizontalAlignment="Left" Padding="8" Background="White" ItemsSource="{Binding MaskStylesSource,ElementName=SettingsWindow}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding PrimaryMaskStyle}" AutomationProperties.Name="Mask style"/>
    <TextBlock Grid.Row="2" Text="Mask color" VerticalAlignment="Center" Margin="0,20,0,0"/>
-   <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,20,0,0" Width="230" HorizontalAlignment="Left" Padding="8" Background="White" ItemsSource="{Binding MaskColorsSource,ElementName=SettingsWindow}" SelectedItem="{Binding MaskColor}" AutomationProperties.Name="Mask color"/>
+   <ComboBox Style="{StaticResource ReferenceCombo}" Grid.Row="2" Grid.Column="1" Margin="0,20,0,0" Width="230" HorizontalAlignment="Left" Padding="8" Background="White" ItemsSource="{Binding MaskColorsSource,ElementName=SettingsWindow}" SelectedItem="{Binding MaskColor}" AutomationProperties.Name="Mask color"/>
    <TextBlock Grid.Row="3" Text="Activation" VerticalAlignment="Center" Margin="0,28,0,0"/>
    <WrapPanel Grid.Row="3" Grid.Column="1" Margin="0,28,0,0">
-    <RadioButton Content="Always while visible" GroupName="Activation" IsChecked="{Binding StartupMode, Converter={StaticResource EnumSelection}, ConverterParameter={x:Static models:AppActivationMode.Manual}}" Margin="0,0,20,8" AutomationProperties.Name="Always mask while visible"/>
+    <RadioButton Style="{StaticResource ActivationRadio}" Content="Always while visible" GroupName="Activation" IsChecked="{Binding StartupMode, Converter={StaticResource EnumSelection}, ConverterParameter={x:Static models:AppActivationMode.Manual}}" Margin="0,0,20,8" AutomationProperties.Name="Always mask while visible"/>
     <RadioButton Content="Only while focused" GroupName="Activation" IsChecked="{Binding StartupMode, Converter={StaticResource EnumSelection}, ConverterParameter={x:Static models:AppActivationMode.FocusAware}}" Margin="0,0,0,8" AutomationProperties.Name="Mask only while focused"/>
    </WrapPanel>
    <TextBlock Grid.Row="4" Text="Hover reveal" VerticalAlignment="Center" Margin="0,24,0,0"/>
@@ -119,7 +120,7 @@
     <StackPanel Margin="0,0,0,8"><TextBlock Text="Height" Margin="0,0,0,6"/><StackPanel Orientation="Horizontal"><TextBox Width="76" Padding="8" Text="{Binding HoverRevealHeightPixels,UpdateSourceTrigger=LostFocus}" PreviewTextInput="NumericTextBox_PreviewTextInput" AutomationProperties.Name="Hover reveal height"/><TextBlock Text="px" Margin="8,0,0,0" VerticalAlignment="Center"/></StackPanel></StackPanel>
    </WrapPanel>
   </Grid>
-  <Border Style="{StaticResource Card}" Margin="0,20,0,0">
+  <Border BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" CornerRadius="6" Padding="12" Background="#F5F5F5" Margin="0,20,0,0">
    <StackPanel>
 
     <Expander
@@ -210,7 +211,7 @@
   </Border>
   <StackPanel Orientation="Horizontal" Margin="0,20,0,0" Visibility="{Binding IsCustom,Converter={StaticResource BooleanToVisibility}}">
    <Button Content="Relink application" Style="{StaticResource SecondaryButton}" Click="RelinkApplication_Click" Tag="{Binding}" Margin="0,0,12,0"/>
-   <Button Content="Remove profile" Style="{StaticResource SecondaryButton}" Foreground="{StaticResource DangerBrush}" Click="RemoveApplication_Click" Tag="{Binding}"/>
+   <Button Content="Remove profile" Background="Transparent" BorderThickness="0" Foreground="{StaticResource DangerBrush}" Click="RemoveApplication_Click" Tag="{Binding}"/>
   </StackPanel>
  </StackPanel>
 </DataTemplate>
@@ -571,10 +572,7 @@
                             Click="Save_Click" />
                     </StackPanel>
                     <TextBlock
-                        Text="{Binding EditStatus}"
-                        VerticalAlignment="Center"
-                        Foreground="{StaticResource MutedInkBrush}"
-                        TextWrapping="Wrap" />
+                        Text="{Binding EditStatus}" VerticalAlignment="Center" TextWrapping="Wrap"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource MutedInkBrush}"/><Style.Triggers><DataTrigger Binding="{Binding HasPendingChanges}" Value="True"><Setter Property="Foreground" Value="#D88D00"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
                 </DockPanel>
             </Border>
         </Grid>
