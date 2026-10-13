@@ -187,7 +187,7 @@ public partial class MainWindow : Window
         if ((sender as FrameworkElement)?.Tag is AppProfileViewModel profile)
         {
             profile.ApplySelectedPreset();
-            PreviewRequested?.Invoke(ViewModel.ToModel());
+            QueuePreview();
         }
     }
 
@@ -198,7 +198,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void HoverRevealDimension_LostFocus(object sender, RoutedEventArgs e)
@@ -208,7 +208,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void MaskColorSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -218,7 +218,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void MaskStyleSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -228,7 +228,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void NumericTextBox_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
@@ -277,7 +277,7 @@ public partial class MainWindow : Window
             picker.SelectedApplication.ProcessName,
             executablePath: picker.SelectedApplication.ExecutablePath);
         ViewModel.AppProfiles.Add(new AppProfileViewModel(profile));
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void RelinkApplication_Click(object sender, RoutedEventArgs e)
@@ -302,7 +302,7 @@ public partial class MainWindow : Window
         profile.Relink(
             picker.SelectedApplication.ProcessName,
             picker.SelectedApplication.ExecutablePath);
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void RemoveApplication_Click(object sender, RoutedEventArgs e)
@@ -325,12 +325,12 @@ public partial class MainWindow : Window
         }
 
         ViewModel.AppProfiles.Remove(profile);
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void ProfileEnabled_Click(object sender, RoutedEventArgs e)
     {
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private IReadOnlySet<string> GetProtectedProcessNames(AppProfileViewModel? excludedProfile = null)
