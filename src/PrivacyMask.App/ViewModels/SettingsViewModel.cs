@@ -78,11 +78,23 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         _ => "Global protection active",
     };
     public string GlobalPauseLabel => _runtimeMode == RuntimeMode.Off ? "Resume all" : "Pause all";
+    public string ProtectionBannerText => _runtimeMode switch
+    {
+        RuntimeMode.Off => "Protection paused",
+        RuntimeMode.Panic => "Panic mask active",
+        _ => "Protection active",
+    };
+    public string ProtectionBannerBackground => _runtimeMode switch { RuntimeMode.Off => "#FFF3DA", RuntimeMode.Panic => "#FFE4E1", _ => "#DCF4EB" };
+    public string ProtectionBannerColor => _runtimeMode switch { RuntimeMode.Off => "#BD8000", RuntimeMode.Panic => "#D93A32", _ => "#009D6C" };
+    public string QuickShortcutGesture => Hotkeys.FirstOrDefault(binding => binding.Action == HotkeyAction.ToggleProtection)?.GestureText ?? "Not configured";
     public string GlobalPanicLabel => _runtimeMode == RuntimeMode.Panic ? "Unlock panic mask all" : "Panic mask all";
     public bool CanToggleGlobalProtection => !IsRuntimeActionBusy && _runtimeMode != RuntimeMode.Panic;
     public bool CanToggleGlobalPanic => !IsRuntimeActionBusy;
     private void NotifyRuntimeControls()
     {
+        RaisePropertyChanged(nameof(ProtectionBannerText));
+        RaisePropertyChanged(nameof(ProtectionBannerBackground));
+        RaisePropertyChanged(nameof(ProtectionBannerColor));
         RaisePropertyChanged(nameof(ProtectionHeading));
         RaisePropertyChanged(nameof(GlobalPauseLabel));
         RaisePropertyChanged(nameof(GlobalPanicLabel));

@@ -56,12 +56,16 @@ public sealed class AppProfileViewModel : ObservableObject
     public string DisplayName
     {
         get => _displayName;
-        set => SetProperty(ref _displayName, value);
+        set
+        {
+            if (SetProperty(ref _displayName, value)) RaisePropertyChanged(nameof(CardDisplayName));
+        }
     }
 
     public bool IsCustom => AppId == AppId.Custom;
 
     public bool IsBuiltIn => !IsCustom;
+    public string CardDisplayName => AppId switch { AppId.WhatsApp => "WhatsApp", AppId.Telegram => "Telegram", _ => DisplayName };
 
     public string? ExecutablePath => _executablePath;
     public ImageSource Icon => _icon ??= ApplicationIconCache.Get(ExecutablePath);
@@ -77,6 +81,8 @@ public sealed class AppProfileViewModel : ObservableObject
                 RaisePropertyChanged(nameof(RuntimeStatusColor));
                 RaisePropertyChanged(nameof(ApplicationHelp));
                 RaisePropertyChanged(nameof(NeedsRelink));
+                RaisePropertyChanged(nameof(StatusBadgeText));
+                RaisePropertyChanged(nameof(StatusBadgeBackground));
             }
         }
     }
@@ -102,6 +108,21 @@ public sealed class AppProfileViewModel : ObservableObject
     };
 
     public bool NeedsRelink => IsCustom && RuntimeStatus == ProfileRuntimeStatus.TargetMissing;
+    public string StatusBadgeText => RuntimeStatus switch
+    {
+        ProfileRuntimeStatus.TargetMissing => "Needs relink",
+        ProfileRuntimeStatus.PanicProtected => "Panic mask active",
+        ProfileRuntimeStatus.ProtectionPaused => "Paused",
+        ProfileRuntimeStatus.WaitingForFocus => "Waiting for focus",
+        ProfileRuntimeStatus.Checking => "Checking…",
+        _ => RuntimeStatusSummary,
+    };
+    public string StatusBadgeBackground => RuntimeStatus switch
+    {
+        ProfileRuntimeStatus.Protected or ProfileRuntimeStatus.PanicProtected => "#DDF6EB",
+        ProfileRuntimeStatus.TargetMissing or ProfileRuntimeStatus.WaitingForFocus or ProfileRuntimeStatus.ProtectionPaused => "#FFF3DA",
+        _ => "#ECEFF2",
+    };
     public string ApplicationHelp => RuntimeStatus switch
     {
         ProfileRuntimeStatus.TargetMissing => "The saved executable is missing. Use Relink to select its new location; your mask settings will be preserved.",
