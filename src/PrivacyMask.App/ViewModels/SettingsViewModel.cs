@@ -11,6 +11,33 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _launchAtLogin;
     private bool _startMinimized;
     private PanicPinCredential? _panicPin;
+    private DesktopPage _selectedPage = DesktopPage.Overview;
+
+    public DesktopPage SelectedPage
+    {
+        get => _selectedPage;
+        set
+        {
+            if (SetProperty(ref _selectedPage, value))
+            {
+                RaisePropertyChanged(nameof(PageTitle));
+                RaisePropertyChanged(nameof(IsOverviewPage));
+                RaisePropertyChanged(nameof(IsApplicationsPage));
+                RaisePropertyChanged(nameof(IsShortcutsPage));
+                RaisePropertyChanged(nameof(IsSecurityPage));
+                RaisePropertyChanged(nameof(IsSettingsPage));
+                RaisePropertyChanged(nameof(IsAboutPage));
+            }
+        }
+    }
+
+    public string PageTitle => SelectedPage.ToString();
+    public bool IsOverviewPage => SelectedPage == DesktopPage.Overview;
+    public bool IsApplicationsPage => SelectedPage == DesktopPage.Applications;
+    public bool IsShortcutsPage => SelectedPage == DesktopPage.Shortcuts;
+    public bool IsSecurityPage => SelectedPage == DesktopPage.Security;
+    public bool IsSettingsPage => SelectedPage == DesktopPage.Settings;
+    public bool IsAboutPage => SelectedPage == DesktopPage.About;
 
     public static SettingsViewModel FromModel(
         AppSettings settings,
