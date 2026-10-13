@@ -231,9 +231,12 @@ If another program has already reserved a configured global shortcut,
 PrivacyMask shows a tray warning and marks that shortcut as unavailable in the
 settings window. Other registered shortcuts continue to work normally.
 
-Mask appearance changes are previewed while the settings window is open. Press
-`Ctrl+S` to save them, or press `Esc`/choose **Discard and close** to restore the
-last saved configuration and return the window to the tray.
+Use the sidebar to navigate between Overview, Applications, Shortcuts,
+Security, Settings, and About. Pending edits stay available when you change
+pages. Valid mask changes are previewed while the settings window is open.
+Press `Ctrl+S` or **Save changes** to save the complete session, or **Discard**
+to restore saved values across all pages; both keep the selected page open.
+Press `Esc` or close the window to discard the preview and return to the tray.
 
 ## Developer guide
 
