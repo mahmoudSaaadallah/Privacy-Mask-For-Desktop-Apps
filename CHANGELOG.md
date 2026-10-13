@@ -2,6 +2,9 @@
 
 ## 2.0.0 - Unreleased
 
+- Align Overview, Applications and profile details with the approved visual reference: flush sidebar, protection banner, grouped application rows, switches, badges and teal blur tracks
+- Replace profile activation dropdown with bound radio controls, add accurate color swatches and rounded search/profile fields
+- Hide the saved-status footer on clean list/overview pages while retaining it for details and pending edits
 - Rebuild complete source checkouts from the distribution installer instead of silently reinstalling a cached executable after pull
 - Test source/release dispatch, failure exit codes and prevention of stale-build fallback in local and GitHub verification
 - Add isolated compiled WPF layout/edit-session smoke checks to local verification and Windows CI
