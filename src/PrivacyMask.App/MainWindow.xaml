@@ -364,7 +364,7 @@
                                 <TextBlock Text="Your applications" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </DockPanel>
                             <TextBlock Text="No applications configured. Add one to start protecting it." Visibility="{Binding HasNoApplications, Converter={StaticResource BooleanToVisibility}}" Foreground="{StaticResource MutedInkBrush}" TextWrapping="Wrap"/>
-                            <ItemsControl ItemsSource="{Binding AppProfiles}">
+                            <ItemsControl ItemsSource="{Binding OverviewAppProfiles}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type viewModels:AppProfileViewModel}">
                                         <Border Style="{StaticResource Card}" Margin="0,0,0,12">
@@ -385,6 +385,7 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            <Button Content="Manage all applications" Tag="{x:Static viewModels:DesktopPage.Applications}" Click="Navigate_Click" HorizontalAlignment="Left" Style="{StaticResource SecondaryButton}" Margin="0,4,0,0" AutomationProperties.HelpText="The overview shows up to six profiles. Open the Applications page for the complete searchable list."/>
                         </StackPanel>
                     </ScrollViewer>
                     <Grid>

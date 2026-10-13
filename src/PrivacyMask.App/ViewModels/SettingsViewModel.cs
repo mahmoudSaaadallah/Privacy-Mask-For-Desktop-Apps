@@ -24,6 +24,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private readonly HashSet<AppProfileViewModel> _overviewProfiles = [];
 
     public int ConfiguredApplicationCount => AppProfiles.Count;
+    public ObservableCollection<AppProfileViewModel> OverviewAppProfiles { get; } = [];
     public int EnabledApplicationCount => AppProfiles.Count(profile => profile.Enabled);
     public int ProtectedApplicationCount => AppProfiles.Count(profile => profile.RuntimeStatus is
         ProfileRuntimeStatus.Protected or ProfileRuntimeStatus.PanicProtected);
@@ -45,6 +46,13 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         {
             _overviewProfiles.Add(profile);
             profile.PropertyChanged += OverviewProfileChanged;
+        }
+        // Keep the dashboard small; the Applications page virtualizes the full list.
+        var visible = AppProfiles.Take(6).ToList();
+        if (!OverviewAppProfiles.SequenceEqual(visible))
+        {
+            OverviewAppProfiles.Clear();
+            foreach (var profile in visible) OverviewAppProfiles.Add(profile);
         }
         RefreshOverview();
     }
