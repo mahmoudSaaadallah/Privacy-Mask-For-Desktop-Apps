@@ -332,10 +332,7 @@
                                         <Border BorderBrush="#EDF0F2" BorderThickness="0,0,0,1" Padding="18,22">
                                             <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="Transparent"/><Style.Triggers><DataTrigger Binding="{Binding ShowRegistrationFailure}" Value="True"><Setter Property="Background" Value="#FFF4E2"/></DataTrigger></Style.Triggers></Style></Border.Style>
                                             <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="66"/></Grid.ColumnDefinitions>
-                                                <DockPanel Margin="0,0,16,0" VerticalAlignment="Center">
-                                                    <Button DockPanel.Dock="Right" Style="{StaticResource CircleHelp}" Content="i" Width="20" Height="20" MinWidth="20" MinHeight="20" Margin="6,0,0,0" services:InformationHelp.Text="{Binding InformationText}" AutomationProperties.Name="{Binding CompactTitle,StringFormat=Information about {0}}"/>
-                                                    <TextBlock Text="{Binding CompactTitle}" TextWrapping="Wrap" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                                </DockPanel>
+                                                <WrapPanel Margin="0,0,16,0" VerticalAlignment="Center"><TextBlock Text="{Binding CompactTitle}" TextWrapping="Wrap" MaxWidth="180" VerticalAlignment="Center" FontWeight="SemiBold"/><Button Style="{StaticResource CircleHelp}" Content="i" Width="20" Height="20" MinWidth="20" MinHeight="20" Margin="6,0,0,0" services:InformationHelp.Text="{Binding InformationText}" AutomationProperties.Name="{Binding CompactTitle,StringFormat=Information about {0}}"/></WrapPanel>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                                     <ItemsControl ItemsSource="{Binding GestureKeys}">
                                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -387,7 +384,7 @@
                             <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
                                 <StackPanel>
                                     <DockPanel Margin="0,0,0,22"><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="All settings stay on this device. PrivacyMask has no cloud account or background telemetry. The PIN guards panic unlock, not Windows sign-in or access to the local settings file." AutomationProperties.Name="Local settings information"/><TextBlock Text="Local settings" FontSize="20" FontWeight="SemiBold"/></DockPanel>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE753;" FontFamily="Segoe MDL2 Assets" FontSize="34" Margin="0,0,20,0"/><TextBlock Text="No cloud account" VerticalAlignment="Center" FontSize="16"/></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><Canvas Width="36" Height="36" Margin="0,0,20,0"><Ellipse Width="28" Height="10" Canvas.Left="4" Canvas.Top="2" Stroke="{StaticResource InkBrush}" StrokeThickness="2"/><Path Data="M4,7 L4,28 C4,34 32,34 32,28 L32,7 M4,16 C4,22 32,22 32,16 M4,24 C4,30 32,30 32,24" Stroke="{StaticResource InkBrush}" StrokeThickness="2"/></Canvas><TextBlock Text="No cloud account" VerticalAlignment="Center" FontSize="16"/></StackPanel>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -415,7 +412,7 @@
                             </Border>
                             <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="28" VerticalAlignment="Center"/>
+                                    <Path Data="M6,1 L20,1 27,8 27,32 6,32 Z M20,1 L20,8 27,8 M11,15 L22,15 M11,21 L22,21 M11,27 L18,27" Stroke="{StaticResource InkBrush}" StrokeThickness="1.5" Width="30" Height="34" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                                     <DockPanel Grid.Column="1" Margin="0,0,20,0" VerticalAlignment="Center"><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="{Binding ConfigPath}" AutomationProperties.Name="Configuration file path"/><TextBlock Text="Configuration file" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/></DockPanel>
                                     <Button Grid.Column="2" Content="Show location" Style="{StaticResource SecondaryButton}" Click="OpenConfigurationFolder_Click" AutomationProperties.HelpText="Open the local settings folder. Right-click or Shift+F10 to copy the settings file path."><Button.ContextMenu><ContextMenu><MenuItem Header="Copy file path" Click="CopyConfigurationPath_Click"/></ContextMenu></Button.ContextMenu></Button>
                                 </Grid>
