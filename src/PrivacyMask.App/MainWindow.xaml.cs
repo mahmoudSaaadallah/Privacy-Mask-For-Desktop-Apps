@@ -380,6 +380,11 @@ public partial class MainWindow : Window
     {
         if (e.Key == Key.Escape && Keyboard.Modifiers == ModifierKeys.None)
         {
+            if (InformationHelp.CloseIfOpen(Keyboard.FocusedElement))
+            {
+                e.Handled = true;
+                return;
+            }
             DiscardAndHide();
             e.Handled = true;
         }

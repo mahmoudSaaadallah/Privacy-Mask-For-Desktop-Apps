@@ -653,7 +653,7 @@
        <Grid.ColumnDefinitions><ColumnDefinition Width="56"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
        <Image Source="{Binding Icon}" Width="40" Height="40" HorizontalAlignment="Left" VerticalAlignment="Top"/>
        <StackPanel Grid.Column="1" Margin="0,0,16,0">
-        <TextBlock Text="{Binding DisplayName}" FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+        <DockPanel><Button DockPanel.Dock="Right" Style="{StaticResource InformationButton}" services:InformationHelp.Text="{Binding ApplicationHelp}" AutomationProperties.Name="{Binding DisplayName, StringFormat=Information about {0}}" Margin="8,0,0,0"/><TextBlock Text="{Binding DisplayName}" FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/></DockPanel>
         <TextBlock Text="{Binding RuntimeStatusSummary}" Foreground="{Binding RuntimeStatusColor}" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap"/>
         <TextBlock Text="{Binding MaskIntensitySummary}" Foreground="{StaticResource MutedInkBrush}" Margin="0,8,0,0"/>
        </StackPanel>

@@ -75,6 +75,8 @@ public sealed class AppProfileViewModel : ObservableObject
             {
                 RaisePropertyChanged(nameof(RuntimeStatusSummary));
                 RaisePropertyChanged(nameof(RuntimeStatusColor));
+                RaisePropertyChanged(nameof(ApplicationHelp));
+                RaisePropertyChanged(nameof(NeedsRelink));
             }
         }
     }
@@ -97,6 +99,17 @@ public sealed class AppProfileViewModel : ObservableObject
         ProfileRuntimeStatus.TargetMissing => "#A33A2B",
         ProfileRuntimeStatus.ProtectionPaused or ProfileRuntimeStatus.WaitingForFocus => "#8A6A38",
         _ => "#51656E",
+    };
+
+    public bool NeedsRelink => IsCustom && RuntimeStatus == ProfileRuntimeStatus.TargetMissing;
+    public string ApplicationHelp => RuntimeStatus switch
+    {
+        ProfileRuntimeStatus.TargetMissing => "The saved executable is missing. Use Relink to select its new location; your mask settings will be preserved.",
+        ProfileRuntimeStatus.NotRunning => "No matching desktop window is detected. Open the application to activate its configured protection.",
+        ProfileRuntimeStatus.ProtectionPaused => "Protection is paused for this application. Use Ctrl + Shift + P on it, or resume global protection from the tray.",
+        ProfileRuntimeStatus.PanicProtected => "An opaque panic mask is active. A correct PIN is required to disable it; reveal gestures are blocked.",
+        ProfileRuntimeStatus.Disabled => "This profile is disabled. Enable it to restore protection.",
+        _ => Summary,
     };
 
     public string Summary => StartupMode == AppActivationMode.FocusAware
@@ -135,6 +148,7 @@ public sealed class AppProfileViewModel : ObservableObject
             if (SetProperty(ref _startupMode, value))
             {
                 RaisePropertyChanged(nameof(Summary));
+                RaisePropertyChanged(nameof(ApplicationHelp));
             }
         }
     }
