@@ -76,6 +76,7 @@
         </Style>
 
     <services:EnumSelectionConverter x:Key="EnumSelection"/>
+    <services:MaskColorBrushConverter x:Key="MaskColorBrush"/>
     <Style x:Key="ApplicationIcon" TargetType="Image">
         <Setter Property="Source" Value="{Binding Icon}"/>
         <Style.Triggers>
@@ -107,7 +108,7 @@
    <TextBlock Grid.Row="1" Text="Mask style" VerticalAlignment="Center" Margin="0,24,0,0"/>
    <ComboBox Style="{StaticResource ReferenceCombo}" Grid.Row="1" Grid.Column="1" Margin="0,24,0,0" Width="230" HorizontalAlignment="Left" Padding="8" Background="White" ItemsSource="{Binding MaskStylesSource,ElementName=SettingsWindow}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding PrimaryMaskStyle}" AutomationProperties.Name="Mask style"/>
    <TextBlock Grid.Row="2" Text="Mask color" VerticalAlignment="Center" Margin="0,20,0,0"/>
-   <ComboBox Style="{StaticResource ReferenceCombo}" Grid.Row="2" Grid.Column="1" Margin="0,20,0,0" Width="230" HorizontalAlignment="Left" Padding="8" Background="White" ItemsSource="{Binding MaskColorsSource,ElementName=SettingsWindow}" SelectedItem="{Binding MaskColor}" AutomationProperties.Name="Mask color"/>
+   <ComboBox Style="{StaticResource ReferenceCombo}" Grid.Row="2" Grid.Column="1" Margin="0,20,0,0" Width="230" HorizontalAlignment="Left" Padding="8" Background="White" ItemsSource="{Binding MaskColorsSource,ElementName=SettingsWindow}" SelectedItem="{Binding MaskColor}" AutomationProperties.Name="Mask color"><ComboBox.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal"><Ellipse Width="18" Height="18" Fill="{Binding Converter={StaticResource MaskColorBrush}}" Stroke="#D5DADF" Margin="0,0,8,0"/><TextBlock Text="{Binding}" VerticalAlignment="Center"/></StackPanel></DataTemplate></ComboBox.ItemTemplate></ComboBox>
    <TextBlock Grid.Row="3" Text="Activation" VerticalAlignment="Center" Margin="0,28,0,0"/>
    <WrapPanel Grid.Row="3" Grid.Column="1" Margin="0,28,0,0">
     <RadioButton Style="{StaticResource ActivationRadio}" Content="Always while visible" GroupName="Activation" IsChecked="{Binding StartupMode, Converter={StaticResource EnumSelection}, ConverterParameter={x:Static models:AppActivationMode.Manual}}" Margin="0,0,20,8" AutomationProperties.Name="Always mask while visible"/>
