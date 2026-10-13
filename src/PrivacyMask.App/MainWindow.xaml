@@ -401,6 +401,7 @@
         <DockPanel><Button DockPanel.Dock="Right" Style="{StaticResource InformationButton}" services:InformationHelp.Text="{Binding ApplicationHelp}" AutomationProperties.Name="{Binding DisplayName, StringFormat=Information about {0}}" Margin="8,0,0,0"/><TextBlock Text="{Binding DisplayName}" FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/></DockPanel>
         <TextBlock Text="{Binding RuntimeStatusSummary}" Foreground="{Binding RuntimeStatusColor}" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap"/>
         <TextBlock Text="{Binding MaskIntensitySummary}" Foreground="{StaticResource MutedInkBrush}" Margin="0,8,0,0"/>
+<Button Content="Relink" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left" Margin="0,10,0,0" Visibility="{Binding NeedsRelink,Converter={StaticResource BooleanToVisibility}}" Click="RelinkApplication_Click" Tag="{Binding}"/>
        </StackPanel>
        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
         <CheckBox IsChecked="{Binding Enabled, Mode=TwoWay}" Content="Enabled" Margin="0,0,20,0" VerticalAlignment="Center" AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0} masking}"/>

@@ -297,7 +297,9 @@ public partial class MainWindow : Window
             picker.ProfileDisplayName,
             picker.SelectedApplication.ProcessName,
             executablePath: picker.SelectedApplication.ExecutablePath);
-        ViewModel.AppProfiles.Add(new AppProfileViewModel(profile));
+        var profileViewModel = new AppProfileViewModel(profile);
+        ViewModel.AppProfiles.Add(profileViewModel);
+        ViewModel.OpenApplication(profileViewModel);
         QueuePreview();
     }
 
