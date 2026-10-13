@@ -77,7 +77,7 @@
   <DockPanel Margin="0,0,0,20">
    <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="48" Height="48" Margin="0,0,16,0"/>
    <Button DockPanel.Dock="Right" Style="{StaticResource InformationButton}" services:InformationHelp.Text="{Binding ApplicationHelp}" AutomationProperties.Name="Application protection information"/>
-   <StackPanel><TextBlock Text="{Binding DisplayName}" Style="{StaticResource PageHeading}"/><TextBlock Text="{Binding RuntimeStatusSummary}" Foreground="{Binding RuntimeStatusColor}" Margin="0,6,0,0" FontWeight="SemiBold"/></StackPanel>
+   <StackPanel><TextBlock Text="{Binding DisplayName}" Style="{StaticResource PageHeading}" TextWrapping="Wrap"/><TextBlock Text="{Binding RuntimeStatusSummary}" Foreground="{Binding RuntimeStatusColor}" Margin="0,6,0,0" FontWeight="SemiBold" TextWrapping="Wrap"/></StackPanel>
   </DockPanel>
   <Border Style="{StaticResource Card}">
    <Grid>
@@ -97,10 +97,11 @@
     <CheckBox Grid.Row="5" Grid.Column="1" Margin="0,24,0,0" Content="Reveal a small region under the pointer" IsChecked="{Binding HoverRevealEnabled}" AutomationProperties.Name="Enable hover reveal"/>
     <TextBlock Grid.Row="6" Text="Reveal size (px)" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,24,0,0"/>
     <WrapPanel Grid.Row="6" Grid.Column="1" Margin="0,24,0,0">
-     <TextBlock Text="Width" VerticalAlignment="Center" Margin="0,0,10,0"/>
+     <StackPanel Orientation="Horizontal" Margin="0,0,20,8"><TextBlock Text="Width" VerticalAlignment="Center" Margin="0,0,10,0"/>
      <TextBox Width="100" Padding="8" Text="{Binding HoverRevealWidthPixels,UpdateSourceTrigger=LostFocus}" PreviewTextInput="NumericTextBox_PreviewTextInput" AutomationProperties.Name="Hover reveal width"/>
-     <TextBlock Text="Height" VerticalAlignment="Center" Margin="24,0,10,0"/>
+     </StackPanel><StackPanel Orientation="Horizontal" Margin="0,0,0,8"><TextBlock Text="Height" VerticalAlignment="Center" Margin="0,0,10,0"/>
      <TextBox Width="100" Padding="8" Text="{Binding HoverRevealHeightPixels,UpdateSourceTrigger=LostFocus}" PreviewTextInput="NumericTextBox_PreviewTextInput" AutomationProperties.Name="Hover reveal height"/>
+     </StackPanel>
     </WrapPanel>
    </Grid>
   </Border>
@@ -429,7 +430,7 @@
    </Grid>
   </Grid>
  </Border>
- <ScrollViewer x:Name="ApplicationDetailsPage" Visibility="{Binding IsApplicationDetailsPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+ <ScrollViewer x:Name="ApplicationDetailsPage" Visibility="{Binding IsApplicationDetailsPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
   <StackPanel Margin="24">
    <Button Content="← Back to applications" HorizontalAlignment="Left" Style="{StaticResource SecondaryButton}" Click="BackToApplications_Click" Margin="0,0,0,20"/>
    <ContentControl Content="{Binding SelectedApplication}" ContentTemplate="{StaticResource ApplicationDetailTemplate}" />

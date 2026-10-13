@@ -6,5 +6,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/PrivacyMask.Core.Tests/PrivacyMask.Core.Tests.csproj" />
+    <Project Path="tests/PrivacyMask.Gui.SmokeChecks/PrivacyMask.Gui.SmokeChecks.csproj" />
+    <Project Path="tests/PrivacyMask.Gui.Benchmark/PrivacyMask.Gui.Benchmark.csproj" />
   </Folder>
 </Solution>

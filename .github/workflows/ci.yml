@@ -35,6 +35,10 @@ jobs:
         shell: powershell
         run: .\scripts\test-installer-transaction.ps1
 
+      - name: Test compiled WPF layouts and edit sessions
+        shell: powershell
+        run: .\scripts\test-gui-smoke.ps1
+
       - name: Package Windows release
         shell: powershell
         run: .\scripts\package-win-x64-release.ps1 -SkipTests

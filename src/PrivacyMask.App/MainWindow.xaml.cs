@@ -136,6 +136,7 @@ public partial class MainWindow : Window
 
         if (page == DesktopPage.Applications) ViewModel.ShowApplicationList();
         else ViewModel.SelectedPage = page;
+        FocusSelectedPage();
     }
 
     private void ManageApplication_Click(object sender, RoutedEventArgs e)
@@ -143,12 +144,37 @@ public partial class MainWindow : Window
         if ((sender as FrameworkElement)?.Tag is AppProfileViewModel profile)
         {
             ViewModel.OpenApplication(profile);
+            FocusSelectedPage();
         }
     }
 
     private void BackToApplications_Click(object sender, RoutedEventArgs e)
     {
         Navigate_Click(new System.Windows.Controls.Button { Tag = DesktopPage.Applications }, e);
+    }
+
+    private void FocusSelectedPage()
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (!IsVisible) return;
+            if (ViewModel.IsApplicationListPage)
+            {
+                ApplicationSearchBox.Focus();
+                return;
+            }
+            var pageName = ViewModel.IsApplicationDetailsPage ? "ApplicationDetailsPage" : $"{ViewModel.SelectedPage}Page";
+            if (FindName(pageName) is DependencyObject page) FocusFirstControl(page);
+        }, System.Windows.Threading.DispatcherPriority.Input);
+    }
+
+    private static bool FocusFirstControl(DependencyObject root)
+    {
+        if (root is System.Windows.Controls.Control { IsVisible: true, IsEnabled: true, Focusable: true } control
+            && control is not ScrollViewer && control.Focus()) return true;
+        for (var index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); index++)
+            if (FocusFirstControl(System.Windows.Media.VisualTreeHelper.GetChild(root, index))) return true;
+        return false;
     }
 
     private static bool CommitGridEditors(DependencyObject element)
@@ -367,6 +393,7 @@ public partial class MainWindow : Window
         var profileViewModel = new AppProfileViewModel(profile);
         ViewModel.AppProfiles.Add(profileViewModel);
         ViewModel.OpenApplication(profileViewModel);
+        FocusSelectedPage();
         QueuePreview();
     }
 
