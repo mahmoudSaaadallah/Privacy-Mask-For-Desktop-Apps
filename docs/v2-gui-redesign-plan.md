@@ -84,6 +84,17 @@ Executable icons use a 64-entry cache and a generic fallback. Contextual help
 supports pointer and keyboard access. All ten advanced zone columns remain.
 Version stays at the unreleased 2.0.0 and settings schema remains 12.
 
+Verification for this phase (2026-10-13): 186 automated tests passed; solution
+build completed with zero warnings/errors; all 15 PowerShell scripts passed
+syntax validation; transactional installer and isolated 2.0.0 package smoke
+tests passed. An offline WPF harness rendered all six compiled pages, the
+application list/details, advanced zones, empty search, and synthetic picker.
+It checked selector bindings, all ten zone columns, hidden-candidate deselection,
+and selected-profile/search retention through Save and Discard. The harness
+does not start PrivacyMask's runtime or capture protected content. Live pointer,
+screen-reader, multi-DPI, and performance qualification remain in PR 6; offline
+renders are not evidence that those interactive scenarios have passed.
+
 | Commit title | Scope |
 | --- | --- |
 | `feat: add compact application list view` | Render name, icon, status, enable control, and one Manage action. Use bounded icon caching with fallback icons. |
