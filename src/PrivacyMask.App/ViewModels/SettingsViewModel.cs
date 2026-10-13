@@ -89,6 +89,8 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     public string ProtectionBannerBackground => _runtimeMode switch { RuntimeMode.Off => "#FFF3DA", RuntimeMode.Panic => "#FFE4E1", _ => "#DCF4EB" };
     public string ProtectionBannerColor => _runtimeMode switch { RuntimeMode.Off => "#BD8000", RuntimeMode.Panic => "#D93A32", _ => "#009D6C" };
     public string QuickShortcutGesture => Hotkeys.FirstOrDefault(binding => binding.Action == HotkeyAction.ToggleProtection)?.GestureText ?? "Not configured";
+    public IReadOnlyList<ShortcutKeycap> QuickShortcutKeys => QuickShortcutGesture.Split(" + ")
+        .Select((text, index) => new ShortcutKeycap(text, index > 0)).ToArray();
     public string GlobalPanicLabel => _runtimeMode == RuntimeMode.Panic ? "Unlock panic mask all" : "Panic mask all";
     public bool CanToggleGlobalProtection => !IsRuntimeActionBusy && _runtimeMode != RuntimeMode.Panic;
     public bool CanToggleGlobalPanic => !IsRuntimeActionBusy;
@@ -352,3 +354,5 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         };
     }
 }
+
+public sealed record ShortcutKeycap(string Text, bool HasSeparator);
