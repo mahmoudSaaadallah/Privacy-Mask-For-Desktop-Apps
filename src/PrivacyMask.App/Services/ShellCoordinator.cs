@@ -306,6 +306,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _mainWindow.SaveRequested += SaveSettingsAsync;
             _mainWindow.PreviewRequested += PreviewSettings;
             _mainWindow.DiscardRequested += DiscardPreview;
+            _mainWindow.GlobalProtectionRequested += ToggleProtection;
+            _mainWindow.GlobalPanicRequested += ToggleGlobalPanicModeAsync;
         }
         else if (!_mainWindow.IsVisible)
         {

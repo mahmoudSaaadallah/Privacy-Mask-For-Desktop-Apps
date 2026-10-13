@@ -38,6 +38,32 @@ public partial class MainWindow : Window
     public event Action<AppSettings>? PreviewRequested;
 
     public event Action? DiscardRequested;
+    public event Action? GlobalProtectionRequested;
+    public event Func<Task>? GlobalPanicRequested;
+
+    private void GlobalProtection_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.CanToggleGlobalProtection) GlobalProtectionRequested?.Invoke();
+    }
+
+    private async void GlobalPanic_Click(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.CanToggleGlobalPanic || GlobalPanicRequested is null) return;
+        ViewModel.IsRuntimeActionBusy = true;
+        try
+        {
+            await GlobalPanicRequested.Invoke();
+        }
+        catch (Exception exception)
+        {
+            System.Windows.MessageBox.Show(this, $"The panic action could not be completed.\n\n{exception.Message}",
+                "Protection action failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            ViewModel.IsRuntimeActionBusy = false;
+        }
+    }
 
     public SettingsViewModel ViewModel => (SettingsViewModel)DataContext;
 
