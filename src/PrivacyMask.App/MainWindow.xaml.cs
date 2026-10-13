@@ -19,7 +19,6 @@ namespace PrivacyMask.App;
 public partial class MainWindow : Window
 {
     public static readonly Array MaskColors = Enum.GetValues<MaskColorOption>();
-    public static readonly Array ActivationModes = Enum.GetValues<AppActivationMode>();
 
     private bool _allowClose;
     private bool _isSaving;
@@ -46,12 +45,16 @@ public partial class MainWindow : Window
 
     public Array MaskColorsSource => MaskColors;
 
-    public Array ActivationModesSource => ActivationModes;
+    public IReadOnlyList<ActivationModeOption> ActivationModesSource => ActivationModeOption.All;
 
     public void ReplaceViewModel(SettingsViewModel viewModel)
     {
         if (DataContext is SettingsViewModel previous)
         {
+            viewModel.ApplicationSearch = previous.ApplicationSearch;
+            var selected = viewModel.AppProfiles.FirstOrDefault(profile =>
+                profile.ProfileId == previous.SelectedApplication?.ProfileId);
+            if (selected is not null) viewModel.OpenApplication(selected);
             viewModel.SelectedPage = previous.SelectedPage;
             previous.SettingsEdited -= QueuePreview;
             previous.Dispose();
@@ -105,7 +108,21 @@ public partial class MainWindow : Window
             return;
         }
 
-        ViewModel.SelectedPage = page;
+        if (page == DesktopPage.Applications) ViewModel.ShowApplicationList();
+        else ViewModel.SelectedPage = page;
+    }
+
+    private void ManageApplication_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is AppProfileViewModel profile)
+        {
+            ViewModel.OpenApplication(profile);
+        }
+    }
+
+    private void BackToApplications_Click(object sender, RoutedEventArgs e)
+    {
+        Navigate_Click(new System.Windows.Controls.Button { Tag = DesktopPage.Applications }, e);
     }
 
     private static bool CommitGridEditors(DependencyObject element)
@@ -279,7 +296,9 @@ public partial class MainWindow : Window
             picker.ProfileDisplayName,
             picker.SelectedApplication.ProcessName,
             executablePath: picker.SelectedApplication.ExecutablePath);
-        ViewModel.AppProfiles.Add(new AppProfileViewModel(profile));
+        var profileViewModel = new AppProfileViewModel(profile);
+        ViewModel.AppProfiles.Add(profileViewModel);
+        ViewModel.OpenApplication(profileViewModel);
         QueuePreview();
     }
 
@@ -362,6 +381,11 @@ public partial class MainWindow : Window
     {
         if (e.Key == Key.Escape && Keyboard.Modifiers == ModifierKeys.None)
         {
+            if (InformationHelp.CloseIfOpen(Keyboard.FocusedElement))
+            {
+                e.Handled = true;
+                return;
+            }
             DiscardAndHide();
             e.Handled = true;
         }

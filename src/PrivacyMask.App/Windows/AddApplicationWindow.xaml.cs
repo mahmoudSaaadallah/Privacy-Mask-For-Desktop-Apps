@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using PrivacyMask.App.Services;
 using PrivacyMask.App.ViewModels;
 using PrivacyMask.Windows.Models;
@@ -13,6 +15,7 @@ public partial class AddApplicationWindow : Window
     private readonly DesktopApplicationCatalog _catalog;
     private readonly IReadOnlySet<string> _protectedProcessNames;
     private readonly string? _relinkProfileName;
+    private bool _selectedFromBrowse;
 
     public AddApplicationWindow(
         DesktopApplicationCatalog catalog,
@@ -24,6 +27,8 @@ public partial class AddApplicationWindow : Window
         _relinkProfileName = string.IsNullOrWhiteSpace(relinkProfileName)
             ? null
             : relinkProfileName.Trim();
+        ApplicationsView = new ListCollectionView(Applications);
+        ApplicationsView.Filter = MatchesSearch;
         InitializeComponent();
         WindowWorkAreaSizer.Fit(this);
         DataContext = this;
@@ -40,6 +45,31 @@ public partial class AddApplicationWindow : Window
     }
 
     public ObservableCollection<ApplicationCandidateViewModel> Applications { get; } = [];
+    public ICollectionView ApplicationsView { get; }
+
+    private bool MatchesSearch(object item)
+    {
+        if (item is not ApplicationCandidateViewModel candidate) return false;
+        var query = SearchTextBox?.Text.Trim() ?? string.Empty;
+        return query.Length == 0
+            || candidate.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)
+            || candidate.Candidate.ProcessName.Contains(query, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void Search_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        ApplicationsView.Refresh();
+        UpdateEmptyState();
+    }
+
+    private void UpdateEmptyState()
+    {
+        if (EmptyStateText is null) return;
+        EmptyStateText.Visibility = ApplicationsView.IsEmpty ? Visibility.Visible : Visibility.Collapsed;
+        EmptyStateText.Text = Applications.Count == 0
+            ? "No eligible applications are visible. Open one and refresh, or browse to its executable."
+            : "No applications match your search.";
+    }
 
     public DesktopApplicationCandidate? SelectedApplication { get; private set; }
 
@@ -87,11 +117,20 @@ public partial class AddApplicationWindow : Window
     {
         if (ApplicationsList.SelectedItem is not ApplicationCandidateViewModel selected)
         {
+            if (!_selectedFromBrowse)
+            {
+                SelectedApplication = null;
+                SelectedTargetText.Text = "Choose an application";
+                ConfirmButton.IsEnabled = false;
+            }
             return;
         }
 
+        _selectedFromBrowse = false;
         SelectedApplication = selected.Candidate;
         ProfileNameTextBox.Text = selected.DisplayName;
+        SelectedTargetText.Text = selected.Candidate.ExecutablePath;
+        ConfirmButton.IsEnabled = true;
     }
 
     private void Add_Click(object sender, RoutedEventArgs e)
@@ -128,6 +167,9 @@ public partial class AddApplicationWindow : Window
     {
         var candidates = _catalog.GetAvailableRunningApplications(_protectedProcessNames);
         SelectedApplication = null;
+        _selectedFromBrowse = false;
+        ConfirmButton.IsEnabled = false;
+        SelectedTargetText.Text = "Choose an application";
         ProfileNameTextBox.Clear();
         Applications.Clear();
         foreach (var candidate in candidates)
@@ -135,8 +177,8 @@ public partial class AddApplicationWindow : Window
             Applications.Add(new ApplicationCandidateViewModel(candidate));
         }
 
-        EmptyStateText.Visibility = Applications.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        if (Applications.Count > 0)
+        UpdateEmptyState();
+        if (ApplicationsList.Items.Count > 0)
         {
             ApplicationsList.SelectedIndex = 0;
         }
@@ -144,7 +186,11 @@ public partial class AddApplicationWindow : Window
 
     private void SelectCandidate(DesktopApplicationCandidate candidate)
     {
+        ApplicationsList.SelectedIndex = -1;
+        _selectedFromBrowse = true;
         SelectedApplication = candidate;
+        SelectedTargetText.Text = candidate.ExecutablePath;
+        ConfirmButton.IsEnabled = true;
         ProfileNameTextBox.Text = candidate.DisplayName;
         ProfileNameTextBox.Focus();
         ProfileNameTextBox.SelectAll();

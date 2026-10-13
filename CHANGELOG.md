@@ -2,6 +2,10 @@
 
 ## 2.0.0 - Unreleased
 
+- Add searchable compact application cards with bounded executable-icon caching and contextual pointer/keyboard help
+- Move profile appearance and hover controls into a focused detail page while retaining all advanced zone fields and presets
+- Open newly enrolled profiles directly, preserve profile navigation across Save/Discard, and expose missing-target relink recovery
+- Add running-application search and an explicit selected executable path to the enrollment and relink picker
 - Add six sidebar destinations sharing one settings edit session: Overview, Applications, Shortcuts, Security, Settings, and About
 - Keep unsaved edits across navigation and report pending, saving, and failed-save states
 - Keep settings open after Save or Discard, restore all saved values on Discard, and update previews for nested settings changes

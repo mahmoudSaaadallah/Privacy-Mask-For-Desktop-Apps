@@ -15,6 +15,68 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private SettingsChangeTracker? _changeTracker;
     private bool _isSaving;
     private string? _saveError;
+    private string _applicationSearch = string.Empty;
+    private AppProfileViewModel? _selectedApplication;
+
+    public ObservableCollection<AppProfileViewModel> FilteredAppProfiles { get; } = [];
+    public string ApplicationSearch
+    {
+        get => _applicationSearch;
+        set
+        {
+            if (SetProperty(ref _applicationSearch, value ?? string.Empty)) RefreshApplicationFilter();
+        }
+    }
+    public AppProfileViewModel? SelectedApplication
+    {
+        get => _selectedApplication;
+        private set
+        {
+            if (SetProperty(ref _selectedApplication, value)) NotifyApplicationPages();
+        }
+    }
+    public bool IsApplicationListPage => IsApplicationsPage && SelectedApplication is null;
+    public bool IsApplicationDetailsPage => IsApplicationsPage && SelectedApplication is not null;
+    public bool HasNoMatchingApplications => FilteredAppProfiles.Count == 0;
+    public string ApplicationEmptyMessage => string.IsNullOrWhiteSpace(ApplicationSearch)
+        ? "No applications configured. Add an application to start protecting it."
+        : "No applications match your search.";
+
+    public void OpenApplication(AppProfileViewModel profile)
+    {
+        if (!AppProfiles.Contains(profile)) return;
+        SelectedPage = DesktopPage.Applications;
+        SelectedApplication = profile;
+    }
+
+    public void ShowApplicationList()
+    {
+        SelectedApplication = null;
+        SelectedPage = DesktopPage.Applications;
+    }
+
+    private void NotifyApplicationPages()
+    {
+        RaisePropertyChanged(nameof(IsApplicationListPage));
+        RaisePropertyChanged(nameof(IsApplicationDetailsPage));
+    }
+
+    private void RefreshApplicationFilter()
+    {
+        var query = ApplicationSearch.Trim();
+        var matches = AppProfiles.Where(profile => query.Length == 0
+            || profile.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)
+            || profile.WindowMatchers.SelectMany(matcher => matcher.ProcessNames)
+                .Any(name => name.Contains(query, StringComparison.OrdinalIgnoreCase))).ToList();
+        if (!FilteredAppProfiles.SequenceEqual(matches))
+        {
+            FilteredAppProfiles.Clear();
+            foreach (var profile in matches) FilteredAppProfiles.Add(profile);
+        }
+        if (SelectedApplication is not null && !AppProfiles.Contains(SelectedApplication)) SelectedApplication = null;
+        RaisePropertyChanged(nameof(HasNoMatchingApplications));
+        RaisePropertyChanged(nameof(ApplicationEmptyMessage));
+    }
 
     public bool HasPendingChanges => _changeTracker?.HasChanges == true;
     public bool CanSave => HasPendingChanges && !IsSaving;
@@ -50,6 +112,11 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
     private void SettingsChanged(bool edited)
     {
+        if (edited)
+        {
+            RefreshApplicationFilter();
+            foreach (var profile in AppProfiles) profile.NotifyAppearanceChanged();
+        }
         if (edited || !HasPendingChanges) _saveError = null;
         RaisePropertyChanged(nameof(HasPendingChanges));
         RaisePropertyChanged(nameof(CanSave));
@@ -80,6 +147,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
                 RaisePropertyChanged(nameof(IsSecurityPage));
                 RaisePropertyChanged(nameof(IsSettingsPage));
                 RaisePropertyChanged(nameof(IsAboutPage));
+                NotifyApplicationPages();
             }
         }
     }
@@ -118,6 +186,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         };
         viewModel._changeTracker = new SettingsChangeTracker(viewModel);
         viewModel._changeTracker.Changed += viewModel.SettingsChanged;
+        viewModel.RefreshApplicationFilter();
         return viewModel;
     }
 

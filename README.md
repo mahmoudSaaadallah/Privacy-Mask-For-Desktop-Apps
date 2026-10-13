@@ -181,7 +181,8 @@ environment, initial measurements, performance budgets, and required scenarios.
 1. Start PrivacyMask.
 2. Select **Add application**, then choose a visible running program or browse
    directly to its `.exe` file. WhatsApp and Telegram are already included.
-3. Rename a custom profile if needed, then choose a mask style. `Live blur` keeps the cleanest appearance, while
+3. On **Applications**, search by application or process name and select **Manage**
+   on a card to edit that profile. Rename a custom profile if needed, then choose a mask style. `Live blur` keeps the cleanest appearance, while
    `Wet glass` adds a locally generated condensation layer.
 4. Move the blur-strength slider to your preferred appearance. Lower values
    reveal progressively clearer shapes and colors; higher values remove more
@@ -206,6 +207,12 @@ environment, initial measurements, performance budgets, and required scenarios.
 
 Each profile card reports whether its application is protected now, waiting for
 focus, paused, disabled, not running, or no longer detected at its saved path.
+The information button provides contextual help on hover or keyboard focus;
+press `F1`, `Enter`, or `Space` to open it, and `Esc` to dismiss it.
+Profile details contain the primary appearance and hover controls. Expand
+**Advanced privacy zones** for presets and all individual zone settings.
+Search in the application picker narrows running candidates; check the selected
+executable path before confirming. Browsing to an executable remains available.
 For a custom application that moved or changed its executable after an update,
 choose **Relink** and select the current running application or `.exe` file.
 Relinking changes only the application target; the profile name, blur strength,
@@ -221,7 +228,7 @@ New installations also enable launch at sign-in by default; this can be changed
 from onboarding, settings, or the tray without affecting existing users' saved
 choice during an update.
 
-The panic PIN can be added or changed from **General > Panic unlock PIN**.
+The panic PIN can be added or changed from **Security > Panic unlock PIN**.
 Changing it requires the current PIN. PrivacyMask stores only a salted,
 computationally hardened verifier in the local settings file, never the digits
 you entered. Canceling the unlock window or entering an incorrect PIN leaves

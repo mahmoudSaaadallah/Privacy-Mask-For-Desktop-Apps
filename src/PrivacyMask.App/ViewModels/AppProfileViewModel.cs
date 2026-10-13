@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows.Media;
+using PrivacyMask.App.Services;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
 
@@ -10,6 +12,7 @@ public sealed class AppProfileViewModel : ObservableObject
 {
     private string _displayName;
     private string? _executablePath;
+    private ImageSource? _icon;
     private bool _enabled;
     private AppActivationMode _startupMode;
     private string _selectedPresetId;
@@ -61,6 +64,7 @@ public sealed class AppProfileViewModel : ObservableObject
     public bool IsBuiltIn => !IsCustom;
 
     public string? ExecutablePath => _executablePath;
+    public ImageSource Icon => _icon ??= ApplicationIconCache.Get(ExecutablePath);
 
     public ProfileRuntimeStatus RuntimeStatus
     {
@@ -71,6 +75,8 @@ public sealed class AppProfileViewModel : ObservableObject
             {
                 RaisePropertyChanged(nameof(RuntimeStatusSummary));
                 RaisePropertyChanged(nameof(RuntimeStatusColor));
+                RaisePropertyChanged(nameof(ApplicationHelp));
+                RaisePropertyChanged(nameof(NeedsRelink));
             }
         }
     }
@@ -95,6 +101,17 @@ public sealed class AppProfileViewModel : ObservableObject
         _ => "#51656E",
     };
 
+    public bool NeedsRelink => IsCustom && RuntimeStatus == ProfileRuntimeStatus.TargetMissing;
+    public string ApplicationHelp => RuntimeStatus switch
+    {
+        ProfileRuntimeStatus.TargetMissing => "The saved executable is missing. Use Relink to select its new location; your mask settings will be preserved.",
+        ProfileRuntimeStatus.NotRunning => "No matching desktop window is detected. Open the application to activate its configured protection.",
+        ProfileRuntimeStatus.ProtectionPaused => "Protection is paused for this application. Use Ctrl + Shift + P on it, or resume global protection from the tray.",
+        ProfileRuntimeStatus.PanicProtected => "An opaque panic mask is active. A correct PIN is required to disable it; reveal gestures are blocked.",
+        ProfileRuntimeStatus.Disabled => "This profile is disabled. Enable it to restore protection.",
+        _ => Summary,
+    };
+
     public string Summary => StartupMode == AppActivationMode.FocusAware
         ? "Masks only while the supported app is focused."
         : "Covers the whole app window even when it is visible but inactive.";
@@ -106,6 +123,23 @@ public sealed class AppProfileViewModel : ObservableObject
     public string MaskColorSummary => $"Mask color: {MaskColor}";
 
     public string HoverRevealSummary => $"Hover reveal window: {HoverRevealWidthPixels} x {HoverRevealHeightPixels} px";
+
+    public bool HoverRevealEnabled
+    {
+        get => Zones.Any(zone => zone.RevealOnHover);
+        set
+        {
+            foreach (var zone in Zones) zone.RevealOnHover = value;
+            RaisePropertyChanged(nameof(HoverRevealEnabled));
+        }
+    }
+
+    public void NotifyAppearanceChanged()
+    {
+        RaisePropertyChanged(nameof(PrimaryMaskStyle));
+        RaisePropertyChanged(nameof(MaskStyleSummary));
+        RaisePropertyChanged(nameof(HoverRevealEnabled));
+    }
 
     public ObservableCollection<LayoutPreset> Presets { get; }
 
@@ -131,6 +165,7 @@ public sealed class AppProfileViewModel : ObservableObject
             if (SetProperty(ref _startupMode, value))
             {
                 RaisePropertyChanged(nameof(Summary));
+                RaisePropertyChanged(nameof(ApplicationHelp));
             }
         }
     }
@@ -261,6 +296,8 @@ public sealed class AppProfileViewModel : ObservableObject
             ? null
             : executablePath.Trim();
         RuntimeStatus = ProfileRuntimeStatus.Checking;
+        _icon = null;
+        RaisePropertyChanged(nameof(Icon));
         RaisePropertyChanged(nameof(ExecutablePath));
     }
 
