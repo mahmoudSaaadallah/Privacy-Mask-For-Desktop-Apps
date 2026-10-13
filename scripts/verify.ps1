@@ -15,3 +15,4 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 & .\scripts\test-installer-transaction.ps1
+& .\scripts\test-gui-smoke.ps1
