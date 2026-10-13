@@ -223,7 +223,10 @@
         <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
         <Border Background="{StaticResource SidebarBrush}" Padding="10,24,6,24">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Margin="22,0,0,34"><TextBlock Text="PM" FontSize="36" FontWeight="Black" Foreground="White"/><TextBlock Text="PrivacyMask" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,0"/></StackPanel>
+                <Grid DockPanel.Dock="Top" Margin="12,0,0,28">
+                    <StackPanel Margin="10,0,0,6"><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsSecondaryDesignPage}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style><TextBlock Text="PM" FontSize="36" FontWeight="Black" Foreground="White"/><TextBlock Text="PrivacyMask" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,0"/></StackPanel>
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsSecondaryDesignPage,Converter={StaticResource BooleanToVisibility}}"><Border Width="44" Height="44" CornerRadius="7" Background="{StaticResource AccentBrush}" Margin="0,0,12,0"><TextBlock Text="PM" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="PrivacyMask" FontSize="14" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/></StackPanel>
+                </Grid>
                 <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
                     <Button Style="{StaticResource NavigationButton}" Tag="{x:Static viewModels:DesktopPage.Overview}" Click="Navigate_Click" AutomationProperties.Name="Overview"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" Width="28"/><TextBlock Text="Overview" Foreground="White" FontWeight="Normal"/></StackPanel></Button>
                     <Button Style="{StaticResource NavigationButton}" Tag="{x:Static viewModels:DesktopPage.Applications}" Click="Navigate_Click" AutomationProperties.Name="Applications"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80A;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" Width="28"/><TextBlock Text="Applications" Foreground="White" FontWeight="Normal"/></StackPanel></Button>
@@ -414,7 +417,7 @@
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="28" VerticalAlignment="Center"/>
                                     <DockPanel Grid.Column="1" Margin="0,0,20,0" VerticalAlignment="Center"><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="{Binding ConfigPath}" AutomationProperties.Name="Configuration file path"/><TextBlock Text="Configuration file" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/></DockPanel>
-                                    <Button Grid.Column="2" Content="Show location" Style="{StaticResource SecondaryButton}" Click="OpenConfigurationFolder_Click" AutomationProperties.HelpText="Open the directory containing your local settings in Windows Explorer."/>
+                                    <Button Grid.Column="2" Content="Show location" Style="{StaticResource SecondaryButton}" Click="OpenConfigurationFolder_Click" AutomationProperties.HelpText="Open the local settings folder. Right-click or Shift+F10 to copy the settings file path."><Button.ContextMenu><ContextMenu><MenuItem Header="Copy file path" Click="CopyConfigurationPath_Click"/></ContextMenu></Button.ContextMenu></Button>
                                 </Grid>
                             </Border>
                         </StackPanel>
@@ -494,8 +497,7 @@
                             IsEnabled="{Binding CanSave}"
                             Click="Save_Click" />
                     </StackPanel>
-                    <TextBlock
-                        Text="{Binding EditStatus}" VerticalAlignment="Center" TextWrapping="Wrap"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource MutedInkBrush}"/><Style.Triggers><DataTrigger Binding="{Binding HasPendingChanges}" Value="True"><Setter Property="Foreground" Value="#D88D00"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><Border Width="16" Height="16" CornerRadius="8" Background="#E2A12A" Margin="0,0,9,0" Visibility="{Binding HasPendingChanges,Converter={StaticResource BooleanToVisibility}}"><TextBlock Text="!" Foreground="White" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="{Binding EditStatus}" VerticalAlignment="Center" TextWrapping="Wrap"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource MutedInkBrush}"/><Style.Triggers><DataTrigger Binding="{Binding HasPendingChanges}" Value="True"><Setter Property="Foreground" Value="#D88D00"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></StackPanel>
                 </DockPanel>
             </Border>
         </Grid>

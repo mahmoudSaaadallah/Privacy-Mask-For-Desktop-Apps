@@ -343,6 +343,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private void CopyConfigurationPath_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(ViewModel.ConfigPath);
+        }
+        catch
+        {
+            System.Windows.MessageBox.Show(this, $"The clipboard is unavailable. Your settings path is:\n\n{ViewModel.ConfigPath}",
+                "Copy settings path", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
     private void OpenConfigurationFolder_Click(object sender, RoutedEventArgs e)
     {
         try
