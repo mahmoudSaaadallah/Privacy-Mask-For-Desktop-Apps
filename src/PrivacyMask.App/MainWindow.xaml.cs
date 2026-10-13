@@ -46,7 +46,7 @@ public partial class MainWindow : Window
 
     public Array MaskColorsSource => MaskColors;
 
-    public Array ActivationModesSource => ActivationModes;
+    public IReadOnlyList<ActivationModeOption> ActivationModesSource => ActivationModeOption.All;
 
     public void ReplaceViewModel(SettingsViewModel viewModel)
     {

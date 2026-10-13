@@ -112,7 +112,11 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
     private void SettingsChanged(bool edited)
     {
-        if (edited) RefreshApplicationFilter();
+        if (edited)
+        {
+            RefreshApplicationFilter();
+            foreach (var profile in AppProfiles) profile.NotifyAppearanceChanged();
+        }
         if (edited || !HasPendingChanges) _saveError = null;
         RaisePropertyChanged(nameof(HasPendingChanges));
         RaisePropertyChanged(nameof(CanSave));

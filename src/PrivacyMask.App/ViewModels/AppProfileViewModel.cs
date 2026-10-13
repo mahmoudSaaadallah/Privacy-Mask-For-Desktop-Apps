@@ -124,6 +124,23 @@ public sealed class AppProfileViewModel : ObservableObject
 
     public string HoverRevealSummary => $"Hover reveal window: {HoverRevealWidthPixels} x {HoverRevealHeightPixels} px";
 
+    public bool HoverRevealEnabled
+    {
+        get => Zones.Any(zone => zone.RevealOnHover);
+        set
+        {
+            foreach (var zone in Zones) zone.RevealOnHover = value;
+            RaisePropertyChanged(nameof(HoverRevealEnabled));
+        }
+    }
+
+    public void NotifyAppearanceChanged()
+    {
+        RaisePropertyChanged(nameof(PrimaryMaskStyle));
+        RaisePropertyChanged(nameof(MaskStyleSummary));
+        RaisePropertyChanged(nameof(HoverRevealEnabled));
+    }
+
     public ObservableCollection<LayoutPreset> Presets { get; }
 
     public List<WindowMatcher> WindowMatchers { get; }
