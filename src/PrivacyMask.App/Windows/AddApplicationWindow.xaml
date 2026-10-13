@@ -23,6 +23,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <StackPanel>
@@ -38,7 +39,8 @@
                        Text="Choose a running desktop app, or browse to its executable. PrivacyMask protects every visible window created by the selected process." />
         </StackPanel>
 
-        <Grid Grid.Row="1"
+        <TextBox x:Name="SearchTextBox" Grid.Row="1" Margin="0,18,0,0" Padding="12,10" FontSize="14" AutomationProperties.Name="Search running applications" ToolTip="Search by application or process name" TextChanged="Search_TextChanged"/>
+        <Grid Grid.Row="2"
               Margin="0,18,0,14">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -53,7 +55,7 @@
                     Width="104"
                     Margin="12,0,10,0"
                     Padding="10,7"
-                    Click="Refresh_Click"
+                    Style="{StaticResource SecondaryButton}" Click="Refresh_Click"
                     Content="_Refresh" />
             <Button Grid.Column="2"
                     Width="176"
@@ -61,11 +63,11 @@
                     Background="#1F6E6C"
                     BorderBrush="#1F6E6C"
                     Foreground="White"
-                    Click="Browse_Click"
+                    Style="{StaticResource SecondaryButton}" Click="Browse_Click"
                     Content="_Browse for executable" />
         </Grid>
 
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 Padding="8"
                 Background="#FCFAF6"
                 BorderBrush="#DED4C4"
@@ -76,7 +78,7 @@
                          AutomationProperties.Name="Available running applications"
                          BorderThickness="0"
                          Background="Transparent"
-                         ItemsSource="{Binding Applications}"
+                         ItemsSource="{Binding ApplicationsView}"
                          SelectionChanged="ApplicationsList_SelectionChanged">
                     <ListBox.ItemTemplate>
                         <DataTemplate DataType="{x:Type viewModels:ApplicationCandidateViewModel}">
@@ -121,7 +123,7 @@
         </Border>
 
         <Border x:Name="ProfileNamePanel"
-                Grid.Row="3"
+                Grid.Row="4"
                 Margin="0,16,0,0"
                 Padding="14"
                 Background="#E8F1EF"
@@ -143,11 +145,11 @@
             </Grid>
         </Border>
 
-        <DockPanel Grid.Row="4"
+        <DockPanel Grid.Row="5"
                    Margin="0,18,0,0">
             <TextBlock VerticalAlignment="Center"
                        Foreground="#8A6A38"
-                       Text="System surfaces and apps already protected are hidden." />
+                       x:Name="SelectedTargetText" MaxWidth="330" TextTrimming="CharacterEllipsis" Text="Choose an application" />
             <StackPanel HorizontalAlignment="Right"
                         Orientation="Horizontal"
                         DockPanel.Dock="Right">
@@ -155,13 +157,11 @@
                         Margin="0,0,10,0"
                         Padding="12,8"
                         IsCancel="True"
+                        Style="{StaticResource SecondaryButton}"
                         Content="_Cancel" />
-                <Button x:Name="ConfirmButton"
+                <Button x:Name="ConfirmButton" Style="{StaticResource PrimaryButton}" IsEnabled="False"
                         Width="146"
                         Padding="12,8"
-                        Background="#CC7A21"
-                        BorderBrush="#CC7A21"
-                        Foreground="White"
                         Click="Add_Click"
                         Content="_Add application" />
             </StackPanel>
