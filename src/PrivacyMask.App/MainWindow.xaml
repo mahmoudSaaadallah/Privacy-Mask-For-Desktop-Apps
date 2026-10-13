@@ -80,13 +80,14 @@
     <Style x:Key="ApplicationIcon" TargetType="Image">
         <Setter Property="Source" Value="{Binding Icon}"/>
         <Style.Triggers>
+            <DataTrigger Binding="{Binding IsNotepad}" Value="True"><Setter Property="Source" Value="{StaticResource NotepadSymbol}"/></DataTrigger>
             <DataTrigger Binding="{Binding AppId}" Value="{x:Static models:AppId.WhatsApp}"><Setter Property="Source" Value="{StaticResource WhatsAppSymbol}"/></DataTrigger>
             <DataTrigger Binding="{Binding AppId}" Value="{x:Static models:AppId.Telegram}"><Setter Property="Source" Value="{StaticResource TelegramSymbol}"/></DataTrigger>
         </Style.Triggers>
     </Style>
     <DataTemplate x:Key="StatusBadge">
         <Border Background="{Binding StatusBadgeBackground}" CornerRadius="5" Padding="9,5" HorizontalAlignment="Left">
-            <StackPanel Orientation="Horizontal"><Ellipse Width="10" Height="10" Fill="{Binding RuntimeStatusColor}" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock Text="{Binding StatusBadgeText}" Foreground="{Binding RuntimeStatusColor}" FontSize="12"/></StackPanel>
+            <StackPanel Orientation="Horizontal"><Ellipse Width="10" Height="10" Fill="{Binding StatusBadgeColor}" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBlock Text="{Binding StatusBadgeText}" Foreground="{Binding StatusBadgeColor}" FontSize="12"/></StackPanel>
         </Border>
     </DataTemplate>
     <DataTemplate x:Key="ApplicationDetailTemplate" DataType="{x:Type viewModels:AppProfileViewModel}">

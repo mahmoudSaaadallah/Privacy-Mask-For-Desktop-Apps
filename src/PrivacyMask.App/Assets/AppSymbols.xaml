@@ -11,4 +11,13 @@
             <GeometryDrawing Brush="White" Geometry="M 10,29 L 51,13 43,51 30,41 23,47 24,35 44,21 28,38 25,36 Z"/>
         </DrawingGroup></DrawingImage.Drawing>
     </DrawingImage>
+    <DrawingImage x:Key="NotepadSymbol">
+        <DrawingImage.Drawing><DrawingGroup>
+            <GeometryDrawing Brush="#6B5936" Geometry="M 10,59 L 54,59 54,63 10,63 Z"/>
+            <GeometryDrawing Brush="#EDF7F8" Geometry="M 8,8 L 56,8 56,59 8,59 Z"/>
+            <GeometryDrawing Brush="#63CEE9" Geometry="M 8,5 L 56,5 56,55 8,55 Z"/>
+            <GeometryDrawing Geometry="M 15,1 L 15,9 M 24,1 L 24,9 M 33,1 L 33,9 M 42,1 L 42,9 M 51,1 L 51,9"><GeometryDrawing.Pen><Pen Brush="#179EC4" Thickness="4" StartLineCap="Round" EndLineCap="Round"/></GeometryDrawing.Pen></GeometryDrawing>
+            <GeometryDrawing Geometry="M 17,21 L 46,21 M 17,31 L 46,31 M 17,41 L 46,41"><GeometryDrawing.Pen><Pen Brush="#17617A" Thickness="4"/></GeometryDrawing.Pen></GeometryDrawing>
+        </DrawingGroup></DrawingImage.Drawing>
+    </DrawingImage>
 </ResourceDictionary>

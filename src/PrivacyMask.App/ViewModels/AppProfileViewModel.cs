@@ -66,6 +66,8 @@ public sealed class AppProfileViewModel : ObservableObject
 
     public bool IsBuiltIn => !IsCustom;
     public string CardDisplayName => AppId switch { AppId.WhatsApp => "WhatsApp", AppId.Telegram => "Telegram", _ => DisplayName };
+    public bool IsNotepad => WindowMatchers.SelectMany(matcher => matcher.ProcessNames)
+        .Any(name => string.Equals(name, "notepad", StringComparison.OrdinalIgnoreCase));
 
     public string? ExecutablePath => _executablePath;
     public ImageSource Icon => _icon ??= ApplicationIconCache.Get(ExecutablePath);
@@ -83,6 +85,7 @@ public sealed class AppProfileViewModel : ObservableObject
                 RaisePropertyChanged(nameof(NeedsRelink));
                 RaisePropertyChanged(nameof(StatusBadgeText));
                 RaisePropertyChanged(nameof(StatusBadgeBackground));
+                RaisePropertyChanged(nameof(StatusBadgeColor));
             }
         }
     }
@@ -122,6 +125,12 @@ public sealed class AppProfileViewModel : ObservableObject
         ProfileRuntimeStatus.Protected or ProfileRuntimeStatus.PanicProtected => "#DDF6EB",
         ProfileRuntimeStatus.TargetMissing or ProfileRuntimeStatus.WaitingForFocus or ProfileRuntimeStatus.ProtectionPaused => "#FFF3DA",
         _ => "#ECEFF2",
+    };
+    public string StatusBadgeColor => RuntimeStatus switch
+    {
+        ProfileRuntimeStatus.TargetMissing => "#BC8000",
+        ProfileRuntimeStatus.Protected => "#007D55",
+        _ => RuntimeStatusColor,
     };
     public string ApplicationHelp => RuntimeStatus switch
     {
@@ -319,6 +328,7 @@ public sealed class AppProfileViewModel : ObservableObject
         RuntimeStatus = ProfileRuntimeStatus.Checking;
         _icon = null;
         RaisePropertyChanged(nameof(Icon));
+        RaisePropertyChanged(nameof(IsNotepad));
         RaisePropertyChanged(nameof(ExecutablePath));
     }
 
