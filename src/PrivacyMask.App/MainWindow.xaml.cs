@@ -52,6 +52,10 @@ public partial class MainWindow : Window
     {
         if (DataContext is SettingsViewModel previous)
         {
+            viewModel.ApplicationSearch = previous.ApplicationSearch;
+            var selected = viewModel.AppProfiles.FirstOrDefault(profile =>
+                profile.ProfileId == previous.SelectedApplication?.ProfileId);
+            if (selected is not null) viewModel.OpenApplication(selected);
             viewModel.SelectedPage = previous.SelectedPage;
             previous.SettingsEdited -= QueuePreview;
             previous.Dispose();
@@ -105,7 +109,21 @@ public partial class MainWindow : Window
             return;
         }
 
-        ViewModel.SelectedPage = page;
+        if (page == DesktopPage.Applications) ViewModel.ShowApplicationList();
+        else ViewModel.SelectedPage = page;
+    }
+
+    private void ManageApplication_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is AppProfileViewModel profile)
+        {
+            ViewModel.OpenApplication(profile);
+        }
+    }
+
+    private void BackToApplications_Click(object sender, RoutedEventArgs e)
+    {
+        Navigate_Click(new System.Windows.Controls.Button { Tag = DesktopPage.Applications }, e);
     }
 
     private static bool CommitGridEditors(DependencyObject element)

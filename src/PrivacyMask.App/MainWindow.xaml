@@ -72,242 +72,7 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-    </Window.Resources>
-    <Grid
-        Margin="16">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition
-                Width="220" />
-            <ColumnDefinition
-                Width="16" />
-            <ColumnDefinition
-                Width="*" />
-        </Grid.ColumnDefinitions>
-        <Border
-            Background="{StaticResource SidebarBrush}"
-            CornerRadius="16"
-            Padding="20">
-            <DockPanel>
-                <StackPanel
-                    DockPanel.Dock="Top"
-                    Margin="0,0,0,24">
-                    <Image
-                        Source="{StaticResource PrivacyMaskLogo}"
-                        Width="56"
-                        Height="56"
-                        HorizontalAlignment="Left" />
-                    <TextBlock
-                        Text="PrivacyMask"
-                        FontSize="24"
-                        FontWeight="Bold"
-                        Foreground="White"
-                        Margin="0,16,0,0" />
-                </StackPanel>
-                <ScrollViewer
-                    VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <Button
-                            Content="Overview"
-                            Tag="{x:Static viewModels:DesktopPage.Overview}"
-                            Style="{StaticResource NavigationButton}"
-                            Click="Navigate_Click">
-                            <Button.Resources>
-                                <Style
-                                    TargetType="TextBlock">
-                                    <Setter
-                                        Property="Foreground"
-                                        Value="White" />
-                                </Style>
-                            </Button.Resources>
-                        </Button>
-                        <Button
-                            Content="Applications"
-                            Tag="{x:Static viewModels:DesktopPage.Applications}"
-                            Style="{StaticResource NavigationButton}"
-                            Click="Navigate_Click">
-                            <Button.Resources>
-                                <Style
-                                    TargetType="TextBlock">
-                                    <Setter
-                                        Property="Foreground"
-                                        Value="White" />
-                                </Style>
-                            </Button.Resources>
-                        </Button>
-                        <Button
-                            Content="Shortcuts"
-                            Tag="{x:Static viewModels:DesktopPage.Shortcuts}"
-                            Style="{StaticResource NavigationButton}"
-                            Click="Navigate_Click">
-                            <Button.Resources>
-                                <Style
-                                    TargetType="TextBlock">
-                                    <Setter
-                                        Property="Foreground"
-                                        Value="White" />
-                                </Style>
-                            </Button.Resources>
-                        </Button>
-                        <Button
-                            Content="Security"
-                            Tag="{x:Static viewModels:DesktopPage.Security}"
-                            Style="{StaticResource NavigationButton}"
-                            Click="Navigate_Click">
-                            <Button.Resources>
-                                <Style
-                                    TargetType="TextBlock">
-                                    <Setter
-                                        Property="Foreground"
-                                        Value="White" />
-                                </Style>
-                            </Button.Resources>
-                        </Button>
-                        <Button
-                            Content="Settings"
-                            Tag="{x:Static viewModels:DesktopPage.Settings}"
-                            Style="{StaticResource NavigationButton}"
-                            Click="Navigate_Click">
-                            <Button.Resources>
-                                <Style
-                                    TargetType="TextBlock">
-                                    <Setter
-                                        Property="Foreground"
-                                        Value="White" />
-                                </Style>
-                            </Button.Resources>
-                        </Button>
-                        <Button
-                            Content="About"
-                            Tag="{x:Static viewModels:DesktopPage.About}"
-                            Style="{StaticResource NavigationButton}"
-                            Click="Navigate_Click">
-                            <Button.Resources>
-                                <Style
-                                    TargetType="TextBlock">
-                                    <Setter
-                                        Property="Foreground"
-                                        Value="White" />
-                                </Style>
-                            </Button.Resources>
-                        </Button>
-                    </StackPanel>
-                </ScrollViewer>
-            </DockPanel>
-        </Border>
-        <Grid
-            Grid.Column="2">
-            <Grid.RowDefinitions>
-                <RowDefinition
-                    Height="*" />
-                <RowDefinition
-                    Height="Auto" />
-            </Grid.RowDefinitions>
-            <Border
-                Background="#FCFAF6"
-                CornerRadius="16">
-                <Grid>
-                    <ScrollViewer
-                        x:Name="OverviewPage"
-                        Visibility="{Binding IsOverviewPage, Converter={StaticResource BooleanToVisibility}}"
-                        VerticalScrollBarVisibility="Auto">
-                        <StackPanel
-                            Margin="24">
-                            <TextBlock
-                                Style="{StaticResource PageHeading}"
-                                Text="Overview"
-                                Margin="0,0,0,24" />
-                            <Border
-                                Style="{StaticResource Card}">
-                                <StackPanel>
-                                    <TextBlock
-                                        FontSize="22"
-                                        FontWeight="SemiBold"
-                                        Text="Protection status" />
-                                    <TextBlock
-                                        Text="{Binding CurrentModeSummary}"
-                                        TextWrapping="Wrap"
-                                        Margin="0,12,0,20" />
-                                    <Button
-                                        Style="{StaticResource PrimaryButton}"
-                                        Content="Manage applications"
-                                        HorizontalAlignment="Left"
-                                        Tag="{x:Static viewModels:DesktopPage.Applications}"
-                                        Click="Navigate_Click" />
-                                </StackPanel>
-                            </Border>
-                            <Border
-                                Style="{StaticResource Card}"
-                                Margin="0,20,0,0">
-                                <StackPanel>
-                                    <TextBlock
-                                        FontWeight="SemiBold"
-                                        Text="Quick enrollment" />
-                                    <TextBlock
-                                        Text="Focus an application and press Ctrl + Shift + P to add it or toggle its mask."
-                                        TextWrapping="Wrap"
-                                        Margin="0,10,0,0" />
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </ScrollViewer>
-                    <Border
-                        x:Name="ApplicationsPage"
-                        Visibility="{Binding IsApplicationsPage, Converter={StaticResource BooleanToVisibility}}"
-                        Padding="24"
-                        Background="#FCFAF6"
-                        CornerRadius="26">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition
-                                    Height="Auto" />
-                                <RowDefinition
-                                    Height="*" />
-                                <RowDefinition
-                                    Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid
-                                Margin="0,0,0,20">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition
-                                        Width="*" />
-                                    <ColumnDefinition
-                                        Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock
-                                        FontSize="30"
-                                        FontWeight="Bold"
-                                        Text="App Profiles" />
-                                    <TextBlock
-                                        Margin="0,8,0,0"
-                                        Foreground="#51656E"
-                                        Text="Add desktop applications, tune their protection, and calibrate privacy zones." />
-                                    <TextBlock
-                                        Margin="0,8,0,0"
-                                        Foreground="#8A6A38"
-                                        Text="{Binding ConfigPath}" />
-                                </StackPanel>
-                                <Button
-                                    Grid.Column="1"
-                                    MinWidth="170"
-                                    Margin="20,0,0,0"
-                                    Padding="16,11"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Top"
-                                    Background="#1F6E6C"
-                                    BorderBrush="#1F6E6C"
-                                    Foreground="White"
-                                    AutomationProperties.HelpText="Choose a running desktop application or browse to an executable file."
-                                    Click="AddApplication_Click"
-                                    Content="_Add application" />
-                            </Grid>
-                            <ScrollViewer
-                                Grid.Row="1"
-                                VerticalScrollBarVisibility="Auto">
-                                <ItemsControl
-                                    ItemsSource="{Binding AppProfiles}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate
+    <DataTemplate x:Key="ApplicationDetailTemplate"
                                             DataType="{x:Type viewModels:AppProfileViewModel}">
                                             <Border
                                                 Margin="0,0,0,18"
@@ -689,11 +454,227 @@
                                                 </StackPanel>
                                             </Border>
                                         </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
+    </Window.Resources>
+    <Grid
+        Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition
+                Width="220" />
+            <ColumnDefinition
+                Width="16" />
+            <ColumnDefinition
+                Width="*" />
+        </Grid.ColumnDefinitions>
+        <Border
+            Background="{StaticResource SidebarBrush}"
+            CornerRadius="16"
+            Padding="20">
+            <DockPanel>
+                <StackPanel
+                    DockPanel.Dock="Top"
+                    Margin="0,0,0,24">
+                    <Image
+                        Source="{StaticResource PrivacyMaskLogo}"
+                        Width="56"
+                        Height="56"
+                        HorizontalAlignment="Left" />
+                    <TextBlock
+                        Text="PrivacyMask"
+                        FontSize="24"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Margin="0,16,0,0" />
+                </StackPanel>
+                <ScrollViewer
+                    VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Button
+                            Content="Overview"
+                            Tag="{x:Static viewModels:DesktopPage.Overview}"
+                            Style="{StaticResource NavigationButton}"
+                            Click="Navigate_Click">
+                            <Button.Resources>
+                                <Style
+                                    TargetType="TextBlock">
+                                    <Setter
+                                        Property="Foreground"
+                                        Value="White" />
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                        <Button
+                            Content="Applications"
+                            Tag="{x:Static viewModels:DesktopPage.Applications}"
+                            Style="{StaticResource NavigationButton}"
+                            Click="Navigate_Click">
+                            <Button.Resources>
+                                <Style
+                                    TargetType="TextBlock">
+                                    <Setter
+                                        Property="Foreground"
+                                        Value="White" />
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                        <Button
+                            Content="Shortcuts"
+                            Tag="{x:Static viewModels:DesktopPage.Shortcuts}"
+                            Style="{StaticResource NavigationButton}"
+                            Click="Navigate_Click">
+                            <Button.Resources>
+                                <Style
+                                    TargetType="TextBlock">
+                                    <Setter
+                                        Property="Foreground"
+                                        Value="White" />
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                        <Button
+                            Content="Security"
+                            Tag="{x:Static viewModels:DesktopPage.Security}"
+                            Style="{StaticResource NavigationButton}"
+                            Click="Navigate_Click">
+                            <Button.Resources>
+                                <Style
+                                    TargetType="TextBlock">
+                                    <Setter
+                                        Property="Foreground"
+                                        Value="White" />
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                        <Button
+                            Content="Settings"
+                            Tag="{x:Static viewModels:DesktopPage.Settings}"
+                            Style="{StaticResource NavigationButton}"
+                            Click="Navigate_Click">
+                            <Button.Resources>
+                                <Style
+                                    TargetType="TextBlock">
+                                    <Setter
+                                        Property="Foreground"
+                                        Value="White" />
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                        <Button
+                            Content="About"
+                            Tag="{x:Static viewModels:DesktopPage.About}"
+                            Style="{StaticResource NavigationButton}"
+                            Click="Navigate_Click">
+                            <Button.Resources>
+                                <Style
+                                    TargetType="TextBlock">
+                                    <Setter
+                                        Property="Foreground"
+                                        Value="White" />
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+        <Grid
+            Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition
+                    Height="*" />
+                <RowDefinition
+                    Height="Auto" />
+            </Grid.RowDefinitions>
+            <Border
+                Background="#FCFAF6"
+                CornerRadius="16">
+                <Grid>
+                    <ScrollViewer
+                        x:Name="OverviewPage"
+                        Visibility="{Binding IsOverviewPage, Converter={StaticResource BooleanToVisibility}}"
+                        VerticalScrollBarVisibility="Auto">
+                        <StackPanel
+                            Margin="24">
+                            <TextBlock
+                                Style="{StaticResource PageHeading}"
+                                Text="Overview"
+                                Margin="0,0,0,24" />
+                            <Border
+                                Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock
+                                        FontSize="22"
+                                        FontWeight="SemiBold"
+                                        Text="Protection status" />
+                                    <TextBlock
+                                        Text="{Binding CurrentModeSummary}"
+                                        TextWrapping="Wrap"
+                                        Margin="0,12,0,20" />
+                                    <Button
+                                        Style="{StaticResource PrimaryButton}"
+                                        Content="Manage applications"
+                                        HorizontalAlignment="Left"
+                                        Tag="{x:Static viewModels:DesktopPage.Applications}"
+                                        Click="Navigate_Click" />
+                                </StackPanel>
+                            </Border>
+                            <Border
+                                Style="{StaticResource Card}"
+                                Margin="0,20,0,0">
+                                <StackPanel>
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Quick enrollment" />
+                                    <TextBlock
+                                        Text="Focus an application and press Ctrl + Shift + P to add it or toggle its mask."
+                                        TextWrapping="Wrap"
+                                        Margin="0,10,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <Grid>
+ <Border x:Name="ApplicationsPage" Visibility="{Binding IsApplicationListPage, Converter={StaticResource BooleanToVisibility}}" Padding="24">
+  <Grid>
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+   <DockPanel Margin="0,0,0,20">
+    <Button DockPanel.Dock="Right" Content="Add application" Click="AddApplication_Click" Style="{StaticResource PrimaryButton}" />
+    <TextBlock Text="Applications" Style="{StaticResource PageHeading}" />
+   </DockPanel>
+   <TextBox Grid.Row="1" Margin="0,0,0,20" Padding="12,10" FontSize="14" AutomationProperties.Name="Search applications" ToolTip="Search by application or process name"
+            Text="{Binding ApplicationSearch, UpdateSourceTrigger=PropertyChanged}" />
+   <Grid Grid.Row="2">
+    <ListBox ItemsSource="{Binding FilteredAppProfiles}" Background="Transparent" BorderThickness="0"
+             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+             VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+             AutomationProperties.Name="Configured applications">
+     <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem"><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="0,0,0,12"/></Style></ListBox.ItemContainerStyle>
+     <ListBox.ItemTemplate><DataTemplate DataType="{x:Type viewModels:AppProfileViewModel}">
+      <Border Style="{StaticResource Card}"><Grid>
+       <Grid.ColumnDefinitions><ColumnDefinition Width="56"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <Image Source="{Binding Icon}" Width="40" Height="40" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+       <StackPanel Grid.Column="1" Margin="0,0,16,0">
+        <TextBlock Text="{Binding DisplayName}" FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+        <TextBlock Text="{Binding RuntimeStatusSummary}" Foreground="{Binding RuntimeStatusColor}" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap"/>
+        <TextBlock Text="{Binding MaskIntensitySummary}" Foreground="{StaticResource MutedInkBrush}" Margin="0,8,0,0"/>
+       </StackPanel>
+       <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+        <CheckBox IsChecked="{Binding Enabled, Mode=TwoWay}" Content="Enabled" Margin="0,0,20,0" VerticalAlignment="Center" AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0} masking}"/>
+        <Button Content="Manage" Click="ManageApplication_Click" Tag="{Binding}" Style="{StaticResource SecondaryButton}"/>
+       </StackPanel>
+      </Grid></Border>
+     </DataTemplate></ListBox.ItemTemplate>
+    </ListBox>
+    <TextBlock Text="{Binding ApplicationEmptyMessage}" Visibility="{Binding HasNoMatchingApplications, Converter={StaticResource BooleanToVisibility}}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource MutedInkBrush}" FontSize="16" TextWrapping="Wrap"/>
+   </Grid>
+  </Grid>
+ </Border>
+ <ScrollViewer x:Name="ApplicationDetailsPage" Visibility="{Binding IsApplicationDetailsPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+  <StackPanel Margin="24">
+   <Button Content="← Back to applications" HorizontalAlignment="Left" Style="{StaticResource SecondaryButton}" Click="BackToApplications_Click" Margin="0,0,0,20"/>
+   <ContentControl Content="{Binding SelectedApplication}" ContentTemplate="{StaticResource ApplicationDetailTemplate}" />
+  </StackPanel>
+ </ScrollViewer>
+</Grid>
                     <ScrollViewer
                         x:Name="ShortcutsPage"
                         Visibility="{Binding IsShortcutsPage, Converter={StaticResource BooleanToVisibility}}"
