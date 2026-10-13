@@ -22,6 +22,28 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private RuntimeMode _runtimeMode;
     private bool _isRuntimeActionBusy;
     private readonly HashSet<AppProfileViewModel> _overviewProfiles = [];
+    private PanicHelpScope _panicHelpScope;
+
+    public PanicHelpScope PanicHelpScope
+    {
+        get => _panicHelpScope;
+        set
+        {
+            if (SetProperty(ref _panicHelpScope, value)) RaisePropertyChanged(nameof(PanicScopeSummary));
+        }
+    }
+    public string PanicScopeSummary => PanicHelpScope == PanicHelpScope.ActiveApp
+        ? "Use the focused-app panic shortcut. A correct PIN is required to unlock."
+        : "Use Panic mask all in Overview or the tray. A correct PIN is required to unlock.";
+    public IReadOnlyList<HotkeyBindingViewModel> ShortcutRows => Hotkeys.OrderBy(binding => binding.Action switch
+    {
+        HotkeyAction.ToggleProtection => 0,
+        HotkeyAction.PanicHideAll => 1,
+        HotkeyAction.IncreaseBlurStrength => 2,
+        HotkeyAction.DecreaseBlurStrength => 3,
+        HotkeyAction.TemporaryRevealHold => 4,
+        _ => 5,
+    }).ToArray();
 
     public int ConfiguredApplicationCount => AppProfiles.Count;
     public ObservableCollection<AppProfileViewModel> OverviewAppProfiles { get; } = [];
@@ -329,6 +351,9 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         : "No PIN configured. The first panic action will ask you to create one.";
 
     public string PanicPinActionLabel => HasPanicPin ? "Change PIN" : "Add PIN";
+    public string PanicPinCompactStatus => HasPanicPin ? "PIN configured" : "No PIN configured";
+    public string PanicPinIndicator => HasPanicPin ? "✓" : "!";
+    public string PanicPinIndicatorColor => HasPanicPin ? "#00999E" : "#D99A1F";
 
     public void SetPanicPin(PanicPinCredential credential)
     {
@@ -338,6 +363,9 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         RaisePropertyChanged(nameof(HasPanicPin));
         RaisePropertyChanged(nameof(PanicPinStatus));
         RaisePropertyChanged(nameof(PanicPinActionLabel));
+        RaisePropertyChanged(nameof(PanicPinCompactStatus));
+        RaisePropertyChanged(nameof(PanicPinIndicator));
+        RaisePropertyChanged(nameof(PanicPinIndicatorColor));
     }
 
     public AppSettings ToModel()
@@ -356,3 +384,5 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 }
 
 public sealed record ShortcutKeycap(string Text, bool HasSeparator);
+
+public enum PanicHelpScope { ActiveApp, AllApps }

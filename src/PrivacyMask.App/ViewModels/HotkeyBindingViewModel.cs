@@ -32,6 +32,40 @@ public sealed class HotkeyBindingViewModel : ObservableObject
     public bool IsHoldGesture { get; }
 
     public string GestureText { get; }
+    public string CompactTitle => Action switch
+    {
+        HotkeyAction.ToggleProtection => "Add / toggle active app",
+        HotkeyAction.PanicHideAll => "Panic active app",
+        HotkeyAction.IncreaseBlurStrength => "Increase blur",
+        HotkeyAction.DecreaseBlurStrength => "Decrease blur",
+        HotkeyAction.TemporaryRevealHold => "Hold to reveal",
+        HotkeyAction.OpenSettings => "Open settings",
+        _ => DisplayName,
+    };
+    public IReadOnlyList<ShortcutKeycap> GestureKeys
+    {
+        get
+        {
+            var keys = new List<string>();
+            if (!IsHoldGesture)
+            {
+                if (Modifiers.HasFlag(HotkeyModifiers.Control)) keys.Add("Ctrl");
+                if (Modifiers.HasFlag(HotkeyModifiers.Alt)) keys.Add("Alt");
+                if (Modifiers.HasFlag(HotkeyModifiers.Shift)) keys.Add("Shift");
+                if (Modifiers.HasFlag(HotkeyModifiers.Windows)) keys.Add("Win");
+            }
+            keys.Add(IsHoldGesture ? GestureText["Hold ".Length..] : GestureText.Split(" + ")[^1]);
+            return keys.Select((text, index) => new ShortcutKeycap(text, index > 0)).ToArray();
+        }
+    }
+    public string HoldDelayText => IsHoldGesture ? "(0.5 s)" : string.Empty;
+    public bool HasPendingEnableChange => Enabled != _savedEnabled;
+    public bool HasAttentionMessage => ShowRegistrationFailure || HasPendingEnableChange;
+    public string AttentionHeading => ShowRegistrationFailure ? "Shortcut unavailable." : "Pending change.";
+    public string AttentionDetail => ShowRegistrationFailure
+        ? "Another program may be using this shortcut. Resolve the conflict and restart PrivacyMask."
+        : "Save changes to apply this switch.";
+    public string InformationText => $"{ScopeSummary}\n\n{RegistrationStatus}\n\nEnable/disable only; remapping is not available here.";
 
     public bool HasRegistrationFailure { get; }
 
@@ -61,6 +95,11 @@ public sealed class HotkeyBindingViewModel : ObservableObject
             {
                 RaisePropertyChanged(nameof(RegistrationStatus));
                 RaisePropertyChanged(nameof(ShowRegistrationFailure));
+                RaisePropertyChanged(nameof(HasPendingEnableChange));
+                RaisePropertyChanged(nameof(HasAttentionMessage));
+                RaisePropertyChanged(nameof(AttentionHeading));
+                RaisePropertyChanged(nameof(AttentionDetail));
+                RaisePropertyChanged(nameof(InformationText));
             }
         }
     }
