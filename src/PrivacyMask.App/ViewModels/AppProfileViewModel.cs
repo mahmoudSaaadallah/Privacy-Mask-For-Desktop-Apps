@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows.Media;
+using PrivacyMask.App.Services;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
 
@@ -10,6 +12,7 @@ public sealed class AppProfileViewModel : ObservableObject
 {
     private string _displayName;
     private string? _executablePath;
+    private ImageSource? _icon;
     private bool _enabled;
     private AppActivationMode _startupMode;
     private string _selectedPresetId;
@@ -61,6 +64,7 @@ public sealed class AppProfileViewModel : ObservableObject
     public bool IsBuiltIn => !IsCustom;
 
     public string? ExecutablePath => _executablePath;
+    public ImageSource Icon => _icon ??= ApplicationIconCache.Get(ExecutablePath);
 
     public ProfileRuntimeStatus RuntimeStatus
     {
@@ -261,6 +265,8 @@ public sealed class AppProfileViewModel : ObservableObject
             ? null
             : executablePath.Trim();
         RuntimeStatus = ProfileRuntimeStatus.Checking;
+        _icon = null;
+        RaisePropertyChanged(nameof(Icon));
         RaisePropertyChanged(nameof(ExecutablePath));
     }
 
