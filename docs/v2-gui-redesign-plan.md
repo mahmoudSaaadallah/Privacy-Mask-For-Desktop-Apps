@@ -77,6 +77,13 @@ immediately as it is today.
 
 ### PR 3: Applications and profile details
 
+Implemented on `codex/v2-application-cards`. Cards and detail navigation share
+the edit session; filtering never changes the saved profile collection. The
+picker has search, explicit target confirmation, browse, and relink support.
+Executable icons use a 64-entry cache and a generic fallback. Contextual help
+supports pointer and keyboard access. All ten advanced zone columns remain.
+Version stays at the unreleased 2.0.0 and settings schema remains 12.
+
 | Commit title | Scope |
 | --- | --- |
 | `feat: add compact application list view` | Render name, icon, status, enable control, and one Manage action. Use bounded icon caching with fallback icons. |
