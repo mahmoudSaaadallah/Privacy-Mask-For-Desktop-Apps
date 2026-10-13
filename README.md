@@ -241,6 +241,17 @@ settings window. Other registered shortcuts continue to work normally.
 Use the sidebar to navigate between Overview, Applications, Shortcuts,
 Security, Settings, and About. Pending edits stay available when you change
 pages. Valid mask changes are previewed while the settings window is open.
+Overview reports configured/enabled profiles and applications protected now.
+It shows quick blur sliders for up to six profiles; **Manage all applications**
+opens the complete searchable list. Slider edits use the same Save/Discard
+session as profile details. **Pause all / Resume all** and **Panic mask all**
+are immediate global runtime actions, just like the tray controls; Discard does
+not undo them. Unlocking a global panic mask still requires the saved PIN.
+The Shortcuts page explains focused-app scope, the 0.5-second reveal delay,
+registration conflicts, and pending enable/disable changes. It does not remap
+gestures. Close a conflicting program and restart PrivacyMask to retry an
+unavailable shortcut. Settings contains startup preferences and an
+**Open settings folder** action; the displayed local file path can be copied.
 Press `Ctrl+S` or **Save changes** to save the complete session, or **Discard**
 to restore saved values across all pages; both keep the selected page open.
 Press `Esc` or close the window to discard the preview and return to the tray.

@@ -38,6 +38,32 @@ public partial class MainWindow : Window
     public event Action<AppSettings>? PreviewRequested;
 
     public event Action? DiscardRequested;
+    public event Action? GlobalProtectionRequested;
+    public event Func<Task>? GlobalPanicRequested;
+
+    private void GlobalProtection_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.CanToggleGlobalProtection) GlobalProtectionRequested?.Invoke();
+    }
+
+    private async void GlobalPanic_Click(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.CanToggleGlobalPanic || GlobalPanicRequested is null) return;
+        ViewModel.IsRuntimeActionBusy = true;
+        try
+        {
+            await GlobalPanicRequested.Invoke();
+        }
+        catch (Exception exception)
+        {
+            System.Windows.MessageBox.Show(this, $"The panic action could not be completed.\n\n{exception.Message}",
+                "Protection action failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            ViewModel.IsRuntimeActionBusy = false;
+        }
+    }
 
     public SettingsViewModel ViewModel => (SettingsViewModel)DataContext;
 
@@ -264,6 +290,24 @@ public partial class MainWindow : Window
         };
 
         aboutWindow.ShowDialog();
+    }
+
+    private void OpenConfigurationFolder_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var folder = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(ViewModel.ConfigPath));
+            if (folder is null || !System.IO.Directory.Exists(folder))
+                throw new System.IO.DirectoryNotFoundException("The settings folder does not exist yet.");
+            var startInfo = new System.Diagnostics.ProcessStartInfo("explorer.exe") { UseShellExecute = true };
+            startInfo.ArgumentList.Add(folder);
+            System.Diagnostics.Process.Start(startInfo);
+        }
+        catch (Exception exception)
+        {
+            System.Windows.MessageBox.Show(this, $"The settings folder could not be opened.\n\n{exception.Message}",
+                "Open settings folder", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 
     private void ConfigurePanicPin_Click(object sender, RoutedEventArgs e)
