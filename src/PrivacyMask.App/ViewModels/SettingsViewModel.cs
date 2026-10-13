@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
@@ -17,6 +19,68 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private string? _saveError;
     private string _applicationSearch = string.Empty;
     private AppProfileViewModel? _selectedApplication;
+    private RuntimeMode _runtimeMode;
+    private bool _isRuntimeActionBusy;
+    private readonly HashSet<AppProfileViewModel> _overviewProfiles = [];
+
+    public int ConfiguredApplicationCount => AppProfiles.Count;
+    public int EnabledApplicationCount => AppProfiles.Count(profile => profile.Enabled);
+    public int ProtectedApplicationCount => AppProfiles.Count(profile => profile.RuntimeStatus is
+        ProfileRuntimeStatus.Protected or ProfileRuntimeStatus.PanicProtected);
+    public bool HasNoApplications => AppProfiles.Count == 0;
+
+    private void RefreshOverview()
+    {
+        RaisePropertyChanged(nameof(ConfiguredApplicationCount));
+        RaisePropertyChanged(nameof(EnabledApplicationCount));
+        RaisePropertyChanged(nameof(ProtectedApplicationCount));
+        RaisePropertyChanged(nameof(HasNoApplications));
+    }
+
+    private void OverviewProfilesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        foreach (var profile in _overviewProfiles) profile.PropertyChanged -= OverviewProfileChanged;
+        _overviewProfiles.Clear();
+        foreach (var profile in AppProfiles)
+        {
+            _overviewProfiles.Add(profile);
+            profile.PropertyChanged += OverviewProfileChanged;
+        }
+        RefreshOverview();
+    }
+
+    private void OverviewProfileChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(AppProfileViewModel.RuntimeStatus) or nameof(AppProfileViewModel.Enabled))
+            RefreshOverview();
+    }
+
+    public bool IsRuntimeActionBusy
+    {
+        get => _isRuntimeActionBusy;
+        set
+        {
+            if (SetProperty(ref _isRuntimeActionBusy, value)) NotifyRuntimeControls();
+        }
+    }
+    public string ProtectionHeading => _runtimeMode switch
+    {
+        RuntimeMode.Off => "Global protection paused",
+        RuntimeMode.Panic => "Global panic mask active",
+        _ => "Global protection active",
+    };
+    public string GlobalPauseLabel => _runtimeMode == RuntimeMode.Off ? "Resume all" : "Pause all";
+    public string GlobalPanicLabel => _runtimeMode == RuntimeMode.Panic ? "Unlock panic mask all" : "Panic mask all";
+    public bool CanToggleGlobalProtection => !IsRuntimeActionBusy && _runtimeMode != RuntimeMode.Panic;
+    public bool CanToggleGlobalPanic => !IsRuntimeActionBusy;
+    private void NotifyRuntimeControls()
+    {
+        RaisePropertyChanged(nameof(ProtectionHeading));
+        RaisePropertyChanged(nameof(GlobalPauseLabel));
+        RaisePropertyChanged(nameof(GlobalPanicLabel));
+        RaisePropertyChanged(nameof(CanToggleGlobalProtection));
+        RaisePropertyChanged(nameof(CanToggleGlobalPanic));
+    }
 
     public ObservableCollection<AppProfileViewModel> FilteredAppProfiles { get; } = [];
     public string ApplicationSearch
@@ -126,6 +190,9 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        AppProfiles.CollectionChanged -= OverviewProfilesChanged;
+        foreach (var profile in _overviewProfiles) profile.PropertyChanged -= OverviewProfileChanged;
+        _overviewProfiles.Clear();
         if (_changeTracker is not null)
         {
             _changeTracker.Changed -= SettingsChanged;
@@ -179,7 +246,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
                 RuntimeMode.TemporaryReveal => "Temporary reveal is active while the reveal key is held.",
                 _ => "Standard masking is active when a supported app is detected.",
             },
-            ConfigPath = $"Config file: {configPath}",
+            ConfigPath = configPath,
             Hotkeys = new ObservableCollection<HotkeyBindingViewModel>(settings.GlobalHotkeys.Select(
                 binding => new HotkeyBindingViewModel(binding, unavailableHotkeyActions.Contains(binding.Action)))),
             AppProfiles = new ObservableCollection<AppProfileViewModel>(settings.AppProfiles.Select(profile => new AppProfileViewModel(profile))),
@@ -187,6 +254,9 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         viewModel._changeTracker = new SettingsChangeTracker(viewModel);
         viewModel._changeTracker.Changed += viewModel.SettingsChanged;
         viewModel.RefreshApplicationFilter();
+        viewModel.AppProfiles.CollectionChanged += viewModel.OverviewProfilesChanged;
+        viewModel.OverviewProfilesChanged(null, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+        viewModel.UpdateRuntimeMode(currentMode);
         return viewModel;
     }
 
@@ -196,6 +266,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
     public void UpdateRuntimeMode(RuntimeMode mode)
     {
+        _runtimeMode = mode;
         CurrentModeSummary = mode switch
         {
             RuntimeMode.Off => "Protection is paused for every application.",
@@ -203,6 +274,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
             _ => "Protection is active for enabled application profiles.",
         };
         RaisePropertyChanged(nameof(CurrentModeSummary));
+        NotifyRuntimeControls();
     }
 
     public ObservableCollection<HotkeyBindingViewModel> Hotkeys { get; private set; } = [];
