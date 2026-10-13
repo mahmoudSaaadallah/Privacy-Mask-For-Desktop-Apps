@@ -125,7 +125,7 @@
   <Border BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" CornerRadius="6" Padding="12" Background="#F5F5F5" Margin="0,20,0,0">
    <StackPanel>
 
-    <Expander
+    <Expander Style="{StaticResource ReferenceExpander}"
                                                         AutomationProperties.Name="Advanced privacy zones"
                                                         AutomationProperties.HelpText="Expand to edit normalized zone coordinates, styles, blur strength, and reveal behavior."
                                                         Header="_Advanced privacy zones">
@@ -248,7 +248,7 @@
 
                     <ScrollViewer x:Name="OverviewPage" Visibility="{Binding IsOverviewPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto">
                      <StackPanel Margin="28">
-                      <DockPanel Margin="0,0,0,26"><Button DockPanel.Dock="Right" Content="?" Style="{StaticResource InformationButton}" services:InformationHelp.Text="Pause all and Panic mask all affect every protected app immediately. Mask settings below use Save and Discard." AutomationProperties.Name="Overview help"/><TextBlock Text="Overview" Style="{StaticResource PageHeading}"/></DockPanel>
+                      <DockPanel Margin="0,0,0,26"><Button DockPanel.Dock="Right" Content="?" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="Pause all and Panic mask all affect every protected app immediately. Mask settings below use Save and Discard." AutomationProperties.Name="Overview help"/><TextBlock Text="Overview" Style="{StaticResource PageHeading}"/></DockPanel>
                       <Border Background="{Binding ProtectionBannerBackground}" CornerRadius="10" Padding="24" Margin="0,0,0,26">
                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="56"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <TextBlock Text="&#xE83D;" FontFamily="Segoe MDL2 Assets" FontSize="42" Foreground="{Binding ProtectionBannerColor}" VerticalAlignment="Center" AutomationProperties.Name="Protection state"/>
@@ -283,7 +283,7 @@
 
  <Border x:Name="ApplicationsPage" Visibility="{Binding IsApplicationListPage,Converter={StaticResource BooleanToVisibility}}" Padding="28">
   <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-   <DockPanel Margin="0,0,0,26"><Button DockPanel.Dock="Right" Content="?" Style="{StaticResource InformationButton}" services:InformationHelp.Text="Search configured apps, enable or disable their masks, and use Manage to adjust appearance. Changes are saved together." AutomationProperties.Name="Applications help"/><TextBlock Text="Applications" Style="{StaticResource PageHeading}"/></DockPanel>
+   <DockPanel Margin="0,0,0,26"><Button DockPanel.Dock="Right" Content="?" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="Search configured apps, enable or disable their masks, and use Manage to adjust appearance. Changes are saved together." AutomationProperties.Name="Applications help"/><TextBlock Text="Applications" Style="{StaticResource PageHeading}"/></DockPanel>
    <Grid Grid.Row="1" Margin="0,0,0,22"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <Grid Margin="0,0,20,0">
      <TextBox Style="{StaticResource ReferenceInput}" x:Name="ApplicationSearchBox" Text="{Binding ApplicationSearch,UpdateSourceTrigger=PropertyChanged}" Padding="38,12,12,12" FontSize="14" AutomationProperties.Name="Search applications"/>

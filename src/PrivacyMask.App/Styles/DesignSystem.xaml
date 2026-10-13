@@ -175,4 +175,19 @@
             <ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Outline" Property="BorderBrush" Value="{StaticResource FocusBrush}"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value></Setter>
     </Style>
+    <Style x:Key="CircleHelp" TargetType="Button" BasedOn="{StaticResource InformationButton}">
+        <Setter Property="Width" Value="24"/><Setter Property="Height" Value="24"/><Setter Property="MinWidth" Value="24"/><Setter Property="MinHeight" Value="24"/><Setter Property="FontSize" Value="13"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Grid><Ellipse x:Name="Ring" Stroke="{StaticResource MutedInkBrush}" Fill="Transparent"/><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Grid><ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Ring" Property="StrokeThickness" Value="2"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="ReferenceExpander" TargetType="Expander">
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Expander">
+            <StackPanel>
+                <ToggleButton IsChecked="{Binding IsExpanded,RelativeSource={RelativeSource TemplatedParent},Mode=TwoWay}" Content="{TemplateBinding Header}" HorizontalContentAlignment="Stretch">
+                    <ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><Border x:Name="Focus" BorderBrush="Transparent" BorderThickness="1" CornerRadius="3"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/></Grid.ColumnDefinitions><TextBlock x:Name="Arrow" Text="⌄" FontSize="18" VerticalAlignment="Center"/><ContentPresenter Grid.Column="1" VerticalAlignment="Center" RecognizesAccessKey="True"/><TextBlock Grid.Column="2" Text="›" FontSize="20" VerticalAlignment="Center"/></Grid></Border><ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Arrow" Property="Text" Value="⌃"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Focus" Property="BorderBrush" Value="{StaticResource FocusBrush}"/></Trigger></ControlTemplate.Triggers></ControlTemplate></ToggleButton.Template>
+                </ToggleButton>
+                <ContentPresenter x:Name="Body" ContentSource="Content" Margin="0,12,0,0" Visibility="Collapsed"/>
+            </StackPanel>
+            <ControlTemplate.Triggers><Trigger Property="IsExpanded" Value="True"><Setter TargetName="Body" Property="Visibility" Value="Visible"/></Trigger></ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
 </ResourceDictionary>
