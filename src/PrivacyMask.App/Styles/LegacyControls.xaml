@@ -13,7 +13,5 @@
     <Style TargetType="CheckBox">
         <Setter Property="Margin" Value="0,0,0,10" />
     </Style>
-    <Style TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
-    </Style>
+    <!-- Text inherits from its window/control so button foreground remains legible. -->
 </ResourceDictionary>

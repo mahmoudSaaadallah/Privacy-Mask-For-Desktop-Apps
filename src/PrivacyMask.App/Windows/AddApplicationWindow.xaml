@@ -6,6 +6,7 @@
         xmlns:viewModels="clr-namespace:PrivacyMask.App.ViewModels"
         mc:Ignorable="d"
         Title="Add an application"
+        Foreground="{StaticResource InkBrush}"
         Icon="pack://application:,,,/PrivacyMask.App;component/Assets/PrivacyMask.ico"
         Width="760"
         Height="640"
