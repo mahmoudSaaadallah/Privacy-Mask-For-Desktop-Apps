@@ -129,6 +129,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
     private void NotifyApplicationPages()
     {
+        RaisePropertyChanged(nameof(IsSaveBarVisible));
         RaisePropertyChanged(nameof(IsApplicationListPage));
         RaisePropertyChanged(nameof(IsApplicationDetailsPage));
     }
@@ -151,6 +152,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     }
 
     public bool HasPendingChanges => _changeTracker?.HasChanges == true;
+    public bool IsSaveBarVisible => HasPendingChanges || IsApplicationDetailsPage;
     public bool CanSave => HasPendingChanges && !IsSaving;
     public string EditStatus => IsSaving ? "Saving…"
         : SaveError is not null ? "Save failed — your edits are retained"
@@ -194,6 +196,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         RaisePropertyChanged(nameof(CanSave));
         RaisePropertyChanged(nameof(EditStatus));
         if (edited) SettingsEdited?.Invoke();
+        RaisePropertyChanged(nameof(IsSaveBarVisible));
     }
 
     public void Dispose()
