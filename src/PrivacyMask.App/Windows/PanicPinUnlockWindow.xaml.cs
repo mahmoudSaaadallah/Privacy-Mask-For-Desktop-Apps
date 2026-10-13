@@ -1,6 +1,7 @@
 using System.Windows;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
+using PrivacyMask.App.Services;
 
 namespace PrivacyMask.App.Windows;
 
@@ -13,6 +14,7 @@ public partial class PanicPinUnlockWindow : Window
         _credential = PanicPinService.Clone(credential)
             ?? throw new ArgumentNullException(nameof(credential));
         InitializeComponent();
+        WindowWorkAreaSizer.Fit(this);
         DescriptionText.Text = $"Enter the panic unlock PIN to reveal {targetName}.";
         PinBox.Focus();
     }
@@ -29,5 +31,11 @@ public partial class PanicPinUnlockWindow : Window
 
         DialogResult = true;
         Close();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        PinBox.Clear();
+        base.OnClosed(e);
     }
 }
