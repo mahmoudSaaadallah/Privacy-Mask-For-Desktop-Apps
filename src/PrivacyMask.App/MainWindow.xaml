@@ -319,93 +319,38 @@
   </StackPanel>
  </ScrollViewer>
 </Grid>
-                    <ScrollViewer
-                        x:Name="ShortcutsPage"
-                        Visibility="{Binding IsShortcutsPage, Converter={StaticResource BooleanToVisibility}}"
-                        VerticalScrollBarVisibility="Auto">
-                        <StackPanel
-                            Margin="24">
-                            <TextBlock
-                                Style="{StaticResource PageHeading}"
-                                Text="Shortcuts"
-                                Margin="0,0,0,24" />
-                            <Border
-                                Style="{StaticResource Card}">
-                                <StackPanel>
-                                    <TextBlock
-                                        FontSize="18"
-                                        FontWeight="SemiBold"
-                                        Text="Keyboard controls" />
-                                    <TextBlock
-                                        Margin="0,6,0,14"
-                                        Foreground="#51656E"
-                                        TextWrapping="Wrap"
-                                        Text="Enable the shortcuts you use, then save. Key combinations are shown for reference; remapping is not available here." />
-                                    <ItemsControl
-                                        ItemsSource="{Binding Hotkeys}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate
-                                                DataType="{x:Type viewModels:HotkeyBindingViewModel}">
-                                                <Border
-                                                    Margin="0,0,0,10"
-                                                    Padding="16"
-                                                    Background="White"
-                                                    CornerRadius="14">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition
-                                                                Width="*" />
-                                                            <ColumnDefinition
-                                                                Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <StackPanel>
-                                                            <TextBlock
-                                                                FontWeight="SemiBold"
-                                                                Text="{Binding DisplayName}" />
-                                                            <TextBlock
-                                                                Margin="0,4,0,0"
-                                                                Foreground="#51656E"
-                                                                FontSize="16"
-                                                                FontWeight="SemiBold"
-                                                                Text="{Binding GestureText}" />
-                                                            <TextBlock Text="{Binding ScopeSummary}" TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,8,18,0"/>
-                                                            <TextBlock
-                                                                Margin="0,4,0,0"
-                                                                Text="{Binding RegistrationStatus}"
-                                                                TextWrapping="Wrap">
-                                                                <TextBlock.Style>
-                                                                    <Style
-                                                                        TargetType="TextBlock">
-                                                                        <Setter
-                                                                            Property="Visibility"
-                                                                            Value="Visible" />
-                                                                        <Setter Property="Foreground" Value="{StaticResource MutedInkBrush}" />
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger
-                                                                                Binding="{Binding ShowRegistrationFailure}"
-                                                                                Value="True">
-                                                                                <Setter
-                                                                                    Property="Foreground"
-                                                                                    Value="{StaticResource DangerBrush}" />
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </TextBlock.Style>
-                                                            </TextBlock>
-                                                        </StackPanel>
-                                                        <CheckBox
-                                                            Grid.Column="1"
-                                                            VerticalAlignment="Center"
-                                                            AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0}}"
-                                                            AutomationProperties.HelpText="Enable or disable this shortcut after saving. It remains scoped as described on the card."
-                                                            Content="Enabled"
-                                                            IsChecked="{Binding Enabled, Mode=TwoWay}" />
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
+
+                    <ScrollViewer x:Name="ShortcutsPage" Visibility="{Binding IsShortcutsPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="28">
+                            <TextBlock Text="Shortcuts" Style="{StaticResource PageHeading}" Margin="0,0,0,26"/>
+                            <Border Style="{StaticResource Card}" Padding="0" BorderBrush="#E7EBEE">
+                                <ItemsControl ItemsSource="{Binding ShortcutRows}">
+                                    <ItemsControl.ItemTemplate><DataTemplate DataType="{x:Type viewModels:HotkeyBindingViewModel}">
+                                        <Border BorderBrush="#EDF0F2" BorderThickness="0,0,0,1" Padding="18,22">
+                                            <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="Transparent"/><Style.Triggers><DataTrigger Binding="{Binding ShowRegistrationFailure}" Value="True"><Setter Property="Background" Value="#FFF4E2"/></DataTrigger></Style.Triggers></Style></Border.Style>
+                                            <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="66"/></Grid.ColumnDefinitions>
+                                                <DockPanel Margin="0,0,16,0" VerticalAlignment="Center">
+                                                    <Button DockPanel.Dock="Right" Style="{StaticResource CircleHelp}" Content="i" Width="20" Height="20" MinWidth="20" MinHeight="20" Margin="6,0,0,0" services:InformationHelp.Text="{Binding InformationText}" AutomationProperties.Name="{Binding CompactTitle,StringFormat=Information about {0}}"/>
+                                                    <TextBlock Text="{Binding CompactTitle}" TextWrapping="Wrap" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                                </DockPanel>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ItemsControl ItemsSource="{Binding GestureKeys}">
+                                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal"><TextBlock Text="+" VerticalAlignment="Center" Margin="5,0" Visibility="{Binding HasSeparator,Converter={StaticResource BooleanToVisibility}}"/><Border Background="#F0F2F4" BorderBrush="#DDE2E6" BorderThickness="1" CornerRadius="5" Padding="10,8"><TextBlock Text="{Binding Text}" FontSize="13"/></Border></StackPanel></DataTemplate></ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <TextBlock Text="{Binding HoldDelayText}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <CheckBox Grid.Column="2" Style="{StaticResource Switch}" HorizontalAlignment="Right" IsChecked="{Binding Enabled,Mode=TwoWay}" AutomationProperties.Name="{Binding CompactTitle,StringFormat=Enable {0}}" AutomationProperties.HelpText="Enable or disable after Save. Scope and actual registration are explained by the information button."/>
+                                                <Grid Grid.Row="1" Grid.ColumnSpan="3" Margin="0,14,0,0" Visibility="{Binding HasAttentionMessage,Converter={StaticResource BooleanToVisibility}}">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="⚠" Foreground="#CF8200" FontSize="20"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AttentionHeading}" Foreground="#AC6500" FontWeight="SemiBold" Margin="0,3,14,0"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding AttentionDetail}" TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,3,0,0"/>
+                                                </Grid>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate></ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </Border>
                         </StackPanel>
                     </ScrollViewer>

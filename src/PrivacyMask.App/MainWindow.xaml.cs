@@ -78,6 +78,7 @@ public partial class MainWindow : Window
         if (DataContext is SettingsViewModel previous)
         {
             viewModel.ApplicationSearch = previous.ApplicationSearch;
+            viewModel.PanicHelpScope = previous.PanicHelpScope;
             var selected = viewModel.AppProfiles.FirstOrDefault(profile =>
                 profile.ProfileId == previous.SelectedApplication?.ProfileId);
             if (selected is not null) viewModel.OpenApplication(selected);

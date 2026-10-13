@@ -7,5 +7,7 @@ public static class AboutInformation
     public static Uri EmailUri { get; } = new($"mailto:{SupportEmail}");
     public static Uri GitHubUri { get; } = new("https://github.com/mahmoudsaaadallah");
     public static Uri LinkedInUri { get; } = new("https://linkedin.com/in/mahmoudsaaadallah");
-    public static string VersionText => $"Version {typeof(AboutInformation).Assembly.GetName().Version?.ToString(3) ?? "unknown"}";
+    public static string ProductVersion => typeof(AboutInformation).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+    public static string VersionText => $"Version {ProductVersion}";
+    public static string ProductLabel => $"PrivacyMask {ProductVersion}";
 }
