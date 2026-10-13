@@ -13,6 +13,12 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <ApplicationIcon>Assets\PrivacyMask.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\PrivacyMask.ico;Assets\PrivacyMask.png" />
+    <Resource Include="Assets\PrivacyMask.ico;Assets\PrivacyMask.png" />
+  </ItemGroup>
 
 </Project>

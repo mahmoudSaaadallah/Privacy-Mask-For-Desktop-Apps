@@ -3,24 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
-        <SolidColorBrush x:Key="CanvasBrush" Color="#F2ECE3" />
-        <SolidColorBrush x:Key="InkBrush" Color="#17313D" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#1F6E6C" />
-        <SolidColorBrush x:Key="WarmAccentBrush" Color="#CC7A21" />
-        <Style TargetType="Button">
-            <Setter Property="Margin" Value="0,0,0,10" />
-            <Setter Property="Padding" Value="16,10" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="{StaticResource InkBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource InkBrush}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-        </Style>
-        <Style TargetType="CheckBox">
-            <Setter Property="Margin" Value="0,0,0,10" />
-        </Style>
-        <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Assets/Brand.xaml" />
+                <ResourceDictionary Source="Styles/DesignSystem.xaml" />
+                <ResourceDictionary Source="Styles/LegacyControls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

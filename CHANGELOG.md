@@ -2,6 +2,8 @@
 
 ## 2.0.0 - Unreleased
 
+- Introduce the approved private-view application icon across the executable, desktop windows, notification tray, and installed shortcuts
+- Add shared GUI colors, spacing, cards, accessible focus outlines, and action-button styles for the upcoming sidebar redesign
 - Show live per-profile states for protected, paused, focus-waiting, disabled, stopped, and missing-target applications
 - Add a custom-profile relink flow that changes the target executable while preserving mask appearance, strength, zones, hover settings, and profile identity
 - Persist executable paths for newly selected applications and migrate the optional field through settings schema version 12

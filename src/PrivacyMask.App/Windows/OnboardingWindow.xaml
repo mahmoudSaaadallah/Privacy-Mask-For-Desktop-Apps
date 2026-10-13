@@ -2,6 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Welcome to PrivacyMask"
+        Foreground="{StaticResource InkBrush}"
+        Icon="pack://application:,,,/PrivacyMask.App;component/Assets/PrivacyMask.ico"
         Width="760"
         Height="560"
         MinWidth="720"

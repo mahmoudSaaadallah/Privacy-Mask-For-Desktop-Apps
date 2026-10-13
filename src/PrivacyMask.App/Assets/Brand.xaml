@@ -1,0 +1,36 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+    <!-- Editable vector master for the approved B (private view) identity. -->
+    <DrawingImage x:Key="PrivacyMaskLogo" po:Freeze="True">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="#102D49">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0,0,256,256" RadiusX="52" RadiusY="52" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="M 43,128 C 68,90 95,76 128,76 C 161,76 188,90 213,128 C 188,166 161,180 128,180 C 95,180 68,166 43,128 Z">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#FFFFFF" Thickness="14" LineJoin="Round" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="#FFFFFF">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="128,128" RadiusX="29" RadiusY="29" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="M 76,194 L 180,62">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#102D49" Thickness="36" StartLineCap="Round" EndLineCap="Round" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="M 76,194 L 180,62">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#00B6AD" Thickness="22" StartLineCap="Round" EndLineCap="Round" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+</ResourceDictionary>
