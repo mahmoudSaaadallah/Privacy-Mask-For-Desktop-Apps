@@ -1,6 +1,7 @@
 using System.Windows;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
+using PrivacyMask.App.Services;
 
 namespace PrivacyMask.App.Windows;
 
@@ -12,6 +13,7 @@ public partial class PanicPinSetupWindow : Window
     {
         _currentCredential = PanicPinService.Clone(currentCredential);
         InitializeComponent();
+        WindowWorkAreaSizer.Fit(this);
         if (_currentCredential is not null)
         {
             Title = "Change panic unlock PIN";
@@ -26,6 +28,14 @@ public partial class PanicPinSetupWindow : Window
     }
 
     public PanicPinCredential? CreatedCredential { get; private set; }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        CurrentPinBox.Clear();
+        NewPinBox.Clear();
+        ConfirmPinBox.Clear();
+        base.OnClosed(e);
+    }
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {

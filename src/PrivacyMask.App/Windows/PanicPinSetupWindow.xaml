@@ -5,20 +5,18 @@
         Foreground="{StaticResource InkBrush}"
         Icon="pack://application:,,,/PrivacyMask.App;component/Assets/PrivacyMask.ico"
         Width="460"
-        Height="430"
+        Height="560"
         MinWidth="420"
         MinHeight="390"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         Topmost="True"
         FontFamily="Segoe UI Variable Text"
-        Background="#F2ECE3"
+        Background="{StaticResource CanvasBrush}"
         WindowStartupLocation="CenterScreen"
         AutomationProperties.Name="Configure panic unlock PIN">
     <Border Margin="18"
-            Padding="24"
-            Background="#FCFAF6"
-            CornerRadius="24">
+            Style="{StaticResource Card}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -34,10 +32,11 @@
                            Margin="0,8,0,20"
                            Foreground="#51656E"
                            TextWrapping="Wrap"
-                           Text="Create a PIN required whenever a panic mask is disabled." />
+                           Text="Create a 4–8 digit PIN required whenever a panic mask is disabled." />
             </StackPanel>
 
-            <StackPanel Grid.Row="1">
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
                 <StackPanel x:Name="CurrentPinPanel"
                             Visibility="Collapsed">
                     <TextBlock Margin="0,0,0,6"
@@ -66,25 +65,26 @@
                              AutomationProperties.Name="Confirm new panic unlock PIN" />
 
                 <TextBlock x:Name="ErrorText"
+                           AutomationProperties.LiveSetting="Assertive"
                            Margin="0,12,0,0"
                            Foreground="#A33A2B"
                            TextWrapping="Wrap" />
             </StackPanel>
+            </ScrollViewer>
 
             <StackPanel Grid.Row="2"
                         Margin="0,20,0,0"
                         HorizontalAlignment="Right"
                         Orientation="Horizontal">
                 <Button MinWidth="94"
+                        Style="{StaticResource SecondaryButton}"
                         Padding="14,9"
                         IsCancel="True"
                         Content="Cancel" />
                 <Button MinWidth="110"
                         Margin="10,0,0,0"
                         Padding="14,9"
-                        Background="#1F6E6C"
-                        BorderBrush="#1F6E6C"
-                        Foreground="White"
+                        Style="{StaticResource PrimaryButton}"
                         IsDefault="True"
                         Click="Save_Click"
                         Content="Save PIN" />
