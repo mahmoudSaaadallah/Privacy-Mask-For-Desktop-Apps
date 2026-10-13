@@ -343,38 +343,48 @@
                                 Style="{StaticResource PageHeading}"
                                 Text="Overview"
                                 Margin="0,0,0,24" />
-                            <Border
-                                Style="{StaticResource Card}">
+                            <Border Style="{StaticResource Card}">
                                 <StackPanel>
-                                    <TextBlock
-                                        FontSize="22"
-                                        FontWeight="SemiBold"
-                                        Text="Protection status" />
-                                    <TextBlock
-                                        Text="{Binding CurrentModeSummary}"
-                                        TextWrapping="Wrap"
-                                        Margin="0,12,0,20" />
-                                    <Button
-                                        Style="{StaticResource PrimaryButton}"
-                                        Content="Manage applications"
-                                        HorizontalAlignment="Left"
-                                        Tag="{x:Static viewModels:DesktopPage.Applications}"
-                                        Click="Navigate_Click" />
+                                    <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding ProtectionHeading}" />
+                                    <TextBlock Text="{Binding CurrentModeSummary}" TextWrapping="Wrap" Margin="0,10,0,16" Foreground="{StaticResource MutedInkBrush}" />
+                                    <WrapPanel>
+                                        <Button Content="{Binding GlobalPauseLabel}" IsEnabled="{Binding CanToggleGlobalProtection}" Click="GlobalProtection_Click" Style="{StaticResource SecondaryButton}" Margin="0,0,12,8" AutomationProperties.HelpText="Pause or resume global protection. Individual application pauses remain unchanged. Panic cannot be bypassed here." />
+                                        <Button Content="{Binding GlobalPanicLabel}" IsEnabled="{Binding CanToggleGlobalPanic}" Click="GlobalPanic_Click" Style="{StaticResource PrimaryButton}" Margin="0,0,0,8" AutomationProperties.HelpText="Apply an opaque mask to every protected application, or unlock global panic using your PIN." />
+                                    </WrapPanel>
+                                    <TextBlock Text="These actions take effect immediately; Save and Discard do not undo them." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,4,0,0" />
                                 </StackPanel>
                             </Border>
-                            <Border
-                                Style="{StaticResource Card}"
-                                Margin="0,20,0,0">
-                                <StackPanel>
-                                    <TextBlock
-                                        FontWeight="SemiBold"
-                                        Text="Quick enrollment" />
-                                    <TextBlock
-                                        Text="Focus an application and press Ctrl + Shift + P to add it or toggle its mask."
-                                        TextWrapping="Wrap"
-                                        Margin="0,10,0,0" />
-                                </StackPanel>
-                            </Border>
+                            <UniformGrid Columns="3" Margin="0,20,0,20">
+                                <Border Style="{StaticResource Card}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Protected now" Foreground="{StaticResource MutedInkBrush}"/><TextBlock Text="{Binding ProtectedApplicationCount}" FontSize="28" FontWeight="SemiBold"/></StackPanel></Border>
+                                <Border Style="{StaticResource Card}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Enabled profiles" Foreground="{StaticResource MutedInkBrush}"/><TextBlock Text="{Binding EnabledApplicationCount}" FontSize="28" FontWeight="SemiBold"/></StackPanel></Border>
+                                <Border Style="{StaticResource Card}"><StackPanel><TextBlock Text="Configured apps" Foreground="{StaticResource MutedInkBrush}"/><TextBlock Text="{Binding ConfiguredApplicationCount}" FontSize="28" FontWeight="SemiBold"/></StackPanel></Border>
+                            </UniformGrid>
+                            <DockPanel Margin="0,0,0,16">
+                                <Button DockPanel.Dock="Right" Content="Add application" Click="AddApplication_Click" Style="{StaticResource PrimaryButton}"/>
+                                <TextBlock Text="Your applications" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBlock Text="No applications configured. Add one to start protecting it." Visibility="{Binding HasNoApplications, Converter={StaticResource BooleanToVisibility}}" Foreground="{StaticResource MutedInkBrush}" TextWrapping="Wrap"/>
+                            <ItemsControl ItemsSource="{Binding AppProfiles}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:AppProfileViewModel}">
+                                        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="48"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                <Image Source="{Binding Icon}" Width="32" Height="32" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                                <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="18" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding RuntimeStatusSummary}" Foreground="{Binding RuntimeStatusColor}" Margin="0,4,0,10" TextWrapping="Wrap"/>
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding MaskIntensityPercent, StringFormat={}{0:0}%}" MinWidth="48" TextAlignment="Right"/>
+                                                        <Slider Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding MaskIntensityPercent, Mode=TwoWay}" AutomationProperties.Name="{Binding DisplayName, StringFormat=Blur strength for {0}}"/>
+                                                    </DockPanel>
+                                                </StackPanel>
+                                                <Button Grid.Column="2" Content="Manage" Tag="{Binding}" Click="ManageApplication_Click" Style="{StaticResource SecondaryButton}" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </ScrollViewer>
                     <Grid>
