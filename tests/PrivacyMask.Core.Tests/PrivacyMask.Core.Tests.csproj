@@ -4,6 +4,7 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -21,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PrivacyMask.Core\PrivacyMask.Core.csproj" />
     <ProjectReference Include="..\..\src\PrivacyMask.Windows\PrivacyMask.Windows.csproj" />
+    <ProjectReference Include="..\..\src\PrivacyMask.App\PrivacyMask.App.csproj" />
   </ItemGroup>
 
 </Project>

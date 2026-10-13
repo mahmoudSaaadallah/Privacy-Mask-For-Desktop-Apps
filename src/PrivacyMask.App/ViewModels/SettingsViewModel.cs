@@ -6,12 +6,38 @@ using PrivacyMask.Core.Services;
 
 namespace PrivacyMask.App.ViewModels;
 
-public sealed class SettingsViewModel : ObservableObject
+public sealed class SettingsViewModel : ObservableObject, IDisposable
 {
     private bool _launchAtLogin;
     private bool _startMinimized;
     private PanicPinCredential? _panicPin;
     private DesktopPage _selectedPage = DesktopPage.Overview;
+    private SettingsChangeTracker? _changeTracker;
+
+    public bool HasPendingChanges => _changeTracker?.HasChanges == true;
+    public string EditStatus => HasPendingChanges ? "Unsaved changes" : "All changes saved";
+    public event Action? SettingsEdited;
+
+    public void SetSavedBaseline(AppSettings settings)
+    {
+        _changeTracker?.SetBaseline(settings);
+    }
+
+    private void SettingsChanged()
+    {
+        RaisePropertyChanged(nameof(HasPendingChanges));
+        RaisePropertyChanged(nameof(EditStatus));
+        SettingsEdited?.Invoke();
+    }
+
+    public void Dispose()
+    {
+        if (_changeTracker is not null)
+        {
+            _changeTracker.Changed -= SettingsChanged;
+            _changeTracker.Dispose();
+        }
+    }
 
     public DesktopPage SelectedPage
     {
@@ -45,7 +71,7 @@ public sealed class SettingsViewModel : ObservableObject
         string configPath,
         IReadOnlySet<HotkeyAction> unavailableHotkeyActions)
     {
-        return new SettingsViewModel
+        var viewModel = new SettingsViewModel
         {
             _launchAtLogin = settings.LaunchAtLogin,
             _startMinimized = settings.StartMinimized,
@@ -63,6 +89,9 @@ public sealed class SettingsViewModel : ObservableObject
                 binding => new HotkeyBindingViewModel(binding, unavailableHotkeyActions.Contains(binding.Action)))),
             AppProfiles = new ObservableCollection<AppProfileViewModel>(settings.AppProfiles.Select(profile => new AppProfileViewModel(profile))),
         };
+        viewModel._changeTracker = new SettingsChangeTracker(viewModel);
+        viewModel._changeTracker.Changed += viewModel.SettingsChanged;
+        return viewModel;
     }
 
     public string ConfigPath { get; private set; } = string.Empty;
