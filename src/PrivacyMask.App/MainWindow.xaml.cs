@@ -19,7 +19,6 @@ namespace PrivacyMask.App;
 public partial class MainWindow : Window
 {
     public static readonly Array MaskColors = Enum.GetValues<MaskColorOption>();
-    public static readonly Array ActivationModes = Enum.GetValues<AppActivationMode>();
 
     private bool _allowClose;
     private bool _isSaving;

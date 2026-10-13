@@ -106,7 +106,7 @@
   </Border>
   <Border Style="{StaticResource Card}" Margin="0,20,0,0">
    <StackPanel>
-    
+
     <Expander
                                                         AutomationProperties.Name="Advanced privacy zones"
                                                         AutomationProperties.HelpText="Expand to edit normalized zone coordinates, styles, blur strength, and reveal behavior."
