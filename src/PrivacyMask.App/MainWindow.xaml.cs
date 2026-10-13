@@ -282,14 +282,38 @@ public partial class MainWindow : Window
         e.Handled = !Regex.IsMatch(e.Text, "^[0-9]+$");
     }
 
-    private void OpenAbout_Click(object sender, RoutedEventArgs e)
+    private void DeveloperContact_Click(object sender, RoutedEventArgs e)
     {
-        var aboutWindow = new AboutWindow
+        var uri = (sender as FrameworkElement)?.Tag as string switch
         {
-            Owner = this,
+            "email" => AboutInformation.EmailUri,
+            "github" => AboutInformation.GitHubUri,
+            "linkedin" => AboutInformation.LinkedInUri,
+            _ => null,
         };
+        if (uri is null) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+        }
+        catch (Exception exception)
+        {
+            System.Windows.MessageBox.Show(this, $"The link could not be opened.\n\n{uri}\n\n{exception.Message}",
+                "Developer contact", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
 
-        aboutWindow.ShowDialog();
+    private void CopySupportEmail_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(AboutInformation.SupportEmail);
+            ContactFeedback.Text = "Support email copied.";
+        }
+        catch (Exception)
+        {
+            ContactFeedback.Text = "Clipboard unavailable. Select and copy the email address above.";
+        }
     }
 
     private void OpenConfigurationFolder_Click(object sender, RoutedEventArgs e)
