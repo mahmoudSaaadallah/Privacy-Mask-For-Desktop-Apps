@@ -158,6 +158,17 @@ Release package output:
 powershell -ExecutionPolicy Bypass -File .\scripts\verify.ps1
 ```
 
+Verification includes isolated compiled WPF layout and edit-session smoke
+checks; it does not start the production privacy runtime or change your settings.
+Run just the GUI checks with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\test-gui-smoke.ps1
+```
+
+See [GUI qualification](docs/gui-qualification.md) for the current evidence,
+resource comparison, limitations, and remaining live release checks.
+
 ## Performance measurements
 
 Measure the resource usage of a running PrivacyMask process:

@@ -2,6 +2,10 @@
 
 ## 2.0.0 - Unreleased
 
+- Add isolated compiled WPF layout/edit-session smoke checks to local verification and Windows CI
+- Keep compact application details within the viewport while retaining advanced-grid scrolling and grouped reveal dimensions
+- Move keyboard focus into newly selected pages and back to application search
+- Record repeatable synthetic GUI resource measurements and outstanding live release-qualification gates
 - Move About directly into the sidebar with developer information, assembly-based version, privacy/capture limitations, and email/copy/GitHub/LinkedIn actions
 - Clarify focused and global panic behavior and saved-PIN requirements on Security
 - Apply shared styles and bounded scrolling to PIN dialogs; clear password fields when dialogs close

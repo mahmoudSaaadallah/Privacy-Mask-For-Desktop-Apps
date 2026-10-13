@@ -172,6 +172,14 @@ Verified contact values from the current About implementation:
 
 ### PR 6: Usability qualification and handoff
 
+Automated qualification implemented on `codex/v2-gui-qualification`: compiled
+WPF smoke checks are now repeatable locally and in CI; compact detail layout
+and page-focus issues are addressed. A same-machine synthetic GUI comparison
+and single-file size comparison are recorded in [gui-qualification.md](gui-qualification.md).
+Live Computer Use initialization failed, so keyboard/screen-reader/per-monitor
+DPI and full runtime stability gates remain outstanding. This phase is not
+marked fully qualified and no stable release is authorized by these checks.
+
 | Commit title | Scope |
 | --- | --- |
 | `fix: improve keyboard navigation and accessible help` | Verify logical Tab order, focus restore after dialogs, visible focus, Enter/Escape behavior, and screen-reader labels. |
