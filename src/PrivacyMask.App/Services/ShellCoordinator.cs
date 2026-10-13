@@ -391,6 +391,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private void DiscardPreview()
     {
         _settings = AppSettingsCloner.Clone(_savedSettings);
+        _mainWindow?.ReplaceViewModel(CreateSettingsViewModel());
         RebuildWindowProcessFilter();
         RefreshOverlays();
     }

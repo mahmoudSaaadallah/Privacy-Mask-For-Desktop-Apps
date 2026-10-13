@@ -23,6 +23,7 @@ public partial class MainWindow : Window
 
     private bool _allowClose;
     private bool _isSaving;
+    private bool _previewQueued;
     private readonly DesktopApplicationCatalog _applicationCatalog;
 
     public MainWindow(SettingsViewModel viewModel, DesktopApplicationCatalog applicationCatalog)
@@ -49,7 +50,39 @@ public partial class MainWindow : Window
 
     public void ReplaceViewModel(SettingsViewModel viewModel)
     {
+        if (DataContext is SettingsViewModel previous)
+        {
+            viewModel.SelectedPage = previous.SelectedPage;
+            previous.SettingsEdited -= QueuePreview;
+            previous.Dispose();
+        }
+
         DataContext = viewModel;
+        viewModel.SettingsEdited += QueuePreview;
+    }
+
+    private void QueuePreview()
+    {
+        if (!IsLoaded || _isSaving || _previewQueued || _allowClose) return;
+        _previewQueued = true;
+        var editedSession = ViewModel;
+        Dispatcher.BeginInvoke(() =>
+        {
+            _previewQueued = false;
+            if (!ReferenceEquals(editedSession, DataContext) || !IsVisible || _isSaving) return;
+            var preview = editedSession.ToModel();
+            if (!HasBindingErrors(this) && AppSettingsValidator.Validate(preview).Count == 0)
+            {
+                PreviewRequested?.Invoke(preview);
+            }
+        }, System.Windows.Threading.DispatcherPriority.Background);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        ViewModel.SettingsEdited -= QueuePreview;
+        ViewModel.Dispose();
+        base.OnClosed(e);
     }
 
     public void AllowClose()
@@ -99,7 +132,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (!CommitFocusedEditor() || HasBindingErrors(this))
+        if (!CommitFocusedEditor() || !CommitGridEditors(this) || HasBindingErrors(this))
         {
             System.Windows.MessageBox.Show(
                 this,
