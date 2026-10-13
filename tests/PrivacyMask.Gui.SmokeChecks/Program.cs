@@ -66,6 +66,16 @@ internal static class Program
                     Layout(root, size);
                     var combos = Find<ComboBox>(root).Where(item => item.IsVisible || item.ActualWidth > 0).ToList();
                     Check(combos.Any(box => AutomationProperties.GetName(box) == "Mask style" && box.Items.Count >= 4), "Style source failed.");
+                    session.SelectedApplication!.StartupMode = AppActivationMode.FocusAware;
+                    Layout(root, size);
+                    var radios = Find<RadioButton>(root).ToList();
+                    var focused = radios.Single(radio => AutomationProperties.GetName(radio) == "Mask only while focused");
+                    Check(focused.IsChecked == true, "Activation radio failed to reflect the model.");
+                    var always = radios.Single(radio => AutomationProperties.GetName(radio) == "Always mask while visible");
+                    always.IsChecked = true;
+                    Drain();
+                    Check(session.SelectedApplication.StartupMode == AppActivationMode.Manual, "Activation radio failed to update the shared edit session.");
+                    session.SetSavedBaseline(session.ToModel());
                     var expander = Find<Expander>(root).Single();
                     expander.IsExpanded = true;
                     Layout(root, size);

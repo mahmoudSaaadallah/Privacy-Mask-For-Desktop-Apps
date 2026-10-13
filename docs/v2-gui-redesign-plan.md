@@ -249,6 +249,11 @@ Co-authored-by: Codex <codex@openai.com>
 
 ## Completion boundary
 
+Visual fidelity follow-up: `codex/gui-reference-alignment` corrects the three
+pages against the user's supplied Overview/Applications/app-settings reference.
+See [gui-reference-alignment.md](gui-reference-alignment.md) for the concrete
+appearance changes, retained behavior and verification boundaries.
+
 This work delivers the approved GUI and icon through reviewable PRs. Final
 2.0.0 release qualification remains necessary afterward; tagging, publishing,
 or merging a release is a separate user-authorized action.

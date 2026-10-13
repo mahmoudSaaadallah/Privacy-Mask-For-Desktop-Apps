@@ -29,6 +29,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     public int ProtectedApplicationCount => AppProfiles.Count(profile => profile.RuntimeStatus is
         ProfileRuntimeStatus.Protected or ProfileRuntimeStatus.PanicProtected);
     public bool HasNoApplications => AppProfiles.Count == 0;
+    public bool HasMoreOverviewApplications => AppProfiles.Count > 6;
 
     private void RefreshOverview()
     {
@@ -36,6 +37,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         RaisePropertyChanged(nameof(EnabledApplicationCount));
         RaisePropertyChanged(nameof(ProtectedApplicationCount));
         RaisePropertyChanged(nameof(HasNoApplications));
+        RaisePropertyChanged(nameof(HasMoreOverviewApplications));
     }
 
     private void OverviewProfilesChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -78,11 +80,25 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         _ => "Global protection active",
     };
     public string GlobalPauseLabel => _runtimeMode == RuntimeMode.Off ? "Resume all" : "Pause all";
+    public string ProtectionBannerText => _runtimeMode switch
+    {
+        RuntimeMode.Off => "Protection paused",
+        RuntimeMode.Panic => "Panic mask active",
+        _ => "Protection active",
+    };
+    public string ProtectionBannerBackground => _runtimeMode switch { RuntimeMode.Off => "#FFF3DA", RuntimeMode.Panic => "#FFE4E1", _ => "#DCF4EB" };
+    public string ProtectionBannerColor => _runtimeMode switch { RuntimeMode.Off => "#BD8000", RuntimeMode.Panic => "#D93A32", _ => "#009D6C" };
+    public string QuickShortcutGesture => Hotkeys.FirstOrDefault(binding => binding.Action == HotkeyAction.ToggleProtection)?.GestureText ?? "Not configured";
+    public IReadOnlyList<ShortcutKeycap> QuickShortcutKeys => QuickShortcutGesture.Split(" + ")
+        .Select((text, index) => new ShortcutKeycap(text, index > 0)).ToArray();
     public string GlobalPanicLabel => _runtimeMode == RuntimeMode.Panic ? "Unlock panic mask all" : "Panic mask all";
     public bool CanToggleGlobalProtection => !IsRuntimeActionBusy && _runtimeMode != RuntimeMode.Panic;
     public bool CanToggleGlobalPanic => !IsRuntimeActionBusy;
     private void NotifyRuntimeControls()
     {
+        RaisePropertyChanged(nameof(ProtectionBannerText));
+        RaisePropertyChanged(nameof(ProtectionBannerBackground));
+        RaisePropertyChanged(nameof(ProtectionBannerColor));
         RaisePropertyChanged(nameof(ProtectionHeading));
         RaisePropertyChanged(nameof(GlobalPauseLabel));
         RaisePropertyChanged(nameof(GlobalPanicLabel));
@@ -129,6 +145,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
     private void NotifyApplicationPages()
     {
+        RaisePropertyChanged(nameof(IsSaveBarVisible));
         RaisePropertyChanged(nameof(IsApplicationListPage));
         RaisePropertyChanged(nameof(IsApplicationDetailsPage));
     }
@@ -151,6 +168,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     }
 
     public bool HasPendingChanges => _changeTracker?.HasChanges == true;
+    public bool IsSaveBarVisible => HasPendingChanges || IsApplicationDetailsPage;
     public bool CanSave => HasPendingChanges && !IsSaving;
     public string EditStatus => IsSaving ? "Saving…"
         : SaveError is not null ? "Save failed — your edits are retained"
@@ -194,6 +212,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         RaisePropertyChanged(nameof(CanSave));
         RaisePropertyChanged(nameof(EditStatus));
         if (edited) SettingsEdited?.Invoke();
+        RaisePropertyChanged(nameof(IsSaveBarVisible));
     }
 
     public void Dispose()
@@ -335,3 +354,5 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         };
     }
 }
+
+public sealed record ShortcutKeycap(string Text, bool HasSeparator);
