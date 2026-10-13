@@ -284,7 +284,7 @@ public partial class MainWindow : Window
 
     private void DeveloperContact_Click(object sender, RoutedEventArgs e)
     {
-        var uri = (sender as FrameworkElement)?.Tag as string switch
+        var uri = ((sender as FrameworkElement)?.Tag as string) switch
         {
             "email" => AboutInformation.EmailUri,
             "github" => AboutInformation.GitHubUri,
