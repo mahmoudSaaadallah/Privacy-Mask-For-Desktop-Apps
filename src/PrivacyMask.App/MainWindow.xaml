@@ -385,8 +385,11 @@
     <Button DockPanel.Dock="Right" Content="Add application" Click="AddApplication_Click" Style="{StaticResource PrimaryButton}" />
     <TextBlock Text="Applications" Style="{StaticResource PageHeading}" />
    </DockPanel>
-   <TextBox Grid.Row="1" Margin="0,0,0,20" Padding="12,10" FontSize="14" AutomationProperties.Name="Search applications" ToolTip="Search by application or process name"
-            Text="{Binding ApplicationSearch, UpdateSourceTrigger=PropertyChanged}" />
+   <StackPanel Grid.Row="1" Margin="0,0,0,20">
+    <Label Target="{Binding ElementName=ApplicationSearchBox}" Content="_Search applications" Padding="0,0,0,6" />
+    <TextBox x:Name="ApplicationSearchBox" Padding="12,10" FontSize="14" AutomationProperties.Name="Search applications" ToolTip="Search by application or process name"
+             Text="{Binding ApplicationSearch, UpdateSourceTrigger=PropertyChanged}" />
+   </StackPanel>
    <Grid Grid.Row="2">
     <ListBox ItemsSource="{Binding FilteredAppProfiles}" Background="Transparent" BorderThickness="0"
              ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
