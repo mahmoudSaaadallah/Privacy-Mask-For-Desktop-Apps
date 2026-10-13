@@ -278,6 +278,14 @@ registration conflicts, and pending enable/disable changes. It does not remap
 gestures. Close a conflicting program and restart PrivacyMask to retry an
 unavailable shortcut. Settings contains startup preferences and an
 **Open settings folder** action; the displayed local file path can be copied.
+In the compact Settings layout this action is **Show location**. The adjacent
+information button shows the full path; right-click or press `Shift+F10` on
+**Show location** and choose **Copy file path** to copy it. The **About** card
+opens the existing About sidebar page.
+Shortcuts uses compact keycaps and switches; information buttons contain scope
+and registration details, while conflicts and pending changes remain visible.
+Security's **Active app / All apps** tabs explain the existing panic controls;
+selecting a tab does not activate a mask or change shortcut scope.
 About now shows the product version, developer details, privacy commitment,
 and capture limitations directly in the sidebar page. Bugs and suggestions
 can be sent to `mahmoud.saadallah73@gmail.com` using **Email developer**, or

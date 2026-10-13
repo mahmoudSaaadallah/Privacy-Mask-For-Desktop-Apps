@@ -2,6 +2,9 @@
 
 ## 2.0.0 - Unreleased
 
+- Align Shortcuts, Security and Settings with the supplied reference: compact keycap rows, status cards, startup switches and inline branding
+- Keep shortcut conflict/pending feedback data-driven and expose non-mutating explanations of focused/global panic
+- Retain About navigation and local configuration-path copying in the compact Settings layout
 - Align Overview, Applications and profile details with the approved visual reference: flush sidebar, protection banner, grouped application rows, switches, badges and teal blur tracks
 - Replace profile activation dropdown with bound radio controls, add accurate color swatches and rounded search/profile fields
 - Hide the saved-status footer on clean list/overview pages while retaining it for details and pending edits
