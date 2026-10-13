@@ -354,45 +354,37 @@
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
-                    <ScrollViewer
-                        x:Name="SecurityPage"
-                        Visibility="{Binding IsSecurityPage, Converter={StaticResource BooleanToVisibility}}"
-                        VerticalScrollBarVisibility="Auto">
-                        <StackPanel
-                            Margin="24">
-                            <TextBlock
-                                Style="{StaticResource PageHeading}"
-                                Text="Security"
-                                Margin="0,0,0,24" />
-                            <Border Style="{StaticResource Card}">
+
+                    <ScrollViewer x:Name="SecurityPage" Visibility="{Binding IsSecurityPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="28">
+                            <TextBlock Text="Security" Style="{StaticResource PageHeading}" Margin="0,0,0,26"/>
+                            <Border Style="{StaticResource Card}" Padding="24">
                                 <StackPanel>
-                                    <TextBlock
-                                        FontWeight="SemiBold"
-                                        FontSize="20"
-                                        Text="Panic unlock PIN" />
-                                    <TextBlock
-                                        Margin="0,6,0,10"
-                                        Foreground="#51656E"
-                                        TextWrapping="Wrap"
-                                        Text="{Binding PanicPinStatus}" />
-                                    <Button
-                                        MinWidth="110"
-                                        Padding="10,7"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource PrimaryButton}"
-                                        AutomationProperties.HelpText="Add or change the PIN required to disable panic masks."
-                                        Click="ConfigurePanicPin_Click"
-                                        Content="{Binding PanicPinActionLabel}" />
-                                    <TextBlock Text="Save changes after adding or changing your PIN here. Canceling the dialog leaves the current PIN unchanged." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,14,0,0"/>
+                                    <DockPanel Margin="0,0,0,24"><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="Create a 4–8 digit PIN, or change it after verifying the current PIN. Save changes on this page to persist it. Cancel leaves the existing PIN unchanged. Only a salted hardened verifier is stored." AutomationProperties.Name="Panic PIN information"/><TextBlock Text="Panic unlock PIN" FontSize="20" FontWeight="SemiBold"/></DockPanel>
+                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="28" Height="28" CornerRadius="14" Background="{Binding PanicPinIndicatorColor}" Margin="0,0,14,0"><TextBlock Text="{Binding PanicPinIndicator}" Foreground="White" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                            <TextBlock Text="{Binding PanicPinCompactStatus}" VerticalAlignment="Center" FontSize="16" AutomationProperties.Name="Panic PIN status" AutomationProperties.HelpText="{Binding PanicPinStatus}"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Content="{Binding PanicPinActionLabel}" Click="ConfigurePanicPin_Click" Style="{StaticResource PrimaryButton}" MinWidth="150"/>
+                                    </Grid>
                                 </StackPanel>
                             </Border>
-                            <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+                            <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
                                 <StackPanel>
-                                    <TextBlock Text="How panic protection works" FontSize="20" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Focused app: Ctrl + Shift + H covers only the active protected application. Other applications are unchanged." TextWrapping="Wrap" Margin="0,12,0,0"/>
-                                    <TextBlock Text="All apps: Panic mask all from Overview or the tray covers every detected protected application." TextWrapping="Wrap" Margin="0,12,0,0"/>
-                                    <TextBlock Text="A correct PIN is required to unlock either mode. Wrong PIN, Cancel, or closing the unlock dialog leaves the mask active. Hover and hold-to-reveal cannot bypass panic." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,12,0,0"/>
-                                    <TextBlock Text="Stored locally as a salted, hardened verifier — never as the PIN digits. This PIN protects panic unlock, not Windows sign-in or access to the settings file. Panic state is not restored after restarting PrivacyMask." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,12,0,0"/>
+                                    <DockPanel><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="These tabs explain existing panic modes; they do not activate protection or change shortcut scope. Focused panic affects one app. Global panic covers every detected protected app. Wrong PIN, Cancel or closing unlock leaves protection active; hover and Alt cannot bypass panic." AutomationProperties.Name="Panic protection information"/><TextBlock Text="Panic protection" FontSize="20" FontWeight="SemiBold"/></DockPanel>
+                                    <TextBlock Text="Choose a mode to see how it works." Foreground="{StaticResource MutedInkBrush}" FontSize="12" Margin="0,10,0,14"/>
+                                    <WrapPanel>
+                                        <RadioButton Content="Active app" GroupName="PanicExplanation" Style="{StaticResource ModeChip}" IsChecked="{Binding PanicHelpScope,Converter={StaticResource EnumSelection},ConverterParameter={x:Static viewModels:PanicHelpScope.ActiveApp}}" Margin="0,0,14,8" AutomationProperties.Name="Explain focused app panic" AutomationProperties.HelpText="Information only; this does not change protection."/>
+                                        <RadioButton Content="All apps" GroupName="PanicExplanation" Style="{StaticResource ModeChip}" IsChecked="{Binding PanicHelpScope,Converter={StaticResource EnumSelection},ConverterParameter={x:Static viewModels:PanicHelpScope.AllApps}}" Margin="0,0,0,8" AutomationProperties.Name="Explain global panic" AutomationProperties.HelpText="Information only; this does not change protection."/>
+                                    </WrapPanel>
+                                    <TextBlock Text="{Binding PanicScopeSummary}" TextWrapping="Wrap" Margin="0,8,0,0" AutomationProperties.LiveSetting="Polite"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
+                                <StackPanel>
+                                    <DockPanel Margin="0,0,0,22"><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="All settings stay on this device. PrivacyMask has no cloud account or background telemetry. The PIN guards panic unlock, not Windows sign-in or access to the local settings file." AutomationProperties.Name="Local settings information"/><TextBlock Text="Local settings" FontSize="20" FontWeight="SemiBold"/></DockPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE753;" FontFamily="Segoe MDL2 Assets" FontSize="34" Margin="0,0,20,0"/><TextBlock Text="No cloud account" VerticalAlignment="Center" FontSize="16"/></StackPanel>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
