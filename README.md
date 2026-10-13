@@ -80,6 +80,18 @@ No administrator access is required. The first build can take a few minutes
 while .NET restores the required packages. The same installer can be run again
 to rebuild and update the local installation.
 
+In a complete source checkout, `desktop-app/windows/win-x64/Install-PrivacyMask.cmd`
+also routes through the root batch installer and rebuilds, even when an older
+published executable already exists. A `git pull` updates source files, not
+ignored build output. Extracted release archives still install their packaged
+executable directly, without requiring the SDK.
+
+Before updating from source, exit PrivacyMask from its tray menu, especially
+if it was launched from the repository's `single-file` folder. Otherwise a
+portable instance can keep its executable locked or cause a newly launched
+copy to reactivate the older instance. Reopen the installed Desktop/Start Menu
+shortcut after a successful build/install.
+
 ## Developer setup
 
 1. Install the tools listed in [requirements.md](requirements.md).

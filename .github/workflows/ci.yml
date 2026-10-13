@@ -39,6 +39,10 @@ jobs:
         shell: powershell
         run: .\scripts\test-gui-smoke.ps1
 
+      - name: Test source and release installer dispatch
+        shell: powershell
+        run: .\scripts\test-installer-entrypoint.ps1
+
       - name: Package Windows release
         shell: powershell
         run: .\scripts\package-win-x64-release.ps1 -SkipTests
