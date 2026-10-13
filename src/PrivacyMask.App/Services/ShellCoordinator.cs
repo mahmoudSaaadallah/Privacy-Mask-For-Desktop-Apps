@@ -37,6 +37,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly StartupRegistrationService _startupRegistrationService;
     private readonly DispatcherTimer _refreshTimer;
     private readonly NotifyIcon _notifyIcon;
+    private readonly System.Drawing.Icon _trayIcon;
     private readonly ToolStripMenuItem _modeItem;
     private readonly ToolStripMenuItem _launchAtLoginItem;
     private readonly ToolStripMenuItem _toggleProtectionItem;
@@ -87,9 +88,18 @@ public sealed class ShellCoordinator : IAsyncDisposable
         };
         _refreshTimer.Tick += RefreshTimerOnTick;
 
+        var iconResource = Application.GetResourceStream(
+            new Uri("pack://application:,,,/Assets/PrivacyMask.ico"));
+        using (var iconStream = iconResource.Stream)
+        using (var sourceIcon = new System.Drawing.Icon(iconStream, SystemInformation.SmallIconSize))
+        {
+            // Own a copy independently of the resource stream for the tray lifetime.
+            _trayIcon = (System.Drawing.Icon)sourceIcon.Clone();
+        }
+
         _notifyIcon = new NotifyIcon
         {
-            Icon = System.Drawing.SystemIcons.Shield,
+            Icon = _trayIcon,
             Text = "PrivacyMask",
             Visible = true,
         };
@@ -173,6 +183,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _overlayManager.Dispose();
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();
+        _trayIcon.Dispose();
 
         if (_mainWindow is not null)
         {
