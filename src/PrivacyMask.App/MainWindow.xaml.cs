@@ -97,7 +97,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (!CommitFocusedEditor() || !CommitGridEditors(this))
+        if (!CommitFocusedEditor() || !CommitGridEditors(this) || HasBindingErrors(this))
         {
             System.Windows.MessageBox.Show(this,
                 "Correct the highlighted value before changing pages. Your edits are retained.",
