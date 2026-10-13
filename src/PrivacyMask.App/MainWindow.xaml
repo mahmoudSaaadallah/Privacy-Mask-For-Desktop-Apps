@@ -97,7 +97,7 @@
   <Grid Margin="0,0,0,24">
    <Grid.ColumnDefinitions><ColumnDefinition Width="86"/><ColumnDefinition Width="*"/><ColumnDefinition Width="86"/></Grid.ColumnDefinitions>
    <Image Style="{StaticResource ApplicationIcon}" Width="64" Height="64" HorizontalAlignment="Left"/>
-   <StackPanel Grid.Column="1" Margin="0,0,24,0"><TextBlock Text="Name" Margin="0,0,0,8"/><TextBox Text="{Binding DisplayName,UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsBuiltIn}" MaxLength="80" Padding="10,8" FontSize="14" AutomationProperties.Name="Application profile name"/></StackPanel>
+   <StackPanel Grid.Column="1" Margin="0,0,24,0"><TextBlock Text="Name" Margin="0,0,0,8"/><TextBox Style="{StaticResource ReferenceInput}" Text="{Binding DisplayName,UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsBuiltIn}" MaxLength="80" Padding="10,8" FontSize="14" AutomationProperties.Name="Application profile name"/></StackPanel>
    <StackPanel Grid.Column="2"><TextBlock Text="Enabled" Margin="0,0,0,10"/><CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Enabled}" AutomationProperties.Name="Enable application masking" HorizontalAlignment="Left"/></StackPanel>
   </Grid>
   <Border Height="1" Background="#E6E8EA" Margin="0,0,0,24"/>
@@ -118,8 +118,8 @@
    <TextBlock Grid.Row="4" Text="Hover reveal" VerticalAlignment="Center" Margin="0,24,0,0"/>
    <WrapPanel Grid.Row="4" Grid.Column="1" Margin="0,24,0,0">
     <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding HoverRevealEnabled}" AutomationProperties.Name="Enable hover reveal" Margin="0,0,24,8"/>
-    <StackPanel Margin="0,0,20,8"><TextBlock Text="Width" Margin="0,0,0,6"/><StackPanel Orientation="Horizontal"><TextBox Width="76" Padding="8" Text="{Binding HoverRevealWidthPixels,UpdateSourceTrigger=LostFocus}" PreviewTextInput="NumericTextBox_PreviewTextInput" AutomationProperties.Name="Hover reveal width"/><TextBlock Text="px" Margin="8,0,0,0" VerticalAlignment="Center"/></StackPanel></StackPanel>
-    <StackPanel Margin="0,0,0,8"><TextBlock Text="Height" Margin="0,0,0,6"/><StackPanel Orientation="Horizontal"><TextBox Width="76" Padding="8" Text="{Binding HoverRevealHeightPixels,UpdateSourceTrigger=LostFocus}" PreviewTextInput="NumericTextBox_PreviewTextInput" AutomationProperties.Name="Hover reveal height"/><TextBlock Text="px" Margin="8,0,0,0" VerticalAlignment="Center"/></StackPanel></StackPanel>
+    <StackPanel Margin="0,0,20,8"><TextBlock Text="Width" Margin="0,0,0,6"/><StackPanel Orientation="Horizontal"><TextBox Style="{StaticResource ReferenceInput}" Width="76" Padding="8" Text="{Binding HoverRevealWidthPixels,UpdateSourceTrigger=LostFocus}" PreviewTextInput="NumericTextBox_PreviewTextInput" AutomationProperties.Name="Hover reveal width"/><TextBlock Text="px" Margin="8,0,0,0" VerticalAlignment="Center"/></StackPanel></StackPanel>
+    <StackPanel Margin="0,0,0,8"><TextBlock Text="Height" Margin="0,0,0,6"/><StackPanel Orientation="Horizontal"><TextBox Style="{StaticResource ReferenceInput}" Width="76" Padding="8" Text="{Binding HoverRevealHeightPixels,UpdateSourceTrigger=LostFocus}" PreviewTextInput="NumericTextBox_PreviewTextInput" AutomationProperties.Name="Hover reveal height"/><TextBlock Text="px" Margin="8,0,0,0" VerticalAlignment="Center"/></StackPanel></StackPanel>
    </WrapPanel>
   </Grid>
   <Border BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" CornerRadius="6" Padding="12" Background="#F5F5F5" Margin="0,20,0,0">
@@ -286,7 +286,7 @@
    <DockPanel Margin="0,0,0,26"><Button DockPanel.Dock="Right" Content="?" Style="{StaticResource InformationButton}" services:InformationHelp.Text="Search configured apps, enable or disable their masks, and use Manage to adjust appearance. Changes are saved together." AutomationProperties.Name="Applications help"/><TextBlock Text="Applications" Style="{StaticResource PageHeading}"/></DockPanel>
    <Grid Grid.Row="1" Margin="0,0,0,22"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <Grid Margin="0,0,20,0">
-     <TextBox x:Name="ApplicationSearchBox" Text="{Binding ApplicationSearch,UpdateSourceTrigger=PropertyChanged}" Padding="38,12,12,12" FontSize="14" AutomationProperties.Name="Search applications"/>
+     <TextBox Style="{StaticResource ReferenceInput}" x:Name="ApplicationSearchBox" Text="{Binding ApplicationSearch,UpdateSourceTrigger=PropertyChanged}" Padding="38,12,12,12" FontSize="14" AutomationProperties.Name="Search applications"/>
      <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="18" Margin="12,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" IsHitTestVisible="False" Foreground="{StaticResource MutedInkBrush}"/>
      <TextBlock Text="Search applications..." Margin="38,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource MutedInkBrush}" IsHitTestVisible="False"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding ApplicationSearch}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
     </Grid>
