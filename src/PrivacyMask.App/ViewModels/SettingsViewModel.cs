@@ -29,6 +29,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     public int ProtectedApplicationCount => AppProfiles.Count(profile => profile.RuntimeStatus is
         ProfileRuntimeStatus.Protected or ProfileRuntimeStatus.PanicProtected);
     public bool HasNoApplications => AppProfiles.Count == 0;
+    public bool HasMoreOverviewApplications => AppProfiles.Count > 6;
 
     private void RefreshOverview()
     {
@@ -36,6 +37,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         RaisePropertyChanged(nameof(EnabledApplicationCount));
         RaisePropertyChanged(nameof(ProtectedApplicationCount));
         RaisePropertyChanged(nameof(HasNoApplications));
+        RaisePropertyChanged(nameof(HasMoreOverviewApplications));
     }
 
     private void OverviewProfilesChanged(object? sender, NotifyCollectionChangedEventArgs e)
