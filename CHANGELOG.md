@@ -2,6 +2,10 @@
 
 ## 2.0.0 - Unreleased
 
+- Move About directly into the sidebar with developer information, assembly-based version, privacy/capture limitations, and email/copy/GitHub/LinkedIn actions
+- Clarify focused and global panic behavior and saved-PIN requirements on Security
+- Apply shared styles and bounded scrolling to PIN dialogs; clear password fields when dialogs close
+- Refresh onboarding into concise enrollment, blur/reveal, panic, and startup sections using the branded icon
 - Add a protection overview with live profile counts, bounded quick blur controls, and navigation to all configured applications
 - Connect Overview global pause and panic actions to existing runtime handlers and PIN verification without persisting runtime state
 - Explain shortcut scope, hold delay, registration conflicts, and pending enable changes on the dedicated Shortcuts page

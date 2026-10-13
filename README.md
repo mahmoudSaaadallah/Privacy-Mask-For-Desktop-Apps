@@ -229,6 +229,9 @@ from onboarding, settings, or the tray without affecting existing users' saved
 choice during an update.
 
 The panic PIN can be added or changed from **Security > Panic unlock PIN**.
+When editing it in Security, confirm the dialog and then use **Save changes**
+to persist the new PIN. First-use panic setup saves its PIN before protection
+is activated. Canceling a setup or change dialog keeps the current credential.
 Changing it requires the current PIN. PrivacyMask stores only a salted,
 computationally hardened verifier in the local settings file, never the digits
 you entered. Canceling the unlock window or entering an incorrect PIN leaves
@@ -252,6 +255,11 @@ registration conflicts, and pending enable/disable changes. It does not remap
 gestures. Close a conflicting program and restart PrivacyMask to retry an
 unavailable shortcut. Settings contains startup preferences and an
 **Open settings folder** action; the displayed local file path can be copied.
+About now shows the product version, developer details, privacy commitment,
+and capture limitations directly in the sidebar page. Bugs and suggestions
+can be sent to `mahmoud.saadallah73@gmail.com` using **Email developer**, or
+the address can be copied with **Copy email**. GitHub and LinkedIn buttons
+open the developer's existing public profiles.
 Press `Ctrl+S` or **Save changes** to save the complete session, or **Discard**
 to restore saved values across all pages; both keep the selected page open.
 Press `Esc` or close the window to discard the preview and return to the tray.

@@ -136,6 +136,25 @@ are not established by this harness and remain part of final qualification.
 
 ### PR 5: Security, About, and supporting dialogs
 
+Implemented on `codex/v2-security-about-onboarding`. About is now inline; its
+obsolete standalone dialog is removed. The verified support address, developer
+profiles and assembly version have one shared source. Contact failures are
+reported and the support address is selectable/copyable. Security explains
+focused/global panic and pending PIN edits. PIN dialogs retain existing
+verification and cancellation, gain shared styling/work-area bounds and
+scrollable fields, and clear password inputs on close. Onboarding explains
+enrollment, default reveal, blur, panic and startup preferences in short cards.
+Version remains unreleased 2.0.0; settings schema remains 12.
+
+Verification (2026-10-13): 196 tests passed, build has zero warnings/errors,
+15 PowerShell scripts validated, and transactional installer/release-package
+smoke tests passed. Offline compiled WPF renders covered all pages, PIN setup,
+change, wrong-PIN unlock and onboarding. Synthetic checks rejected short PINs,
+confirmation mismatch, and wrong current/unlock PINs, verified closed-field
+clearing, and preserved startup choices. These checks do not exercise live
+modal success/cancel, external contact apps, Explorer, clipboard contention,
+screen readers or multi-DPI interactions; final qualification remains PR 6.
+
 | Commit title | Scope |
 | --- | --- |
 | `feat: add dedicated panic security page` | Show credential status and Add/Change PIN; clearly distinguish focused panic from global panic. |
