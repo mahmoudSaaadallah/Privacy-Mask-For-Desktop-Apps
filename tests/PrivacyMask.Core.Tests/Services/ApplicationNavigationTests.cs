@@ -67,4 +67,37 @@ public sealed class ApplicationNavigationTests
         Assert.Equal(800, profile.HoverRevealWidthPixels);
         Assert.Equal(MaskStyle.WetGlass, profile.PrimaryMaskStyle);
     }
+
+    [Fact]
+    public void HoverSwitch_UpdatesEveryZoneAndTracksTheEdit()
+    {
+        using var model = Create();
+        var profile = model.AppProfiles[2];
+        profile.Zones.Add(new PrivacyZoneViewModel(new PrivacyZone
+        {
+            ZoneId = "secondary",
+            DisplayName = "Secondary zone",
+            Behavior = ZoneBehavior.RevealOnHover,
+        }));
+        model.SetSavedBaseline(model.ToModel());
+        profile.HoverRevealEnabled = false;
+        Assert.All(profile.Zones, zone => Assert.False(zone.RevealOnHover));
+        Assert.True(model.HasPendingChanges);
+        profile.HoverRevealEnabled = true;
+        Assert.All(profile.Zones, zone => Assert.True(zone.RevealOnHover));
+        Assert.False(model.HasPendingChanges);
+    }
+
+    [Fact]
+    public void Rename_RefreshesSearchWithoutLosingDetailSelection()
+    {
+        using var model = Create();
+        var profile = model.AppProfiles[2];
+        model.OpenApplication(profile);
+        model.ApplicationSearch = "Renamed";
+        Assert.Empty(model.FilteredAppProfiles);
+        profile.DisplayName = "Renamed editor";
+        Assert.Same(profile, Assert.Single(model.FilteredAppProfiles));
+        Assert.Same(profile, model.SelectedApplication);
+    }
 }
