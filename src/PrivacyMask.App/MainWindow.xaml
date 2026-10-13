@@ -536,14 +536,11 @@
                                 Style="{StaticResource PageHeading}"
                                 Text="Security"
                                 Margin="0,0,0,24" />
-                            <Border
-                                Margin="0,12,0,0"
-                                Padding="12"
-                                Background="#ECE4D6"
-                                CornerRadius="16">
+                            <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock
                                         FontWeight="SemiBold"
+                                        FontSize="20"
                                         Text="Panic unlock PIN" />
                                     <TextBlock
                                         Margin="0,6,0,10"
@@ -554,12 +551,20 @@
                                         MinWidth="110"
                                         Padding="10,7"
                                         HorizontalAlignment="Left"
-                                        Background="#1F6E6C"
-                                        BorderBrush="#1F6E6C"
-                                        Foreground="White"
+                                        Style="{StaticResource PrimaryButton}"
                                         AutomationProperties.HelpText="Add or change the PIN required to disable panic masks."
                                         Click="ConfigurePanicPin_Click"
                                         Content="{Binding PanicPinActionLabel}" />
+                                    <TextBlock Text="Save changes after adding or changing your PIN here. Canceling the dialog leaves the current PIN unchanged." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,14,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="How panic protection works" FontSize="20" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Focused app: Ctrl + Shift + H covers only the active protected application. Other applications are unchanged." TextWrapping="Wrap" Margin="0,12,0,0"/>
+                                    <TextBlock Text="All apps: Panic mask all from Overview or the tray covers every detected protected application." TextWrapping="Wrap" Margin="0,12,0,0"/>
+                                    <TextBlock Text="A correct PIN is required to unlock either mode. Wrong PIN, Cancel, or closing the unlock dialog leaves the mask active. Hover and hold-to-reveal cannot bypass panic." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,12,0,0"/>
+                                    <TextBlock Text="Stored locally as a salted, hardened verifier — never as the PIN digits. This PIN protects panic unlock, not Windows sign-in or access to the settings file. Panic state is not restored after restarting PrivacyMask." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,12,0,0"/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
