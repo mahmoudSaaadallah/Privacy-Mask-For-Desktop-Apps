@@ -73,6 +73,7 @@ namespace PrivacyMask.Installer
                 shellLink.SetPath(targetPath);
                 shellLink.SetWorkingDirectory(workingDirectory);
                 shellLink.SetDescription(description);
+                shellLink.SetIconLocation(targetPath, 0);
                 ((IPersistFile)shellLink).Save(shortcutPath, true);
             }
             finally
@@ -92,6 +93,23 @@ namespace PrivacyMask.Installer
                 Win32FindData findData;
                 shellLink.GetPath(targetPath, targetPath.Capacity, out findData, 0);
                 return targetPath.ToString();
+            }
+            finally
+            {
+                Marshal.FinalReleaseComObject(shellLink);
+            }
+        }
+
+        public static string ReadIconLocation(string shortcutPath)
+        {
+            IShellLinkW shellLink = (IShellLinkW)new ShellLink();
+            try
+            {
+                ((IPersistFile)shellLink).Load(shortcutPath, 0);
+                StringBuilder iconPath = new StringBuilder(32768);
+                int iconIndex;
+                shellLink.GetIconLocation(iconPath, iconPath.Capacity, out iconIndex);
+                return iconPath.ToString() + "," + iconIndex;
             }
             finally
             {

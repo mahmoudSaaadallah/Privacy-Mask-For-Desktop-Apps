@@ -102,6 +102,12 @@ try {
 
   . (Join-Path $extractPath 'ShortcutTools.ps1')
   $expectedTarget = [System.IO.Path]::GetFullPath($installedExePath)
+  foreach ($shortcutPath in @($desktopShortcutPath, (Join-Path $startMenuFolder 'PrivacyMask.lnk'))) {
+    $actualIcon = [PrivacyMask.Installer.UnicodeShortcut]::ReadIconLocation($shortcutPath)
+    if (-not [string]::Equals($actualIcon, "$expectedTarget,0", [StringComparison]::OrdinalIgnoreCase)) {
+      throw 'A packaged installer shortcut does not reference the installed executable icon.'
+    }
+  }
   $desktopTarget = [PrivacyMask.Installer.UnicodeShortcut]::ReadTargetPath($desktopShortcutPath)
   $startMenuTarget = [PrivacyMask.Installer.UnicodeShortcut]::ReadTargetPath(
     (Join-Path $startMenuFolder 'PrivacyMask.lnk'))

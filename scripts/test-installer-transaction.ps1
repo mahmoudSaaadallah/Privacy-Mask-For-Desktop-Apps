@@ -33,6 +33,17 @@ function Assert-PathExists {
   }
 }
 
+function Assert-ShortcutIcons {
+  param([string]$ExecutablePath)
+  $expectedIcon = "$([System.IO.Path]::GetFullPath($ExecutablePath)),0"
+  foreach ($shortcutPath in @($desktopShortcutPath, $startMenuShortcutPath)) {
+    $actualIcon = [PrivacyMask.Installer.UnicodeShortcut]::ReadIconLocation($shortcutPath)
+    if (-not [string]::Equals($actualIcon, $expectedIcon, [StringComparison]::OrdinalIgnoreCase)) {
+      throw "Shortcut '$shortcutPath' has icon '$actualIcon'; expected '$expectedIcon'."
+    }
+  }
+}
+
 try {
   $unsafePathRejected = $false
   try {
@@ -64,6 +75,7 @@ try {
   Assert-PathExists -Path $startMenuShortcutPath -Description 'Start Menu shortcut'
 
   . $shortcutToolsPath
+  Assert-ShortcutIcons -ExecutablePath $installedExePath
   $expectedTarget = [System.IO.Path]::GetFullPath($installedExePath)
   $desktopTarget = [PrivacyMask.Installer.UnicodeShortcut]::ReadTargetPath($desktopShortcutPath)
   $startMenuTarget = [PrivacyMask.Installer.UnicodeShortcut]::ReadTargetPath($startMenuShortcutPath)
@@ -111,6 +123,8 @@ try {
   if ((Get-Content -LiteralPath $settingsPath -Raw) -notmatch 'preserved') {
     throw 'The installer did not preserve the existing settings file during update.'
   }
+
+  Assert-ShortcutIcons -ExecutablePath $installedExePath
 
   if (Test-Path -LiteralPath (Join-Path $installPath 'obsolete.dll')) {
     throw 'The installer retained a stale binary from the previous installation.'
