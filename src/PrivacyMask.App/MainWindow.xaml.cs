@@ -152,14 +152,16 @@ public partial class MainWindow : Window
         }
 
         _isSaving = true;
+        ViewModel.IsSaving = true;
         IsEnabled = false;
         try
         {
             await SaveRequested.Invoke(settings);
-            Hide();
+            ViewModel.SetSavedBaseline(ViewModel.ToModel());
         }
         catch (Exception exception)
         {
+            ViewModel.SaveError = exception.Message;
             System.Windows.MessageBox.Show(
                 this,
                 $"PrivacyMask could not save these changes.\n\n{exception.Message}",
@@ -171,12 +173,13 @@ public partial class MainWindow : Window
         {
             IsEnabled = true;
             _isSaving = false;
+            ViewModel.IsSaving = false;
         }
     }
 
     private void CloseToTray_Click(object sender, RoutedEventArgs e)
     {
-        DiscardAndHide();
+        DiscardRequested?.Invoke();
     }
 
     private void ApplyPreset_Click(object sender, RoutedEventArgs e)

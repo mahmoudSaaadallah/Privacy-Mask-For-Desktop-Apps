@@ -376,6 +376,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _savedSettings = AppSettingsCloner.Clone(nextSettings);
         RebuildWindowProcessFilter();
         RegisterHotkeys();
+        _mainWindow?.ReplaceViewModel(CreateSettingsViewModel());
+        RefreshOverlays();
         UpdateTrayState();
     }
 
@@ -493,6 +495,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             {
                 await _settingsStore.SaveAsync(nextSettings);
                 _savedSettings = AppSettingsCloner.Clone(nextSettings);
+                _mainWindow?.ViewModel.SetSavedBaseline(_savedSettings);
             }
             catch (Exception exception)
             {
@@ -668,6 +671,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
             visibleProfile.Enabled = true;
         }
 
+        _mainWindow?.ViewModel.SetSavedBaseline(_savedSettings);
+
         if (_profileProtectionState.IsPaused(profile.ProfileId))
         {
             _profileProtectionState.TogglePause(profile.ProfileId);
@@ -710,6 +715,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
         {
             _mainWindow.ViewModel.AppProfiles.Add(new AppProfileViewModel(runtimeProfile));
         }
+
+        _mainWindow?.ViewModel.SetSavedBaseline(_savedSettings);
 
         RebuildWindowProcessFilter();
         RefreshOverlays();
@@ -838,6 +845,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _savedSettings = AppSettingsCloner.Clone(nextSettings);
         _settings.PanicPin = PanicPinService.Clone(nextSettings.PanicPin);
         _mainWindow?.ViewModel.SetPanicPin(nextSettings.PanicPin!);
+        _mainWindow?.ViewModel.SetSavedBaseline(_savedSettings);
         return true;
     }
 
@@ -908,6 +916,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private void UpdateTrayState()
     {
         var currentMode = _protectionStateMachine.CurrentMode;
+        _mainWindow?.ViewModel.UpdateRuntimeMode(currentMode);
+        _mainWindow?.ViewModel.SetSavedBaseline(_savedSettings);
         _modeItem.Text = currentMode switch
         {
             RuntimeMode.Standard => "Protection: Active",

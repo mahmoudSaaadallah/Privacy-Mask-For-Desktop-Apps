@@ -83,4 +83,33 @@ public sealed class SettingsEditSessionTests
         Assert.True(session.HasPendingChanges);
         Assert.False(session.StartMinimized);
     }
+
+    [Fact]
+    public void UpdatingSavedBaseline_DoesNotRequestAnotherPreview()
+    {
+        using var session = Create();
+        var requests = 0;
+        session.SettingsEdited += () => requests++;
+        session.StartMinimized = false;
+        Assert.Equal(1, requests);
+        session.SetSavedBaseline(session.ToModel());
+        Assert.Equal(1, requests);
+        Assert.False(session.HasPendingChanges);
+        Assert.False(session.CanSave);
+    }
+
+    [Fact]
+    public void FailedSaveFeedback_RetainsEditsUntilTheyAreSavedOrChanged()
+    {
+        using var session = Create();
+        var baseline = session.ToModel();
+        session.StartMinimized = false;
+        session.SaveError = "Disk unavailable";
+        session.SetSavedBaseline(baseline);
+        Assert.True(session.HasPendingChanges);
+        Assert.NotNull(session.SaveError);
+        session.StartMinimized = true;
+        Assert.Null(session.SaveError);
+        Assert.False(session.HasPendingChanges);
+    }
 }

@@ -550,9 +550,9 @@
                 <DockPanel LastChildFill="True">
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button x:Name="DiscardButton" Content="Discard" Style="{StaticResource SecondaryButton}" Click="CloseToTray_Click" Margin="0,0,12,0" />
-                        <Button x:Name="SaveButton" Content="Save changes" Style="{StaticResource PrimaryButton}" Click="Save_Click" />
+                        <Button x:Name="SaveButton" Content="Save changes" Style="{StaticResource PrimaryButton}" IsEnabled="{Binding CanSave}" Click="Save_Click" />
                     </StackPanel>
-                    <TextBlock Text="Live previews are temporary until saved." VerticalAlignment="Center" Foreground="{StaticResource MutedInkBrush}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding EditStatus}" VerticalAlignment="Center" Foreground="{StaticResource MutedInkBrush}" TextWrapping="Wrap" />
                 </DockPanel>
             </Border>
         </Grid>

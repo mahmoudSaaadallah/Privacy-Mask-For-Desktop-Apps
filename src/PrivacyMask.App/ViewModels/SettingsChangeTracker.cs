@@ -21,12 +21,12 @@ internal sealed class SettingsChangeTracker : IDisposable
     }
 
     public bool HasChanges { get; private set; }
-    public event Action? Changed;
+    public event Action<bool>? Changed;
 
     public void SetBaseline(AppSettings settings)
     {
         _baseline = Snapshot(settings);
-        Refresh();
+        Refresh(edited: false);
     }
 
     private static string Snapshot(AppSettings settings)
@@ -37,10 +37,10 @@ internal sealed class SettingsChangeTracker : IDisposable
         return JsonSerializer.Serialize(normalized);
     }
 
-    private void Refresh()
+    private void Refresh(bool edited = true)
     {
         HasChanges = !string.Equals(_baseline, Snapshot(_viewModel.ToModel()), StringComparison.Ordinal);
-        Changed?.Invoke();
+        Changed?.Invoke(edited);
     }
 
     private void Attach()

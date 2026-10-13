@@ -13,9 +13,34 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private PanicPinCredential? _panicPin;
     private DesktopPage _selectedPage = DesktopPage.Overview;
     private SettingsChangeTracker? _changeTracker;
+    private bool _isSaving;
+    private string? _saveError;
 
     public bool HasPendingChanges => _changeTracker?.HasChanges == true;
-    public string EditStatus => HasPendingChanges ? "Unsaved changes" : "All changes saved";
+    public bool CanSave => HasPendingChanges && !IsSaving;
+    public string EditStatus => IsSaving ? "Saving…"
+        : SaveError is not null ? "Save failed — your edits are retained"
+        : HasPendingChanges ? "Unsaved changes" : "All changes saved";
+    public bool IsSaving
+    {
+        get => _isSaving;
+        set
+        {
+            if (SetProperty(ref _isSaving, value))
+            {
+                RaisePropertyChanged(nameof(CanSave));
+                RaisePropertyChanged(nameof(EditStatus));
+            }
+        }
+    }
+    public string? SaveError
+    {
+        get => _saveError;
+        set
+        {
+            if (SetProperty(ref _saveError, value)) RaisePropertyChanged(nameof(EditStatus));
+        }
+    }
     public event Action? SettingsEdited;
 
     public void SetSavedBaseline(AppSettings settings)
@@ -23,11 +48,13 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         _changeTracker?.SetBaseline(settings);
     }
 
-    private void SettingsChanged()
+    private void SettingsChanged(bool edited)
     {
+        if (edited || !HasPendingChanges) _saveError = null;
         RaisePropertyChanged(nameof(HasPendingChanges));
+        RaisePropertyChanged(nameof(CanSave));
         RaisePropertyChanged(nameof(EditStatus));
-        SettingsEdited?.Invoke();
+        if (edited) SettingsEdited?.Invoke();
     }
 
     public void Dispose()
@@ -97,6 +124,17 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     public string ConfigPath { get; private set; } = string.Empty;
 
     public string CurrentModeSummary { get; private set; } = string.Empty;
+
+    public void UpdateRuntimeMode(RuntimeMode mode)
+    {
+        CurrentModeSummary = mode switch
+        {
+            RuntimeMode.Off => "Protection is paused for every application.",
+            RuntimeMode.Panic => "Panic masks are active for every protected application.",
+            _ => "Protection is active for enabled application profiles.",
+        };
+        RaisePropertyChanged(nameof(CurrentModeSummary));
+    }
 
     public ObservableCollection<HotkeyBindingViewModel> Hotkeys { get; private set; } = [];
 
