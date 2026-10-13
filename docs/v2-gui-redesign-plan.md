@@ -57,6 +57,12 @@ its containing control's foreground to preserve action-button contrast.
 
 ### PR 2: Navigation and settings edit session
 
+Implemented on `codex/v2-sidebar-edit-session`: six navigable sections share
+one view model, pending edits are tracked through nested zones and profiles,
+and Save/Discard keep the selected page open. Existing application forms and
+the full About dialog remain available while subsequent PRs refine page
+content to match the final mockups.
+
 | Commit title | Scope |
 | --- | --- |
 | `refactor: add desktop page navigation state` | Add lightweight page selection and selected-profile navigation without rebuilding the settings model. |

@@ -2,6 +2,10 @@
 
 ## 2.0.0 - Unreleased
 
+- Add six sidebar destinations sharing one settings edit session: Overview, Applications, Shortcuts, Security, Settings, and About
+- Keep unsaved edits across navigation and report pending, saving, and failed-save states
+- Keep settings open after Save or Discard, restore all saved values on Discard, and update previews for nested settings changes
+- Prevent runtime status changes from marking settings dirty, and preserve unrelated edits when shortcut or tray changes are saved
 - Introduce the approved private-view application icon across the executable, desktop windows, notification tray, and installed shortcuts
 - Add shared GUI colors, spacing, cards, accessible focus outlines, and action-button styles for the upcoming sidebar redesign
 - Show live per-profile states for protected, paused, focus-waiting, disabled, stopped, and missing-target applications

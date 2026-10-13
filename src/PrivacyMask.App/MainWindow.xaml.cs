@@ -23,6 +23,7 @@ public partial class MainWindow : Window
 
     private bool _allowClose;
     private bool _isSaving;
+    private bool _previewQueued;
     private readonly DesktopApplicationCatalog _applicationCatalog;
 
     public MainWindow(SettingsViewModel viewModel, DesktopApplicationCatalog applicationCatalog)
@@ -49,12 +50,82 @@ public partial class MainWindow : Window
 
     public void ReplaceViewModel(SettingsViewModel viewModel)
     {
+        if (DataContext is SettingsViewModel previous)
+        {
+            viewModel.SelectedPage = previous.SelectedPage;
+            previous.SettingsEdited -= QueuePreview;
+            previous.Dispose();
+        }
+
         DataContext = viewModel;
+        viewModel.SettingsEdited += QueuePreview;
+    }
+
+    private void QueuePreview()
+    {
+        if (!IsLoaded || _isSaving || _previewQueued || _allowClose) return;
+        _previewQueued = true;
+        var editedSession = ViewModel;
+        Dispatcher.BeginInvoke(() =>
+        {
+            _previewQueued = false;
+            if (!ReferenceEquals(editedSession, DataContext) || !IsVisible || _isSaving) return;
+            var preview = editedSession.ToModel();
+            if (!HasBindingErrors(this) && AppSettingsValidator.Validate(preview).Count == 0)
+            {
+                PreviewRequested?.Invoke(preview);
+            }
+        }, System.Windows.Threading.DispatcherPriority.Background);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        ViewModel.SettingsEdited -= QueuePreview;
+        ViewModel.Dispose();
+        base.OnClosed(e);
     }
 
     public void AllowClose()
     {
         _allowClose = true;
+    }
+
+    private void Navigate_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not DesktopPage page)
+        {
+            return;
+        }
+
+        if (!CommitFocusedEditor() || !CommitGridEditors(this) || HasBindingErrors(this))
+        {
+            System.Windows.MessageBox.Show(this,
+                "Correct the highlighted value before changing pages. Your edits are retained.",
+                "Check this value", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        ViewModel.SelectedPage = page;
+    }
+
+    private static bool CommitGridEditors(DependencyObject element)
+    {
+        if (element is System.Windows.Controls.DataGrid grid
+            && (!grid.CommitEdit(DataGridEditingUnit.Cell, true)
+                || !grid.CommitEdit(DataGridEditingUnit.Row, true)))
+        {
+            return false;
+        }
+
+        for (var index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(element); index++)
+        {
+            if (!CommitGridEditors(System.Windows.Media.VisualTreeHelper.GetChild(element, index)))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private async void Save_Click(object sender, RoutedEventArgs e)
@@ -64,7 +135,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (!CommitFocusedEditor() || HasBindingErrors(this))
+        if (!CommitFocusedEditor() || !CommitGridEditors(this) || HasBindingErrors(this))
         {
             System.Windows.MessageBox.Show(
                 this,
@@ -84,14 +155,16 @@ public partial class MainWindow : Window
         }
 
         _isSaving = true;
+        ViewModel.IsSaving = true;
         IsEnabled = false;
         try
         {
             await SaveRequested.Invoke(settings);
-            Hide();
+            ViewModel.SetSavedBaseline(ViewModel.ToModel());
         }
         catch (Exception exception)
         {
+            ViewModel.SaveError = exception.Message;
             System.Windows.MessageBox.Show(
                 this,
                 $"PrivacyMask could not save these changes.\n\n{exception.Message}",
@@ -103,12 +176,13 @@ public partial class MainWindow : Window
         {
             IsEnabled = true;
             _isSaving = false;
+            ViewModel.IsSaving = false;
         }
     }
 
     private void CloseToTray_Click(object sender, RoutedEventArgs e)
     {
-        DiscardAndHide();
+        DiscardRequested?.Invoke();
     }
 
     private void ApplyPreset_Click(object sender, RoutedEventArgs e)
@@ -116,7 +190,7 @@ public partial class MainWindow : Window
         if ((sender as FrameworkElement)?.Tag is AppProfileViewModel profile)
         {
             profile.ApplySelectedPreset();
-            PreviewRequested?.Invoke(ViewModel.ToModel());
+            QueuePreview();
         }
     }
 
@@ -127,7 +201,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void HoverRevealDimension_LostFocus(object sender, RoutedEventArgs e)
@@ -137,7 +211,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void MaskColorSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -147,7 +221,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void MaskStyleSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -157,7 +231,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void NumericTextBox_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
@@ -206,7 +280,7 @@ public partial class MainWindow : Window
             picker.SelectedApplication.ProcessName,
             executablePath: picker.SelectedApplication.ExecutablePath);
         ViewModel.AppProfiles.Add(new AppProfileViewModel(profile));
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void RelinkApplication_Click(object sender, RoutedEventArgs e)
@@ -231,7 +305,7 @@ public partial class MainWindow : Window
         profile.Relink(
             picker.SelectedApplication.ProcessName,
             picker.SelectedApplication.ExecutablePath);
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void RemoveApplication_Click(object sender, RoutedEventArgs e)
@@ -254,12 +328,12 @@ public partial class MainWindow : Window
         }
 
         ViewModel.AppProfiles.Remove(profile);
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private void ProfileEnabled_Click(object sender, RoutedEventArgs e)
     {
-        PreviewRequested?.Invoke(ViewModel.ToModel());
+        QueuePreview();
     }
 
     private IReadOnlySet<string> GetProtectedProcessNames(AppProfileViewModel? excludedProfile = null)

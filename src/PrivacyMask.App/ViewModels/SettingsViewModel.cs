@@ -6,11 +6,91 @@ using PrivacyMask.Core.Services;
 
 namespace PrivacyMask.App.ViewModels;
 
-public sealed class SettingsViewModel : ObservableObject
+public sealed class SettingsViewModel : ObservableObject, IDisposable
 {
     private bool _launchAtLogin;
     private bool _startMinimized;
     private PanicPinCredential? _panicPin;
+    private DesktopPage _selectedPage = DesktopPage.Overview;
+    private SettingsChangeTracker? _changeTracker;
+    private bool _isSaving;
+    private string? _saveError;
+
+    public bool HasPendingChanges => _changeTracker?.HasChanges == true;
+    public bool CanSave => HasPendingChanges && !IsSaving;
+    public string EditStatus => IsSaving ? "Saving…"
+        : SaveError is not null ? "Save failed — your edits are retained"
+        : HasPendingChanges ? "Unsaved changes" : "All changes saved";
+    public bool IsSaving
+    {
+        get => _isSaving;
+        set
+        {
+            if (SetProperty(ref _isSaving, value))
+            {
+                RaisePropertyChanged(nameof(CanSave));
+                RaisePropertyChanged(nameof(EditStatus));
+            }
+        }
+    }
+    public string? SaveError
+    {
+        get => _saveError;
+        set
+        {
+            if (SetProperty(ref _saveError, value)) RaisePropertyChanged(nameof(EditStatus));
+        }
+    }
+    public event Action? SettingsEdited;
+
+    public void SetSavedBaseline(AppSettings settings)
+    {
+        _changeTracker?.SetBaseline(settings);
+    }
+
+    private void SettingsChanged(bool edited)
+    {
+        if (edited || !HasPendingChanges) _saveError = null;
+        RaisePropertyChanged(nameof(HasPendingChanges));
+        RaisePropertyChanged(nameof(CanSave));
+        RaisePropertyChanged(nameof(EditStatus));
+        if (edited) SettingsEdited?.Invoke();
+    }
+
+    public void Dispose()
+    {
+        if (_changeTracker is not null)
+        {
+            _changeTracker.Changed -= SettingsChanged;
+            _changeTracker.Dispose();
+        }
+    }
+
+    public DesktopPage SelectedPage
+    {
+        get => _selectedPage;
+        set
+        {
+            if (SetProperty(ref _selectedPage, value))
+            {
+                RaisePropertyChanged(nameof(PageTitle));
+                RaisePropertyChanged(nameof(IsOverviewPage));
+                RaisePropertyChanged(nameof(IsApplicationsPage));
+                RaisePropertyChanged(nameof(IsShortcutsPage));
+                RaisePropertyChanged(nameof(IsSecurityPage));
+                RaisePropertyChanged(nameof(IsSettingsPage));
+                RaisePropertyChanged(nameof(IsAboutPage));
+            }
+        }
+    }
+
+    public string PageTitle => SelectedPage.ToString();
+    public bool IsOverviewPage => SelectedPage == DesktopPage.Overview;
+    public bool IsApplicationsPage => SelectedPage == DesktopPage.Applications;
+    public bool IsShortcutsPage => SelectedPage == DesktopPage.Shortcuts;
+    public bool IsSecurityPage => SelectedPage == DesktopPage.Security;
+    public bool IsSettingsPage => SelectedPage == DesktopPage.Settings;
+    public bool IsAboutPage => SelectedPage == DesktopPage.About;
 
     public static SettingsViewModel FromModel(
         AppSettings settings,
@@ -18,7 +98,7 @@ public sealed class SettingsViewModel : ObservableObject
         string configPath,
         IReadOnlySet<HotkeyAction> unavailableHotkeyActions)
     {
-        return new SettingsViewModel
+        var viewModel = new SettingsViewModel
         {
             _launchAtLogin = settings.LaunchAtLogin,
             _startMinimized = settings.StartMinimized,
@@ -36,11 +116,25 @@ public sealed class SettingsViewModel : ObservableObject
                 binding => new HotkeyBindingViewModel(binding, unavailableHotkeyActions.Contains(binding.Action)))),
             AppProfiles = new ObservableCollection<AppProfileViewModel>(settings.AppProfiles.Select(profile => new AppProfileViewModel(profile))),
         };
+        viewModel._changeTracker = new SettingsChangeTracker(viewModel);
+        viewModel._changeTracker.Changed += viewModel.SettingsChanged;
+        return viewModel;
     }
 
     public string ConfigPath { get; private set; } = string.Empty;
 
     public string CurrentModeSummary { get; private set; } = string.Empty;
+
+    public void UpdateRuntimeMode(RuntimeMode mode)
+    {
+        CurrentModeSummary = mode switch
+        {
+            RuntimeMode.Off => "Protection is paused for every application.",
+            RuntimeMode.Panic => "Panic masks are active for every protected application.",
+            _ => "Protection is active for enabled application profiles.",
+        };
+        RaisePropertyChanged(nameof(CurrentModeSummary));
+    }
 
     public ObservableCollection<HotkeyBindingViewModel> Hotkeys { get; private set; } = [];
 
