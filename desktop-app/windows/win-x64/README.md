@@ -31,6 +31,11 @@ launch at sign in.
 
 With the .NET 10 SDK installed, double-click `Install-PrivacyMask.bat` in the
 repository root. It publishes and installs the application in one operation.
+Exit an already running portable/repository copy from its tray before updating.
+After `git pull`, this rebuild is required: generated executables are not tracked.
+The distribution-folder `.cmd` also rebuilds when all source checkout markers
+are present, even if an older executable exists. Release archives do not contain
+those markers and continue to install without the SDK.
 
 To perform the same steps manually, first publish the standalone executable:
 
@@ -41,8 +46,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish-win-x64-single-file.p
 Then run the local installer:
 
 ```powershell
-.\desktop-app\windows\win-x64\Install-PrivacyMask.cmd
+powershell -ExecutionPolicy Bypass -File .\desktop-app\windows\win-x64\Install-PrivacyMask.ps1
 ```
 
 The generated `single-file` and `app` directories are local build output and
 are ignored by Git.
+Calling the `.ps1` directly installs the selected existing build without
+rebuilding; use the root `.bat` or checkout `.cmd` for a normal source update.

@@ -2,6 +2,8 @@
 
 ## 2.0.0 - Unreleased
 
+- Rebuild complete source checkouts from the distribution installer instead of silently reinstalling a cached executable after pull
+- Test source/release dispatch, failure exit codes and prevention of stale-build fallback in local and GitHub verification
 - Add isolated compiled WPF layout/edit-session smoke checks to local verification and Windows CI
 - Keep compact application details within the viewport while retaining advanced-grid scrolling and grouped reveal dimensions
 - Move keyboard focus into newly selected pages and back to application search

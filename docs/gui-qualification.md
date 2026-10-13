@@ -93,6 +93,15 @@ not met; this report does not silently revise that budget.
 
 ## Remaining release gates
 
+Follow-up on 2026-10-14: the installer `.cmd` was found to prefer cached
+executables over source rebuilds. Source checkout markers now take precedence;
+release archives retain direct SDK-free installation. Six isolated dispatch
+cases pass, including stale builds and build-failure exit-code preservation.
+Local verification passes 196 unit tests, 17 script syntax checks, transactional
+installation, and compiled GUI checks. Release verification now includes both
+entrypoint and compiled GUI smoke checks before packaging. Windows Computer Use
+initialization failed again on retry; the live gates below remain outstanding.
+
 1. Live keyboard Tab/Shift+Tab, page focus, F1/help/Escape, modal focus return,
    screen-reader labels and announcements.
 2. Real 100/125/150/200% scaling and moving windows between monitors.
