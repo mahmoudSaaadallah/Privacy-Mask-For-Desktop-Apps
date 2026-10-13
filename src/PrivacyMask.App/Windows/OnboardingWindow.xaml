@@ -1,131 +1,40 @@
 <Window x:Class="PrivacyMask.App.Windows.OnboardingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Welcome to PrivacyMask"
-        Foreground="{StaticResource InkBrush}"
+        Title="Welcome to PrivacyMask" Width="760" Height="720" MinWidth="540" MinHeight="480"
+        Foreground="{StaticResource InkBrush}" Background="{StaticResource CanvasBrush}"
         Icon="pack://application:,,,/PrivacyMask.App;component/Assets/PrivacyMask.ico"
-        Width="760"
-        Height="560"
-        MinWidth="720"
-        MinHeight="520"
-        FontFamily="Segoe UI Variable Text"
-        Background="#F2ECE3"
-        AutomationProperties.Name="Welcome to PrivacyMask"
-        AutomationProperties.HelpText="Choose startup defaults before PrivacyMask begins protecting supported applications."
-        WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize">
-    <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                  VerticalScrollBarVisibility="Auto">
-    <Grid MinWidth="680"
-          MinHeight="480"
-          Margin="18">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1.2*" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-
-        <Border Padding="28"
-                Background="#17313D"
-                CornerRadius="26">
+        FontFamily="Segoe UI Variable Text" WindowStartupLocation="CenterScreen"
+        AutomationProperties.Name="Welcome to PrivacyMask" ResizeMode="NoResize">
+    <Grid Margin="24">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <DockPanel Margin="0,0,0,20">
+            <Image Source="{StaticResource PrivacyMaskLogo}" Width="64" Height="64" Margin="0,0,18,0"/>
+            <StackPanel><TextBlock Text="Welcome to PrivacyMask" Style="{StaticResource PageHeading}" TextWrapping="Wrap"/><TextBlock Text="Local privacy for the desktop applications you choose." Foreground="{StaticResource MutedInkBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel>
+        </DockPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
-                <Border Width="72"
-                        Height="72"
-                        Background="#1F6E6C"
-                        CornerRadius="22">
-                    <TextBlock HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               FontSize="28"
-                               FontWeight="Bold"
-                               Foreground="#F8F4ED"
-                               Text="PM" />
-                </Border>
-
-                <TextBlock Margin="0,22,0,0"
-                           FontSize="30"
-                           FontWeight="Bold"
-                           Foreground="#F8F4ED"
-                           Text="Desktop privacy without touching your chats" />
-                <TextBlock Margin="0,14,0,0"
-                           TextWrapping="Wrap"
-                           Foreground="#D4E3E3"
-                           Text="PrivacyMask places click-through masks over WhatsApp, Telegram, and other desktop applications you choose. It does not inject into apps, scrape content, or send telemetry anywhere." />
-
-                <Border Margin="0,26,0,0"
-                        Padding="16"
-                        Background="#244554"
-                        CornerRadius="18">
-                    <StackPanel>
-                        <TextBlock FontWeight="SemiBold"
-                                   Foreground="#F8F4ED"
-                                   Text="Important limitation" />
-                        <TextBlock Margin="0,8,0,0"
-                                   TextWrapping="Wrap"
-                                   Foreground="#D4E3E3"
-                                   Text="The overlay is designed for local privacy first. Full-screen sharing usually works well, but window-only sharing of WhatsApp or Telegram may not include the mask." />
-                    </StackPanel>
-                </Border>
+                <Border Style="{StaticResource Card}" Margin="0,0,0,14"><StackPanel>
+                    <TextBlock Text="1. Choose what to protect" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="WhatsApp and Telegram are included. Use Add application for another program, or focus it and press Ctrl + Shift + P to add it with default protection. On an existing profile, the shortcut pauses or resumes only that app." TextWrapping="Wrap" Margin="0,8,0,0" Foreground="{StaticResource MutedInkBrush}"/>
+                </StackPanel></Border>
+                <Border Style="{StaticResource Card}" Margin="0,0,0,14"><StackPanel>
+                    <TextBlock Text="2. Tune the mask and reveal" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="Adjust blur in Overview or Manage. Lower strength reveals more detail. Hover reveals a 600 × 70 pixel region by default. Hold Alt alone for 0.5 seconds to reveal the focused app; another key cancels reveal. Ctrl + Alt + Shift + ↑/↓ adjusts its blur by 5%." TextWrapping="Wrap" Margin="0,8,0,0" Foreground="{StaticResource MutedInkBrush}"/>
+                </StackPanel></Border>
+                <Border Style="{StaticResource Card}" Margin="0,0,0,14"><StackPanel>
+                    <TextBlock Text="3. Use panic when you need full concealment" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="Ctrl + Shift + H applies an opaque panic mask to the focused app. Panic mask all in Overview or the tray covers all protected apps. First use asks for a PIN; unlocking requires it. Hover and Alt never reveal panic masks." TextWrapping="Wrap" Margin="0,8,0,0" Foreground="{StaticResource MutedInkBrush}"/>
+                </StackPanel></Border>
+                <Border Style="{StaticResource Card}" Margin="0,0,0,14"><StackPanel>
+                    <TextBlock Text="Startup preferences" FontSize="18" FontWeight="SemiBold"/>
+                    <CheckBox x:Name="LaunchAtLoginCheckBox" Content="_Launch PrivacyMask when I sign in" Margin="0,14,0,12" AutomationProperties.HelpText="Starts PrivacyMask automatically for this Windows user."/>
+                    <CheckBox x:Name="StartMinimizedCheckBox" Content="Start _minimized to tray" AutomationProperties.HelpText="Hide the settings window on subsequent startup. You can reopen it from the tray."/>
+                    <TextBlock Text="These choices can be changed later in Settings." Foreground="{StaticResource MutedInkBrush}" Margin="0,12,0,0" TextWrapping="Wrap"/>
+                </StackPanel></Border>
+                <TextBlock Text="No injection, tracking, analytics, or cloud dependency. Live frames stay in memory. The mask is for local privacy and best-effort full-screen sharing; window-only sharing may omit it. Blur can retain detail — use solid redact or panic for complete concealment." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,0,8,8"/>
             </StackPanel>
-        </Border>
-
-        <Border Grid.Column="1"
-                Padding="26"
-                Margin="18,0,0,0"
-                Background="#FCFAF6"
-                CornerRadius="26">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <StackPanel>
-                    <TextBlock FontSize="26"
-                               FontWeight="Bold"
-                               Text="Choose your defaults" />
-                    <TextBlock Margin="0,10,0,0"
-                               Foreground="#51656E"
-                               TextWrapping="Wrap"
-                               Text="You can fine-tune every preset later from the tray settings window." />
-                </StackPanel>
-
-                <StackPanel Grid.Row="1"
-                            Margin="0,24,0,0">
-                    <CheckBox x:Name="LaunchAtLoginCheckBox"
-                              AutomationProperties.HelpText="Starts PrivacyMask automatically for the current Windows user."
-                              Content="_Launch PrivacyMask when I sign in" />
-                    <CheckBox x:Name="StartMinimizedCheckBox"
-                              IsChecked="True"
-                              AutomationProperties.HelpText="Starts without opening the settings window."
-                              Content="Start _minimized to tray" />
-
-                    <Border Margin="0,18,0,0"
-                            Padding="16"
-                            Background="#F7F1E7"
-                            CornerRadius="16">
-                        <StackPanel>
-                            <TextBlock FontWeight="SemiBold"
-                                       Text="What happens next" />
-                            <TextBlock Margin="0,8,0,0"
-                                       Foreground="#51656E"
-                                       TextWrapping="Wrap"
-                                       Text="The tray utility watches for protected windows immediately. Focus any desktop app and press Ctrl+Shift+P: an unconfigured app is added with the default mask, while an existing app is paused or resumed. Mouse-hover reveal works for every added app. Ctrl+Shift+H toggles the focused app's panic mask, and holding Alt alone for 0.5 seconds reveals only the focused app. The first panic action asks you to create a PIN, which is required to unlock it. Panic mask all remains available from the tray." />
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-
-                <StackPanel Grid.Row="2"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right">
-                    <Button Width="160"
-                            Background="#CC7A21"
-                            BorderBrush="#CC7A21"
-                            Click="Continue_Click"
-                            Content="_Use these defaults"
-                            IsDefault="True" />
-                </StackPanel>
-            </Grid>
-        </Border>
+        </ScrollViewer>
+        <Button Grid.Row="2" Content="_Use these defaults" IsDefault="True" Click="Continue_Click" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right" Margin="0,18,0,0"/>
     </Grid>
-    </ScrollViewer>
 </Window>
