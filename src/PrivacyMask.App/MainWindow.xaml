@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModels="clr-namespace:PrivacyMask.App.ViewModels"
+        xmlns:services="clr-namespace:PrivacyMask.App.Services"
         mc:Ignorable="d"
         Title="PrivacyMask"
         Foreground="{StaticResource InkBrush}"
@@ -20,202 +21,53 @@
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+        <services:PageSelectionConverter x:Key="PageSelection" />
+        <Style x:Key="NavigationButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Margin" Value="0,4" />
+            <Setter Property="MinHeight" Value="48" />
+            <Style.Triggers>
+                <DataTrigger Value="True">
+                    <DataTrigger.Binding>
+                        <MultiBinding Converter="{StaticResource PageSelection}">
+                            <Binding Path="SelectedPage" />
+                            <Binding Path="Tag" RelativeSource="{RelativeSource Self}" />
+                        </MultiBinding>
+                    </DataTrigger.Binding>
+                    <Setter Property="Background" Value="#245673" />
+                    <Setter Property="BorderBrush" Value="#00B6AD" />
+                    <Setter Property="BorderThickness" Value="3,0,0,0" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
-    <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                  VerticalScrollBarVisibility="Disabled">
-    <Grid MinWidth="1120"
-          Margin="18">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="320" />
-            <ColumnDefinition Width="18" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-
-        <Border Grid.Column="0"
-                Padding="24"
-                Background="#17313D"
-                CornerRadius="26">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <Border Width="62"
-                            Height="62"
-                            Margin="0,0,0,18"
-                            Background="#1F6E6C"
-                            CornerRadius="18">
-                        <TextBlock HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontSize="24"
-                                   FontWeight="Bold"
-                                   Foreground="#F7F3ED"
-                                   Text="PM" />
-                    </Border>
-
-                    <TextBlock FontSize="30"
-                               FontWeight="Bold"
-                               Foreground="#F7F3ED"
-                               Text="PrivacyMask" />
-                    <TextBlock Margin="0,8,0,20"
-                               TextWrapping="Wrap"
-                               Foreground="#D4E3E3"
-                               Text="A local-only privacy companion for the desktop applications you choose." />
-
-                    <Border Margin="0,0,0,18"
-                            Padding="18"
-                            Background="#F8F4ED"
-                            CornerRadius="20">
-                        <StackPanel>
-                            <TextBlock FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Text="General" />
-                            <TextBlock Margin="0,6,0,18"
-                                       Foreground="#51656E"
-                                       Text="Keep the utility lightweight and predictable." />
-
-                            <CheckBox Content="_Launch when I sign in"
-                                      AutomationProperties.HelpText="Starts PrivacyMask automatically for the current Windows user."
-                                      IsChecked="{Binding LaunchAtLogin, Mode=TwoWay}" />
-                            <CheckBox Content="Start _minimized to tray"
-                                      AutomationProperties.HelpText="Keeps the settings window hidden when PrivacyMask starts automatically."
-                                      IsChecked="{Binding StartMinimized, Mode=TwoWay}" />
-
-                            <Border Margin="0,8,0,0"
-                                    Padding="12"
-                                    Background="#ECE4D6"
-                                    CornerRadius="16">
-                                <StackPanel>
-                                    <TextBlock FontWeight="SemiBold"
-                                               Text="Current mode" />
-                                    <TextBlock Margin="0,6,0,0"
-                                               Foreground="#51656E"
-                                               Text="{Binding CurrentModeSummary}" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Margin="0,12,0,0"
-                                    Padding="12"
-                                    Background="#ECE4D6"
-                                    CornerRadius="16">
-                                <StackPanel>
-                                    <TextBlock FontWeight="SemiBold"
-                                               Text="Panic unlock PIN" />
-                                    <TextBlock Margin="0,6,0,10"
-                                               Foreground="#51656E"
-                                               TextWrapping="Wrap"
-                                               Text="{Binding PanicPinStatus}" />
-                                    <Button MinWidth="110"
-                                            Padding="10,7"
-                                            HorizontalAlignment="Left"
-                                            Background="#1F6E6C"
-                                            BorderBrush="#1F6E6C"
-                                            Foreground="White"
-                                            AutomationProperties.HelpText="Add or change the PIN required to disable panic masks."
-                                            Click="ConfigurePanicPin_Click"
-                                            Content="{Binding PanicPinActionLabel}" />
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Margin="0,0,0,18"
-                            Padding="18"
-                            Background="#F8F4ED"
-                            CornerRadius="20">
-                        <StackPanel>
-                            <TextBlock FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Text="Hotkeys" />
-                            <TextBlock Margin="0,6,0,14"
-                                       Foreground="#51656E"
-                                       Text="V1 ships with opinionated defaults. You can turn each one on or off here." />
-
-                            <ItemsControl ItemsSource="{Binding Hotkeys}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type viewModels:HotkeyBindingViewModel}">
-                                        <Border Margin="0,0,0,10"
-                                                Padding="12"
-                                                Background="White"
-                                                CornerRadius="14">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel>
-                                                    <TextBlock FontWeight="SemiBold"
-                                                               Text="{Binding DisplayName}" />
-                                                    <TextBlock Margin="0,4,0,0"
-                                                               Foreground="#51656E"
-                                                               Text="{Binding GestureText}" />
-                                                    <TextBlock Margin="0,4,0,0"
-                                                               Foreground="#A33A2B"
-                                                               Text="{Binding RegistrationStatus}"
-                                                               TextWrapping="Wrap">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding HasRegistrationFailure}" Value="True">
-                                                                        <Setter Property="Visibility" Value="Visible" />
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </StackPanel>
-                                                <CheckBox Grid.Column="1"
-                                                          VerticalAlignment="Center"
-                                                          AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0}}"
-                                                          AutomationProperties.HelpText="Enable or disable this global shortcut."
-                                                          Content="Enabled"
-                                                          IsChecked="{Binding Enabled, Mode=TwoWay}" />
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Margin="0,0,0,18"
-                            Padding="18"
-                            Background="#F8F4ED"
-                            CornerRadius="20">
-                        <StackPanel>
-                            <TextBlock FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Text="About" />
-                            <TextBlock Margin="0,6,0,14"
-                                       Foreground="#51656E"
-                                       TextWrapping="Wrap"
-                                       Text="Read the privacy commitment, app purpose, and direct contact details for the developer." />
-                            <Button Width="142"
-                                    Padding="12,10"
-                                    HorizontalAlignment="Left"
-                                    Background="#1F6E6C"
-                                    BorderBrush="#1F6E6C"
-                                    Click="OpenAbout_Click"
-                                    Content="_About PrivacyMask" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Padding="18"
-                            Background="#F8F4ED"
-                            CornerRadius="20">
-                        <StackPanel>
-                            <TextBlock FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Text="Capture note" />
-                            <TextBlock Margin="0,6,0,0"
-                                       TextWrapping="Wrap"
-                                       Foreground="#51656E"
-                                       Text="The overlay is strongest for local privacy and best-effort full-screen sharing. Window-only capture of the target app may bypass it." />
-                        </StackPanel>
-                    </Border>
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="220" /><ColumnDefinition Width="16" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+        <Border Background="{StaticResource SidebarBrush}" CornerRadius="16" Padding="20">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="0,0,0,24">
+                    <Image Source="{StaticResource PrivacyMaskLogo}" Width="56" Height="56" HorizontalAlignment="Left" />
+                    <TextBlock Text="PrivacyMask" FontSize="24" FontWeight="Bold" Foreground="White" Margin="0,16,0,0" />
                 </StackPanel>
-            </ScrollViewer>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel><Button Content="Overview" Tag="{x:Static viewModels:DesktopPage.Overview}" Style="{StaticResource NavigationButton}" Click="Navigate_Click"><Button.Resources><Style TargetType="TextBlock"><Setter Property="Foreground" Value="White" /></Style></Button.Resources></Button>
+<Button Content="Applications" Tag="{x:Static viewModels:DesktopPage.Applications}" Style="{StaticResource NavigationButton}" Click="Navigate_Click"><Button.Resources><Style TargetType="TextBlock"><Setter Property="Foreground" Value="White" /></Style></Button.Resources></Button>
+<Button Content="Shortcuts" Tag="{x:Static viewModels:DesktopPage.Shortcuts}" Style="{StaticResource NavigationButton}" Click="Navigate_Click"><Button.Resources><Style TargetType="TextBlock"><Setter Property="Foreground" Value="White" /></Style></Button.Resources></Button>
+<Button Content="Security" Tag="{x:Static viewModels:DesktopPage.Security}" Style="{StaticResource NavigationButton}" Click="Navigate_Click"><Button.Resources><Style TargetType="TextBlock"><Setter Property="Foreground" Value="White" /></Style></Button.Resources></Button>
+<Button Content="Settings" Tag="{x:Static viewModels:DesktopPage.Settings}" Style="{StaticResource NavigationButton}" Click="Navigate_Click"><Button.Resources><Style TargetType="TextBlock"><Setter Property="Foreground" Value="White" /></Style></Button.Resources></Button>
+<Button Content="About" Tag="{x:Static viewModels:DesktopPage.About}" Style="{StaticResource NavigationButton}" Click="Navigate_Click"><Button.Resources><Style TargetType="TextBlock"><Setter Property="Foreground" Value="White" /></Style></Button.Resources></Button></StackPanel>
+                </ScrollViewer>
+            </DockPanel>
         </Border>
-
-        <Border Grid.Column="2"
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+            <Border Background="#FCFAF6" CornerRadius="16">
+                <Grid>
+                    <ScrollViewer x:Name="OverviewPage" Visibility="{Binding IsOverviewPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto"><StackPanel Margin="24"><TextBlock Style="{StaticResource PageHeading}" Text="Overview" Margin="0,0,0,24" /><Border Style="{StaticResource Card}"><StackPanel><TextBlock FontSize="22" FontWeight="SemiBold" Text="Protection status" /><TextBlock Text="{Binding CurrentModeSummary}" TextWrapping="Wrap" Margin="0,12,0,20" /><Button Style="{StaticResource PrimaryButton}" Content="Manage applications" HorizontalAlignment="Left" Tag="{x:Static viewModels:DesktopPage.Applications}" Click="Navigate_Click" /></StackPanel></Border><Border Style="{StaticResource Card}" Margin="0,20,0,0"><StackPanel><TextBlock FontWeight="SemiBold" Text="Quick enrollment" /><TextBlock Text="Focus an application and press Ctrl + Shift + P to add it or toggle its mask." TextWrapping="Wrap" Margin="0,10,0,0" /></StackPanel></Border></StackPanel></ScrollViewer>
+                    <Border x:Name="ApplicationsPage" Visibility="{Binding IsApplicationsPage, Converter={StaticResource BooleanToVisibility}}"
                 Padding="24"
                 Background="#FCFAF6"
                 CornerRadius="26">
@@ -563,34 +415,146 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <DockPanel Grid.Row="2"
-                           Margin="0,18,0,0">
-                    <TextBlock VerticalAlignment="Center"
-                               Foreground="#51656E"
-                               Text="Live previews are temporary. Save to keep them, or discard to restore the saved settings." />
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                DockPanel.Dock="Right">
-                        <Button Width="160"
-                                 Margin="0,0,12,0"
-                                 Background="#C3B6A2"
-                                 BorderBrush="#C3B6A2"
-                                 AutomationProperties.HelpText="Discard temporary previews and hide the settings window."
-                                 Click="CloseToTray_Click"
-                                 Content="_Discard and close"
-                                 ToolTip="Discard preview changes and hide the window (Esc)"
-                                 Foreground="#17313D" />
-                        <Button Width="148"
-                                 Background="#CC7A21"
-                                 BorderBrush="#CC7A21"
-                                 AutomationProperties.HelpText="Save all settings for future app launches and hide the window."
-                                 Click="Save_Click"
-                                 Content="_Save changes"
-                                 ToolTip="Save changes and hide the window (Ctrl+S)" />
-                    </StackPanel>
-                </DockPanel>
+                
             </Grid>
         </Border>
+                    <ScrollViewer x:Name="ShortcutsPage" Visibility="{Binding IsShortcutsPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto"><StackPanel Margin="24"><TextBlock Style="{StaticResource PageHeading}" Text="Shortcuts" Margin="0,0,0,24" /><Border Margin="0,0,0,18"
+                            Padding="18"
+                            Background="#F8F4ED"
+                            CornerRadius="20">
+                        <StackPanel>
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Text="Shortcuts" />
+                            <TextBlock Margin="0,6,0,14"
+                                       Foreground="#51656E"
+                                       Text="Enable the shortcuts you use. Unavailable bindings are marked below." />
+
+                            <ItemsControl ItemsSource="{Binding Hotkeys}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type viewModels:HotkeyBindingViewModel}">
+                                        <Border Margin="0,0,0,10"
+                                                Padding="12"
+                                                Background="White"
+                                                CornerRadius="14">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock FontWeight="SemiBold"
+                                                               Text="{Binding DisplayName}" />
+                                                    <TextBlock Margin="0,4,0,0"
+                                                               Foreground="#51656E"
+                                                               Text="{Binding GestureText}" />
+                                                    <TextBlock Margin="0,4,0,0"
+                                                               Foreground="#A33A2B"
+                                                               Text="{Binding RegistrationStatus}"
+                                                               TextWrapping="Wrap">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HasRegistrationFailure}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                                <CheckBox Grid.Column="1"
+                                                          VerticalAlignment="Center"
+                                                          AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0}}"
+                                                          AutomationProperties.HelpText="Enable or disable this global shortcut."
+                                                          Content="Enabled"
+                                                          IsChecked="{Binding Enabled, Mode=TwoWay}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border></StackPanel></ScrollViewer>
+                    <ScrollViewer x:Name="SecurityPage" Visibility="{Binding IsSecurityPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto"><StackPanel Margin="24"><TextBlock Style="{StaticResource PageHeading}" Text="Security" Margin="0,0,0,24" /><Border Margin="0,12,0,0"
+                                    Padding="12"
+                                    Background="#ECE4D6"
+                                    CornerRadius="16">
+                                <StackPanel>
+                                    <TextBlock FontWeight="SemiBold"
+                                               Text="Panic unlock PIN" />
+                                    <TextBlock Margin="0,6,0,10"
+                                               Foreground="#51656E"
+                                               TextWrapping="Wrap"
+                                               Text="{Binding PanicPinStatus}" />
+                                    <Button MinWidth="110"
+                                            Padding="10,7"
+                                            HorizontalAlignment="Left"
+                                            Background="#1F6E6C"
+                                            BorderBrush="#1F6E6C"
+                                            Foreground="White"
+                                            AutomationProperties.HelpText="Add or change the PIN required to disable panic masks."
+                                            Click="ConfigurePanicPin_Click"
+                                            Content="{Binding PanicPinActionLabel}" />
+                                </StackPanel>
+                            </Border></StackPanel></ScrollViewer>
+                    <ScrollViewer x:Name="SettingsPage" Visibility="{Binding IsSettingsPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto"><StackPanel Margin="24"><TextBlock Style="{StaticResource PageHeading}" Text="Settings" Margin="0,0,0,24" /><Border Margin="0,0,0,18"
+                            Padding="18"
+                            Background="#F8F4ED"
+                            CornerRadius="20">
+                        <StackPanel>
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Text="General" />
+                            <TextBlock Margin="0,6,0,18"
+                                       Foreground="#51656E"
+                                       Text="Keep the utility lightweight and predictable." />
+
+                            <CheckBox Content="_Launch when I sign in"
+                                      AutomationProperties.HelpText="Starts PrivacyMask automatically for the current Windows user."
+                                      IsChecked="{Binding LaunchAtLogin, Mode=TwoWay}" />
+                            <CheckBox Content="Start _minimized to tray"
+                                      AutomationProperties.HelpText="Keeps the settings window hidden when PrivacyMask starts automatically."
+                                      IsChecked="{Binding StartMinimized, Mode=TwoWay}" />
+
+                            
+
+                            
+                        </StackPanel>
+                    </Border><TextBlock Text="{Binding ConfigPath}" TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" /></StackPanel></ScrollViewer>
+                    <ScrollViewer x:Name="AboutPage" Visibility="{Binding IsAboutPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto"><StackPanel Margin="24"><TextBlock Style="{StaticResource PageHeading}" Text="About PrivacyMask" Margin="0,0,0,24" /><Border Margin="0,0,0,18"
+                            Padding="18"
+                            Background="#F8F4ED"
+                            CornerRadius="20">
+                        <StackPanel>
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Text="About" />
+                            <TextBlock Margin="0,6,0,14"
+                                       Foreground="#51656E"
+                                       TextWrapping="Wrap"
+                                       Text="Read the privacy commitment, app purpose, and direct contact details for the developer." />
+                            <Button Width="142"
+                                    Padding="12,10"
+                                    HorizontalAlignment="Left"
+                                    Background="#1F6E6C"
+                                    BorderBrush="#1F6E6C"
+                                    Click="OpenAbout_Click"
+                                    Content="_About PrivacyMask" />
+                        </StackPanel>
+                    </Border></StackPanel></ScrollViewer>
+                </Grid>
+            </Border>
+            <Border Grid.Row="1" Padding="12" Margin="0,12,0,0" Background="White" CornerRadius="12">
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="DiscardButton" Content="Discard" Style="{StaticResource SecondaryButton}" Click="CloseToTray_Click" Margin="0,0,12,0" />
+                        <Button x:Name="SaveButton" Content="Save changes" Style="{StaticResource PrimaryButton}" Click="Save_Click" />
+                    </StackPanel>
+                    <TextBlock Text="Live previews are temporary until saved." VerticalAlignment="Center" Foreground="{StaticResource MutedInkBrush}" TextWrapping="Wrap" />
+                </DockPanel>
+            </Border>
+        </Grid>
     </Grid>
-    </ScrollViewer>
 </Window>

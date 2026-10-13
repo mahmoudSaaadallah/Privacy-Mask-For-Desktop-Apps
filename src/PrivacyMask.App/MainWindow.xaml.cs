@@ -57,6 +57,41 @@ public partial class MainWindow : Window
         _allowClose = true;
     }
 
+    private void Navigate_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not DesktopPage page)
+        {
+            return;
+        }
+
+        if (!CommitFocusedEditor() || !CommitGridEditors(this))
+        {
+            return;
+        }
+
+        ViewModel.SelectedPage = page;
+    }
+
+    private static bool CommitGridEditors(DependencyObject element)
+    {
+        if (element is System.Windows.Controls.DataGrid grid
+            && (!grid.CommitEdit(DataGridEditingUnit.Cell, true)
+                || !grid.CommitEdit(DataGridEditingUnit.Row, true)))
+        {
+            return false;
+        }
+
+        for (var index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(element); index++)
+        {
+            if (!CommitGridEditors(System.Windows.Media.VisualTreeHelper.GetChild(element, index)))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private async void Save_Click(object sender, RoutedEventArgs e)
     {
         if (SaveRequested is null || _isSaving)
