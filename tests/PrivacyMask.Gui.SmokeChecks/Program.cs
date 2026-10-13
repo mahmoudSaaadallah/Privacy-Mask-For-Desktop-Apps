@@ -70,6 +70,10 @@ internal static class Program
                     expander.IsExpanded = true;
                     Layout(root, size);
                     Check(Find<DataGrid>(root).Single().Columns.Count == 10, "Advanced fields lost.");
+                    var detailScroller = (ScrollViewer)window.FindName("ApplicationDetailsPage");
+                    Check(detailScroller.HorizontalScrollBarVisibility == ScrollBarVisibility.Disabled
+                        && detailScroller.ExtentWidth <= detailScroller.ViewportWidth + 1,
+                        "Primary detail form requires horizontal scrolling.");
                     CheckFiniteControls(root);
                     if (screenshots is not null) Render(root, size, scale, System.IO.Path.Combine(screenshots, $"Details-{scale:0.00}.png"));
                     session.ShowApplicationList();
@@ -111,6 +115,8 @@ internal static class Program
     private static void Layout(FrameworkElement root, Size size)
     {
         Drain();
+        root.InvalidateMeasure();
+        root.InvalidateArrange();
         root.Measure(size);
         root.Arrange(new Rect(new Point(), size));
         root.UpdateLayout();
