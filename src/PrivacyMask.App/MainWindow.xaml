@@ -486,7 +486,6 @@
                                                             <TextBlock Text="{Binding ScopeSummary}" TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,8,18,0"/>
                                                             <TextBlock
                                                                 Margin="0,4,0,0"
-                                                                Foreground="#A33A2B"
                                                                 Text="{Binding RegistrationStatus}"
                                                                 TextWrapping="Wrap">
                                                                 <TextBlock.Style>
@@ -513,7 +512,7 @@
                                                             Grid.Column="1"
                                                             VerticalAlignment="Center"
                                                             AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0}}"
-                        AutomationProperties.HelpText="Enable or disable this shortcut after saving. It remains scoped as described on the card."
+                                                            AutomationProperties.HelpText="Enable or disable this shortcut after saving. It remains scoped as described on the card."
                                                             Content="Enabled"
                                                             IsChecked="{Binding Enabled, Mode=TwoWay}" />
                                                     </Grid>
@@ -582,13 +581,15 @@
                                     <TextBlock
                                         FontSize="18"
                                         FontWeight="SemiBold"
-                                        Text="General" />
+                                        Text="Startup" />
                                     <TextBlock
                                         Margin="0,6,0,18"
                                         Foreground="#51656E"
-                                        Text="Keep the utility lightweight and predictable." />
+                                        TextWrapping="Wrap"
+                                        Text="Choose how PrivacyMask starts for this Windows user. Save to apply these preferences." />
                                     <CheckBox
                                         Content="_Launch when I sign in"
+                                        Margin="0,0,0,14"
                                         AutomationProperties.HelpText="Starts PrivacyMask automatically for the current Windows user."
                                         IsChecked="{Binding LaunchAtLogin, Mode=TwoWay}" />
                                     <CheckBox
@@ -597,10 +598,14 @@
                                         IsChecked="{Binding StartMinimized, Mode=TwoWay}" />
                                 </StackPanel>
                             </Border>
-                            <TextBlock
-                                Text="{Binding ConfigPath}"
-                                TextWrapping="Wrap"
-                                Foreground="{StaticResource MutedInkBrush}" />
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="Local configuration" FontSize="18" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Settings stay on this device. Updates preserve them; uninstalling removes them." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,8,0,12"/>
+                                    <TextBox Text="{Binding ConfigPath, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" AutomationProperties.Name="Settings file location" Padding="0" Margin="0,0,0,16"/>
+                                    <Button Content="Open settings folder" HorizontalAlignment="Left" Click="OpenConfigurationFolder_Click" Style="{StaticResource SecondaryButton}" AutomationProperties.HelpText="Open the directory containing your local settings in Windows Explorer."/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
                     <ScrollViewer

@@ -292,6 +292,24 @@ public partial class MainWindow : Window
         aboutWindow.ShowDialog();
     }
 
+    private void OpenConfigurationFolder_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var folder = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(ViewModel.ConfigPath));
+            if (folder is null || !System.IO.Directory.Exists(folder))
+                throw new System.IO.DirectoryNotFoundException("The settings folder does not exist yet.");
+            var startInfo = new System.Diagnostics.ProcessStartInfo("explorer.exe") { UseShellExecute = true };
+            startInfo.ArgumentList.Add(folder);
+            System.Diagnostics.Process.Start(startInfo);
+        }
+        catch (Exception exception)
+        {
+            System.Windows.MessageBox.Show(this, $"The settings folder could not be opened.\n\n{exception.Message}",
+                "Open settings folder", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
     private void ConfigurePanicPin_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new PanicPinSetupWindow(ViewModel.PanicPin)
