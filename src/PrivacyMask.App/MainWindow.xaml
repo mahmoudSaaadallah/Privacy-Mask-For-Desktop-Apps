@@ -389,49 +389,33 @@
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
-                    <ScrollViewer
-                        x:Name="SettingsPage"
-                        Visibility="{Binding IsSettingsPage, Converter={StaticResource BooleanToVisibility}}"
-                        VerticalScrollBarVisibility="Auto">
-                        <StackPanel
-                            Margin="24">
-                            <TextBlock
-                                Style="{StaticResource PageHeading}"
-                                Text="Settings"
-                                Margin="0,0,0,24" />
-                            <Border
-                                Margin="0,0,0,18"
-                                Padding="18"
-                                Background="#F8F4ED"
-                                CornerRadius="20">
+
+                    <ScrollViewer x:Name="SettingsPage" Visibility="{Binding IsSettingsPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="28">
+                            <TextBlock Text="Settings" Style="{StaticResource PageHeading}" Margin="0,0,0,26"/>
+                            <Border Style="{StaticResource Card}" Padding="24">
                                 <StackPanel>
-                                    <TextBlock
-                                        FontSize="18"
-                                        FontWeight="SemiBold"
-                                        Text="Startup" />
-                                    <TextBlock
-                                        Margin="0,6,0,18"
-                                        Foreground="#51656E"
-                                        TextWrapping="Wrap"
-                                        Text="Choose how PrivacyMask starts for this Windows user. Save to apply these preferences." />
-                                    <CheckBox
-                                        Content="_Launch when I sign in"
-                                        Margin="0,0,0,14"
-                                        AutomationProperties.HelpText="Starts PrivacyMask automatically for the current Windows user."
-                                        IsChecked="{Binding LaunchAtLogin, Mode=TwoWay}" />
-                                    <CheckBox
-                                        Content="Start _minimized to tray"
-                                        AutomationProperties.HelpText="Keeps the settings window hidden when PrivacyMask starts automatically."
-                                        IsChecked="{Binding StartMinimized, Mode=TwoWay}" />
+                                    <TextBlock Text="Startup" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                                    <DockPanel Margin="0,12,0,18"><CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsChecked="{Binding LaunchAtLogin,Mode=TwoWay}" AutomationProperties.Name="Launch when I sign in" AutomationProperties.HelpText="Starts PrivacyMask for this Windows user after saving. Existing preferences are preserved on updates."/><TextBlock Text="Launch when I sign in" VerticalAlignment="Center"/></DockPanel>
+                                    <Border Height="1" Background="#EEF1F3"/>
+                                    <DockPanel Margin="0,18,0,4"><CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsChecked="{Binding StartMinimized,Mode=TwoWay}" AutomationProperties.Name="Start minimized to tray" AutomationProperties.HelpText="Keep the settings window hidden on startup after saving."/><TextBlock Text="Start minimized to tray" VerticalAlignment="Center"/></DockPanel>
                                 </StackPanel>
                             </Border>
-                            <Border Style="{StaticResource Card}">
+                            <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
                                 <StackPanel>
-                                    <TextBlock Text="Local configuration" FontSize="18" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Settings stay on this device. Updates preserve them; uninstalling removes them." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,8,0,12"/>
-                                    <TextBox Text="{Binding ConfigPath, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" AutomationProperties.Name="Settings file location" Padding="0" Margin="0,0,0,16"/>
-                                    <Button Content="Open settings folder" HorizontalAlignment="Left" Click="OpenConfigurationFolder_Click" Style="{StaticResource SecondaryButton}" AutomationProperties.HelpText="Open the directory containing your local settings in Windows Explorer."/>
+                                    <TextBlock Text="About" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal"><Border Width="48" Height="48" Background="{StaticResource AccentBrush}" CornerRadius="8" Margin="0,0,18,0"><TextBlock Text="PM" Foreground="White" FontWeight="Bold" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="{x:Static services:AboutInformation.ProductLabel}" VerticalAlignment="Center" FontSize="18" FontWeight="SemiBold"/></StackPanel>
+                                        <Button Grid.Column="1" Content="About" Style="{StaticResource SecondaryButton}" Tag="{x:Static viewModels:DesktopPage.About}" Click="Navigate_Click" MinWidth="110"/>
+                                    </Grid>
                                 </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="28" VerticalAlignment="Center"/>
+                                    <DockPanel Grid.Column="1" Margin="0,0,20,0" VerticalAlignment="Center"><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="{Binding ConfigPath}" AutomationProperties.Name="Configuration file path"/><TextBlock Text="Configuration file" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/></DockPanel>
+                                    <Button Grid.Column="2" Content="Show location" Style="{StaticResource SecondaryButton}" Click="OpenConfigurationFolder_Click" AutomationProperties.HelpText="Open the directory containing your local settings in Windows Explorer."/>
+                                </Grid>
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
