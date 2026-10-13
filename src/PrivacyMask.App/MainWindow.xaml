@@ -376,6 +376,7 @@
                                                     <TextBlock Text="{Binding RuntimeStatusSummary}" Foreground="{Binding RuntimeStatusColor}" Margin="0,4,0,10" TextWrapping="Wrap"/>
                                                     <DockPanel>
                                                         <TextBlock DockPanel.Dock="Right" Text="{Binding MaskIntensityPercent, StringFormat={}{0:0}%}" MinWidth="48" TextAlignment="Right"/>
+                                                        <TextBlock DockPanel.Dock="Left" Text="Blur strength" Foreground="{StaticResource MutedInkBrush}" Margin="0,0,12,0" VerticalAlignment="Center"/>
                                                         <Slider Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding MaskIntensityPercent, Mode=TwoWay}" AutomationProperties.Name="{Binding DisplayName, StringFormat=Blur strength for {0}}"/>
                                                     </DockPanel>
                                                 </StackPanel>
