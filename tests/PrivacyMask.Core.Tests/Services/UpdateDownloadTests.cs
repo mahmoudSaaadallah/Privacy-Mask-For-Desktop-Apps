@@ -1,5 +1,6 @@
 using System.IO;
 using System.IO.Compression;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Security.AccessControl;
@@ -150,9 +151,9 @@ public sealed class UpdateDownloadTests
         using var f = new DownloadFixture();
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         f.Trust.Handler.Intercept = async (_, ct) => { started.SetResult(); await Task.Delay(Timeout.Infinite, ct); return new(HttpStatusCode.OK); };
-        using var stager = f.Stager(deadline: TimeSpan.FromMilliseconds(300));
+        using var stager = f.Stager(deadline: TimeSpan.FromSeconds(2));
         var pending = stager.PrepareAsync(f.Candidate, f.Trust.Context, f.Root);
-        await started.Task;
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Equal("download-in-progress", (await Assert.ThrowsAsync<UpdateDownloadException>(() => stager.PrepareAsync(f.Candidate, f.Trust.Context, f.Root))).Reason);
         Assert.Equal("download-timeout", (await Assert.ThrowsAsync<UpdateDownloadException>(() => pending)).Reason);
         f.AssertEmpty();
@@ -180,6 +181,50 @@ public sealed class UpdateDownloadTests
         Assert.False(workspace.Cleanup());
         Assert.True(File.Exists(Path.Combine(workspace.Root, "unknown.txt")));
         Assert.False(File.Exists(Path.Combine(workspace.Root, "partial")));
+    }
+
+    [Fact]
+    public async Task ReparseRootAndCleanupDoNotFollowJunctions()
+    {
+        using var f = new DownloadFixture();
+        var outside = Path.Combine(f.Parent, "outside");
+        Directory.CreateDirectory(outside);
+        var sentinel = Path.Combine(outside, "keep.txt");
+        File.WriteAllText(sentinel, "untouched");
+        Directory.Delete(f.Root);
+        CreateJunction(f.Root, outside);
+        try
+        {
+            using var stager = f.Stager();
+            await Assert.ThrowsAsync<UpdateDownloadException>(() => stager.PrepareAsync(f.Candidate, f.Trust.Context, f.Root));
+            Assert.Empty(f.Trust.Handler.Requests);
+            Assert.True(File.Exists(sentinel));
+        }
+        finally { Directory.Delete(f.Root); } // exact fixture junction, not its target
+        Directory.CreateDirectory(f.Root);
+        var workspace = new StagingWorkspace(f.Root, f.Candidate.Manifest);
+        var moved = workspace.Root + "-original";
+        Directory.Move(workspace.Root, moved);
+        CreateJunction(workspace.Root, outside);
+        try
+        {
+            Assert.False(workspace.Cleanup());
+            Assert.True(File.Exists(sentinel));
+        }
+        finally { Directory.Delete(workspace.Root); }
+    }
+
+    private static void CreateJunction(string link, string target)
+    {
+        var start = new ProcessStartInfo("cmd.exe")
+        {
+            Arguments = $"/d /c mklink /J \"{link}\" \"{target}\"",
+            UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true
+        };
+        using var process = Process.Start(start)!;
+        process.WaitForExit();
+        Assert.Equal(0, process.ExitCode);
+        Assert.True((File.GetAttributes(link) & FileAttributes.ReparsePoint) != 0);
     }
 
     [Fact]

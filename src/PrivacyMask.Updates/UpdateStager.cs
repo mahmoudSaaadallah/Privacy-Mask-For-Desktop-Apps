@@ -95,6 +95,7 @@ public sealed class UpdateStager : IDisposable
             ct.ThrowIfCancellationRequested();
             workspace.Rename("package.partial", "package.zip");
             Report(UpdateDownloadPhase.Verifying, 0, manifest.Files[0].Size);
+            StagingWorkspace.AssertSafe(Path.Combine(workspace.Root, "package.zip"));
             using (var archive = new FileStream(Path.Combine(workspace.Root, "package.zip"), FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 UpdatePayload.ValidateArchiveLayout(archive);
@@ -111,7 +112,7 @@ public sealed class UpdateStager : IDisposable
                 }
             }
             ct.ThrowIfCancellationRequested();
-            StagingWorkspace.AssertSafe(workspace.Root);
+            StagingWorkspace.AssertSafe(Path.Combine(workspace.Root, "payload.partial"));
             UpdatePayload.InspectExecutable(Path.Combine(workspace.Root, "payload.partial"), manifest.Version, manifest.CommitSha);
             workspace.Rename("payload.partial", "PrivacyMask.App.exe");
             await Save("update-manifest.json", bytes).ConfigureAwait(false);
