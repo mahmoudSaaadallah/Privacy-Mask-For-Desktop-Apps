@@ -17,13 +17,14 @@ public partial class PanicPinSetupWindow : Window
         if (_currentCredential is not null)
         {
             Title = "Change panic unlock PIN";
-            DescriptionText.Text = "Enter the current PIN, then choose a new 4–8 digit PIN.";
+            HeadingText.Text = "Change panic PIN";
+            DescriptionText.Text = "Enter the current PIN, then choose a new 4–8 digit PIN. Cancel keeps the current PIN. In Security, use Save changes after confirming this dialog to persist it.";
             CurrentPinPanel.Visibility = Visibility.Visible;
-            CurrentPinBox.Focus();
+            CurrentPinBox.FocusInput();
         }
         else
         {
-            NewPinBox.Focus();
+            NewPinBox.FocusInput();
         }
     }
 
@@ -45,14 +46,14 @@ public partial class PanicPinSetupWindow : Window
         {
             ErrorText.Text = "The current PIN is incorrect.";
             CurrentPinBox.Clear();
-            CurrentPinBox.Focus();
+            CurrentPinBox.FocusInput();
             return;
         }
 
         if (!PanicPinService.IsValidPin(NewPinBox.Password))
         {
             ErrorText.Text = "Use 4 to 8 digits only.";
-            NewPinBox.Focus();
+            NewPinBox.FocusInput();
             return;
         }
 
@@ -60,7 +61,7 @@ public partial class PanicPinSetupWindow : Window
         {
             ErrorText.Text = "The new PIN and confirmation do not match.";
             ConfirmPinBox.Clear();
-            ConfirmPinBox.Focus();
+            ConfirmPinBox.FocusInput();
             return;
         }
 
