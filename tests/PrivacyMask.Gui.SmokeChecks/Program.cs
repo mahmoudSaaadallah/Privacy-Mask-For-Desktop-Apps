@@ -8,6 +8,9 @@ using System.Windows.Threading;
 using PrivacyMask.App;
 using PrivacyMask.App.Services;
 using PrivacyMask.App.ViewModels;
+using PrivacyMask.App.Controls;
+using PrivacyMask.App.Windows;
+using PrivacyMask.Windows.Models;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
 using PrivacyMask.Windows.Services;
@@ -22,6 +25,8 @@ internal static class Program
             // Do not initialize PrivacyMask.App.App: no singleton, discovery loop,
             // registration, capture, settings IO or real protection is started.
             var application = new TestApplication { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            if (args.Length > 0 && !args.Contains("--benchmark"))
+                RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
             foreach (var path in new[] { "Assets/Brand.xaml", "Styles/DesignSystem.xaml", "Styles/LegacyControls.xaml" })
                 application.Resources.MergedDictionaries.Add((ResourceDictionary)Application.LoadComponent(
                     new Uri($"/PrivacyMask.App;component/{path}", UriKind.Relative)));
@@ -113,19 +118,26 @@ internal static class Program
                 window.SaveRequested += updated => { saved = AppSettingsCloner.Clone(updated); return Task.CompletedTask; };
                 window.DiscardRequested += () => window.ReplaceViewModel(SettingsViewModel.FromModel(saved, RuntimeMode.Standard, "test", new HashSet<HotkeyAction>()));
                 session.OpenApplication(session.AppProfiles[2]);
+                session.ShowAdvancedZones();
+                session.SelectedApplication!.Zones[0].Width = .8;
                 session.SelectedApplication!.MaskIntensityPercent = 80;
                 Invoke(window, "Save_Click");
                 Check(!window.ViewModel.HasPendingChanges && window.ViewModel.IsApplicationDetailsPage, "Save lost profile navigation.");
+                Check(window.ViewModel.IsAdvancedZonesPage, "Save lost advanced navigation.");
                 window.ViewModel.SelectedApplication!.MaskIntensityPercent = 20;
+                window.ViewModel.SelectedApplication.Zones[0].Width = .2;
                 Invoke(window, "CloseToTray_Click");
                 Check(window.ViewModel.SelectedApplication?.MaskIntensityPercent == 80, "Discard did not restore the selected profile.");
+                Check(window.ViewModel.IsAdvancedZonesPage && window.ViewModel.SelectedApplication!.Zones[0].Width == .8,
+                    "Discard lost the advanced editor or failed to restore zone values.");
                 Check(window.ViewModel.PanicHelpScope == PanicHelpScope.AllApps, "Discard lost the selected explanation tab.");
                 var setup = new PrivacyMask.App.Windows.PanicPinSetupWindow(null);
-                ((PasswordBox)setup.FindName("NewPinBox")).Password = "12";
+                ((PinEntry)setup.FindName("NewPinBox")).Password = "12";
                 Invoke(setup, "Save_Click");
                 Check(setup.CreatedCredential is null && ((TextBlock)setup.FindName("ErrorText")).Text.Length > 0, "Invalid PIN accepted.");
                 setup.Close();
-                Check(((PasswordBox)setup.FindName("NewPinBox")).Password.Length == 0, "Closed PIN input retained.");
+                Check(((PinEntry)setup.FindName("NewPinBox")).Password.Length == 0, "Closed PIN input retained.");
+                CheckReferenceDialogs(screenshots);
                 Console.WriteLine("Search, selected-profile Save/Discard and invalid-PIN/closed-input checks passed.");
             }
             window.AllowClose();
@@ -137,6 +149,117 @@ internal static class Program
         {
             Console.Error.WriteLine(exception);
             return 1;
+        }
+    }
+
+    private static void CheckReferenceDialogs(string? screenshots)
+    {
+        var catalog = new DesktopApplicationCatalog(new DesktopWindowInspector());
+        IReadOnlyList<DesktopApplicationCandidate> candidates = [
+            new() { DisplayName = "Notepad", ProcessName = "notepad", ExecutablePath = "C:\\Synthetic\\notepad.exe", IsRunning = true },
+            new() { DisplayName = "Synthetic editor", ProcessName = "editor", ExecutablePath = "C:\\Synthetic\\editor.exe", IsRunning = true },
+            new() { DisplayName = "Synthetic browser", ProcessName = "browser", ExecutablePath = "C:\\Synthetic\\browser.exe", IsRunning = true },
+        ];
+        var loads = 0;
+        var picker = new AddApplicationWindow(catalog, new HashSet<string>(), null, () => { loads++; return candidates; });
+        Layout((FrameworkElement)picker.Content, new Size(512, 500));
+        var search = (TextBox)picker.FindName("SearchTextBox");
+        search.Text = "EDITOR";
+        Check(picker.ApplicationsView.Cast<object>().Count() == 1, "Picker search did not filter by process/name.");
+        search.Text = "unmatched";
+        Check(((TextBlock)picker.FindName("EmptyStateText")).Visibility == Visibility.Visible, "Picker empty state absent.");
+        search.Clear();
+        Invoke(picker, "Refresh_Click");
+        Check(loads == 2 && picker.SelectedApplication?.ProcessName == "notepad", "Refresh/selection failed.");
+        Check(((TextBlock)picker.FindName("SelectedTargetText")).Text == "C:\\Synthetic\\notepad.exe", "Selected path lost.");
+        CheckDialogLayout(picker, "AddApplication", screenshots, 544, 528);
+        picker.Close();
+
+        var relink = new AddApplicationWindow(catalog, new HashSet<string>(), "Existing private editor", () => candidates);
+        Check(((FrameworkElement)relink.FindName("ProfileNamePanel")).Visibility == Visibility.Collapsed, "Relink allowed profile renaming.");
+        Check(((TextBlock)relink.FindName("HeadingText")).Text == "Relink application", "Relink heading absent.");
+        CheckDialogLayout(relink, "RelinkApplication", screenshots, 544, 528);
+        relink.Close();
+
+        var onboarding = new OnboardingWindow(true, false);
+        Check(onboarding.LaunchAtLogin && !onboarding.StartMinimized, "Onboarding overwrote supplied preferences.");
+        ((CheckBox)onboarding.FindName("LaunchAtLoginCheckBox")).IsChecked = false;
+        ((CheckBox)onboarding.FindName("StartMinimizedCheckBox")).IsChecked = true;
+        Check(!onboarding.LaunchAtLogin && onboarding.StartMinimized, "Onboarding switches failed.");
+        CheckDialogLayout(onboarding, "FirstLaunch", screenshots, 584, 568);
+        onboarding.Close();
+
+        var create = new PanicPinSetupWindow(null);
+        Check(((FrameworkElement)create.FindName("CurrentPinPanel")).Visibility == Visibility.Collapsed, "First creation shows current PIN.");
+        var newPin = (PinEntry)create.FindName("NewPinBox");
+        var confirm = (PinEntry)create.FindName("ConfirmPinBox");
+        newPin.Password = "1234";
+        confirm.Password = "5678";
+        Invoke(create, "Save_Click");
+        Check(create.CreatedCredential is null && confirm.Password.Length == 0, "Mismatched PIN accepted.");
+        newPin.Password = "abcd";
+        Invoke(create, "Save_Click");
+        Check(create.CreatedCredential is null, "Non-digit PIN accepted.");
+        newPin.Password = "123456";
+        var toggle = (System.Windows.Controls.Primitives.ToggleButton)newPin.FindName("RevealButton");
+        toggle.IsChecked = true;
+        var visible = (TextBox)newPin.FindName("VisibleInput");
+        Check(newPin.IsRevealed && visible.Text == "123456", "Explicit reveal failed.");
+        visible.Text = "1234";
+        Check(newPin.Password == "1234", "Revealed editing did not synchronize.");
+        toggle.IsChecked = false;
+        Check(visible.Text.Length == 0 && !newPin.IsRevealed && newPin.Password == "1234", "Hiding PIN retained plaintext or lost masked value.");
+        newPin.Clear();
+        ((TextBlock)create.FindName("ErrorText")).Text = string.Empty;
+        CheckDialogLayout(create, "CreatePin", screenshots, 492, 440);
+        create.Close();
+
+        var credential = PanicPinService.Create("1234");
+        var change = new PanicPinSetupWindow(credential);
+        var current = (PinEntry)change.FindName("CurrentPinBox");
+        Check(((FrameworkElement)change.FindName("CurrentPinPanel")).Visibility == Visibility.Visible, "Change omitted current PIN.");
+        current.Password = "9999";
+        Invoke(change, "Save_Click");
+        Check(change.CreatedCredential is null && current.Password.Length == 0, "Incorrect current PIN was accepted/retained.");
+        CheckDialogLayout(change, "ChangePin", screenshots, 524, 508);
+        current.Password = "1234";
+        ((System.Windows.Controls.Primitives.ToggleButton)current.FindName("RevealButton")).IsChecked = true;
+        change.Close();
+        Check(current.Password.Length == 0 && ((TextBox)current.FindName("VisibleInput")).Text.Length == 0 && !current.IsRevealed,
+            "Closed PIN dialog retained visible or masked input.");
+
+        var unlock = new PanicPinUnlockWindow(credential, "Notepad");
+        var unlockPin = (PinEntry)unlock.FindName("PinBox");
+        unlockPin.Password = "9999";
+        Invoke(unlock, "Unlock_Click");
+        Check(unlock.DialogResult != true && unlockPin.Password.Length == 0 && ((TextBlock)unlock.FindName("ErrorText")).Text.Contains("Mask remains active"),
+            "Wrong PIN unlocked panic or retained input.");
+        Check(((TextBlock)unlock.FindName("HeadingText")).Text == "Unlock Notepad", "Unlock target absent.");
+        CheckDialogLayout(unlock, "UnlockPanic", screenshots, 492, 440);
+        unlock.Close();
+        Check(PanicPinService.Verify("1234", credential), "Dialog changed the original credential.");
+        Console.WriteLine("Reference dialogs passed: synthetic picker/search/relink, startup switches, PIN validation/reveal/cleanup and bounded layouts.");
+    }
+
+    private static void CheckDialogLayout(Window dialog, string name, string? screenshots, double width, double height)
+    {
+        var root = (FrameworkElement)dialog.Content;
+        foreach (var size in new[] { new Size(width, height), new Size(420, 340) })
+        {
+            Layout(root, size);
+            CheckFiniteControls(root);
+            foreach (var button in Find<Button>(root).Where(control => control.Visibility == Visibility.Visible && control.ActualWidth > 0 && control.ActualHeight > 0))
+            {
+                var bounds = button.TransformToAncestor(root).TransformBounds(new Rect(new Point(), button.RenderSize));
+                Check(bounds.Left >= -1 && bounds.Right <= size.Width + 1 && bounds.Top >= -1 && bounds.Bottom <= size.Height + 1,
+                    $"{name}: action outside viewport at {size}.");
+            }
+        }
+        if (screenshots is not null)
+        {
+            var size = new Size(width, height);
+            Layout(root, size);
+            Render(root, size, 1, System.IO.Path.Combine(screenshots, $"{name}.png"));
         }
     }
 
@@ -172,6 +295,10 @@ internal static class Program
     private static void Render(FrameworkElement root, Size size, double scale, string path)
     {
         var bitmap = new RenderTargetBitmap((int)(size.Width * scale), (int)(size.Height * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
+        var backdrop = new DrawingVisual();
+        using (var context = backdrop.RenderOpen())
+            context.DrawRectangle((Brush)Application.Current.Resources["CanvasBrush"], null, new Rect(new Point(), size));
+        bitmap.Render(backdrop);
         bitmap.Render(root);
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));
