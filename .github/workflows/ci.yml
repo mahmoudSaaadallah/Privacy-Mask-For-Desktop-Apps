@@ -26,6 +26,10 @@ jobs:
         shell: powershell
         run: .\scripts\test-version-policy.ps1
 
+      - name: Test draft publication without external writes
+        shell: powershell
+        run: .\scripts\test-release-publication.ps1
+
       - name: Test proposed update manifest schemas
         shell: pwsh
         run: .\scripts\test-update-manifest-schema.ps1
@@ -58,3 +62,7 @@ jobs:
       - name: Smoke test release package
         shell: powershell
         run: .\scripts\test-release-package.ps1
+
+      - name: Test real signed update package with memory-only test keys
+        shell: pwsh
+        run: .\scripts\test-signed-update-package.ps1

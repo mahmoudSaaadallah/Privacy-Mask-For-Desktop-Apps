@@ -6,17 +6,30 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   package-windows:
     runs-on: windows-latest
+    environment: privacy-mask-release
+    permissions:
+      contents: write
     env:
       PRIVACYMASK_RELEASE_TAG: ${{ github.ref_name }}
       PRIVACYMASK_RELEASE_REPOSITORY: ${{ github.repository }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require approved merged tag source
+        shell: powershell
+        run: .\scripts\assert-release-source.ps1 -ExpectedTag $env:PRIVACYMASK_RELEASE_TAG
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -30,6 +43,10 @@ jobs:
       - name: Test version policy and prerelease classification
         shell: powershell
         run: .\scripts\test-version-policy.ps1
+
+      - name: Test draft publication without external writes
+        shell: powershell
+        run: .\scripts\test-release-publication.ps1
 
       - name: Test proposed update manifest schemas
         shell: pwsh
@@ -66,20 +83,28 @@ jobs:
         shell: powershell
         run: .\scripts\test-release-package.ps1 -ExpectedTag $env:PRIVACYMASK_RELEASE_TAG
 
+      - name: Test real signed package with an ephemeral key
+        shell: pwsh
+        run: .\scripts\test-signed-update-package.ps1
+
+      - name: Build signed update assets
+        shell: pwsh
+        env:
+          PRIVACYMASK_UPDATE_PRIVATE_KEY_PEM: ${{ secrets.PRIVACYMASK_UPDATE_PRIVATE_KEY_PEM }}
+          PRIVACYMASK_UPDATE_KEY_ID: ${{ vars.PRIVACYMASK_UPDATE_KEY_ID }}
+        run: .\scripts\package-win-x64-update.ps1 -KeyId $env:PRIVACYMASK_UPDATE_KEY_ID -ExpectedTag $env:PRIVACYMASK_RELEASE_TAG
+
+      - name: Independently verify signed update assets
+        shell: pwsh
+        run: .\scripts\test-update-package.ps1 -ExpectedTag $env:PRIVACYMASK_RELEASE_TAG
+
       - name: Publish GitHub release
-        shell: powershell
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          . .\scripts\PrivacyMask.Build.ps1
-          $version = Get-PrivacyMaskProductVersion -RepoRoot $PWD.Path
-          $assetBaseName = "PrivacyMask-$version-win-x64"
-          $releaseFlags = @(Get-PrivacyMaskReleaseFlags -RepoRoot $PWD.Path -Tag $env:PRIVACYMASK_RELEASE_TAG)
-          gh release create $env:PRIVACYMASK_RELEASE_TAG `
-            ".\artifacts\release\$assetBaseName.zip" `
-            ".\artifacts\release\$assetBaseName.zip.sha256" `
-            --repo $env:PRIVACYMASK_RELEASE_REPOSITORY `
-            --generate-notes `
-            --title "PrivacyMask $env:PRIVACYMASK_RELEASE_TAG" `
-            @releaseFlags
-          if ($LASTEXITCODE -ne 0) { throw 'GitHub release publishing failed.' }
+          . .\scripts\PrivacyMask.Release.ps1
+          $commit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Missing verified source commit.' }
+          Publish-PrivacyMaskRelease -RepoRoot $PWD.Path -Tag $env:PRIVACYMASK_RELEASE_TAG `
+            -Repository $env:PRIVACYMASK_RELEASE_REPOSITORY -ExpectedCommit $commit

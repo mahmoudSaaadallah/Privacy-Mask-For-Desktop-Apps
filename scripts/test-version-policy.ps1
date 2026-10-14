@@ -85,33 +85,11 @@ try {
     Assert-Policy ($parseErrors.Count -eq 0) 'Invalid PowerShell inside release workflow.'
   }
   Assert-Policy ($blocks.Count -eq 2) 'Release workflow validation/publishing blocks changed; review this test.'
-  $publish = ($blocks[1].Groups['Body'].Value -replace '(?m)^          ', '')
-  $publish = $publish.Replace('${{ github.ref_name }}', $current.ExpectedTag).Replace('${{ github.repository }}', 'fixture/repo')
-  $captured = New-Object 'System.Collections.Generic.List[string]'
-  $previousReleaseTag = $env:PRIVACYMASK_RELEASE_TAG
-  $previousReleaseRepo = $env:PRIVACYMASK_RELEASE_REPOSITORY
-  Push-Location $repoRoot
-  try {
-    $env:PRIVACYMASK_RELEASE_TAG = $current.ExpectedTag
-    $env:PRIVACYMASK_RELEASE_REPOSITORY = 'fixture/repo'
-    & {
-      function gh {
-        param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
-        foreach ($argument in $Arguments) { $captured.Add($argument) }
-        $script:LASTEXITCODE = 0
-      }
-      & ([scriptblock]::Create($publish))
-    }
-  }
-  finally {
-    $env:PRIVACYMASK_RELEASE_TAG = $previousReleaseTag
-    $env:PRIVACYMASK_RELEASE_REPOSITORY = $previousReleaseRepo
-    Pop-Location
-  }
-  Assert-Policy ($captured.Count -gt 3 -and $captured[0] -eq 'release' -and $captured[1] -eq 'create' -and $captured[2] -ceq $current.ExpectedTag) 'Wrong release/tag command.'
-  Assert-Policy ($captured -contains '--verify-tag') 'Publishing block omitted tag protection.'
-  Assert-Policy (($captured -contains '--prerelease') -eq $current.IsPrerelease -and ($captured -contains '--latest=false') -eq $current.IsPrerelease) 'Publishing block misclassified prerelease.'
-  Write-Host "Version policy passed $script:policyChecks checks, including mocked workflow publication (no external writes)."
+  $publish = $blocks[1].Groups['Body'].Value
+  Assert-Policy ($publish.Contains('.\scripts\PrivacyMask.Release.ps1')) 'Workflow must load the tested draft publisher.'
+  Assert-Policy ($publish.Contains('Publish-PrivacyMaskRelease -RepoRoot $PWD.Path -Tag $env:PRIVACYMASK_RELEASE_TAG')) 'Workflow omitted release identity validation.'
+  Assert-Policy ($publish.Contains('-Repository $env:PRIVACYMASK_RELEASE_REPOSITORY -ExpectedCommit $commit')) 'Workflow omitted destination/source identity.'
+  Write-Host "Version policy passed $script:policyChecks checks. Publication behavior is exercised separately without external writes."
 }
 finally {
   $resolvedFixture = [IO.Path]::GetFullPath($fixtureRoot)
