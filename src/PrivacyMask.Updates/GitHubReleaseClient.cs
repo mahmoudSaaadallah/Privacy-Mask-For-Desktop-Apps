@@ -44,7 +44,8 @@ public sealed class GitHubReleaseClient : IDisposable
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (OperationCanceledException) { return new(UpdateCheckStatus.UnableToCheck, Reason: "timeout"); }
-        catch (UpdateHttpException error) { return new(error.Status, RetryAt: _transport.RetryAt, Reason: error.Message); }
+        catch (UpdateHttpException error) { return new(error.Status,
+            RetryAt: error.Status == UpdateCheckStatus.RateLimited ? _transport.RetryAt : null, Reason: error.Message); }
         catch (Exception error) when (error is HttpRequestException or IOException or JsonException or
             ReleaseValidationException or FormatException or CryptographicException or DecoderFallbackException or
             InvalidOperationException or KeyNotFoundException or OverflowException)
@@ -74,9 +75,14 @@ public sealed class GitHubReleaseClient : IDisposable
                 if (entry.GetProperty("draft").GetBoolean()) continue;
                 var tag = entry.GetProperty("tag_name").GetString() ?? "";
                 var prerelease = entry.GetProperty("prerelease").GetBoolean();
-                if (!tag.StartsWith('v') || !UpdateEligibility.IsNewerForChannel(tag[1..], prerelease, context)) continue;
+                if (!tag.StartsWith('v') || !SemanticVersion.TryParse(tag[1..], out var version) ||
+                    !UpdateEligibility.IsNewerForChannel(tag[1..], version.IsPrerelease, context)) continue;
                 if (!tags.Add(tag)) return new(UpdateCheckStatus.Incomplete, Reason: "ambiguous-release-tag");
-                if (!SemanticVersion.TryParse(tag[1..], out var version)) continue;
+                if (version.IsPrerelease != prerelease)
+                {
+                    releases.Add(new(id, tag, version, prerelease, "", null));
+                    continue;
+                }
                 var published = entry.GetProperty("published_at");
                 if (published.ValueKind != JsonValueKind.String || !published.TryGetDateTimeOffset(out _)) continue;
                 var notes = entry.TryGetProperty("body", out var body) && body.ValueKind == JsonValueKind.String ? body.GetString() ?? "" : "";
@@ -166,10 +172,12 @@ public sealed class GitHubReleaseClient : IDisposable
         var hasNext = false;
         foreach (var part in link.Split(','))
         {
-            if (!part.Contains("rel=\"next\"", StringComparison.Ordinal)) continue;
+            var relation = System.Text.RegularExpressions.Regex.Match(part,
+                "(?:^|;)\\s*rel\\s*=\\s*(?:\"(?<value>[^\"]+)\"|(?<value>[a-z]+))(?=\\s*(?:;|$))");
+            if (!relation.Success || !relation.Groups["value"].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("next")) continue;
             var start = part.IndexOf('<'); var end = part.IndexOf('>');
-            if (hasNext || start < 0 || end <= start || page == 5 ||
-                part[(start + 1)..end] != GitHubUrls.ListPage(page + 1).AbsoluteUri)
+            if (hasNext || start < 0 || end <= start || !Uri.TryCreate(part[(start + 1)..end], UriKind.Absolute, out var uri) ||
+                !GitHubUrls.IsNextListPage(uri, page))
                 throw new UpdateHttpException(UpdateCheckStatus.Incomplete, "unsafe-or-excess-pagination");
             hasNext = true;
         }

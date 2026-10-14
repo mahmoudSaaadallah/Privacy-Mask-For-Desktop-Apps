@@ -114,6 +114,18 @@ public sealed class UpdateDiscoveryTests
     }
 
     [Fact]
+    public async Task InconsistentGitHubPrereleaseFlagCannotHideAKnownNewerVersion()
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        var release = fixture.Release();
+        release["prerelease"] = false;
+        fixture.Handler.Releases.Add(release);
+        using var client = fixture.Client();
+        Assert.Equal(UpdateCheckStatus.UnableToCheck, (await client.CheckAsync(fixture.Context)).Status);
+        Assert.Single(fixture.Handler.Requests);
+    }
+
+    [Fact]
     public async Task AlteredSignatureCannotAuthorizeUpdateEvenWhenListingDigestIsMissing()
     {
         using var fixture = new UpdateDiscoveryFixture();

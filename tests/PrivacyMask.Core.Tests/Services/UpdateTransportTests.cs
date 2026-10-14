@@ -148,6 +148,26 @@ public sealed class UpdateTransportTests
         Assert.Single(fixture.Handler.Requests);
     }
 
+    [Theory]
+    [InlineData("rel=next")]
+    [InlineData("rel = \"next\"")]
+    [InlineData("rel=\"next last\"")]
+    public async Task NumericRepositoryLinksOnlyTriggerOurOwnCanonicalNextRequest(string relation)
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        fixture.Handler.Intercept = (request, _) =>
+        {
+            var response = FakeUpdateHandler.Json("[]");
+            if (request.RequestUri == GitHubUrls.ListPage(1))
+                response.Headers.TryAddWithoutValidation("Link", $"<https://api.github.com/repositories/123456/releases?page=2&per_page=30>; {relation}");
+            return Task.FromResult(response);
+        };
+        using var client = fixture.Client();
+        Assert.Equal(UpdateCheckStatus.UpToDate, (await client.CheckAsync(fixture.Context)).Status);
+        Assert.Equal(2, fixture.Handler.Requests.Count);
+        Assert.Equal(GitHubUrls.ListPage(2), fixture.Handler.Requests[1].Uri);
+    }
+
     [Fact]
     public async Task ChecksMultiplePagesAndDetectsChangingOrAmbiguousListings()
     {
