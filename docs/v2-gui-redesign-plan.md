@@ -13,6 +13,10 @@ actions. This plan does not implement the redesign.
 
 ## Implementation rules
 
+- Current testing delivery targets `2.0.0-beta.1`. Earlier phase notes below
+  record their original version state. Follow [release-process.md](release-process.md)
+  for subsequent beta/rc counters and numeric file revisions; do not keep shipping
+  different app changes under an indistinguishable stable-looking 2.0.0 label.
 - Use WPF views and shared resources inside the existing application; no browser
   runtime, web framework, or additional UI framework is needed.
 - Share one settings edit session across pages. Navigation must not save,

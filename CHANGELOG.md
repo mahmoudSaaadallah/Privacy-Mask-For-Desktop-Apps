@@ -1,6 +1,13 @@
 # Changelog
 
-## 2.0.0 - Unreleased
+## 2.0.0-beta.1 - Unreleased
+
+- Prepare the first identifiable 2.0 testing delivery; stable 2.0.0 still requires final qualification
+- Show the semantic prerelease version in About and Settings, with full source metadata in About version help
+- Keep numeric assembly/file identities separate; beta.1 uses Windows file version 2.0.0.1 without changing settings schema 12
+- Reject stale or mismatched product/file/tag identities during package verification
+- Classify beta/rc releases as Pre-release and non-Latest, and require an existing matching tag before publication
+- Add local and CI version-policy checks using mocked publishing, without creating tags/releases
 
 - Match the About reference with shield page branding, separate developer/purpose/privacy cards and compact support/profile actions
 - Adapt About cards and email actions to wide, compact and stacked layouts while retaining authoritative contacts, assembly version and capture warnings

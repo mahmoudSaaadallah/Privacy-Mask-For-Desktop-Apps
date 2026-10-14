@@ -170,3 +170,20 @@ contact-client launch/failure checks remain live release gates; automated layout
 and route checks are not evidence of those interactions. No new UI framework,
 runtime capture loop, version bump, schema migration, tag or release is introduced.
 Version remains unreleased 2.0.0 and schema 12.
+
+## Prerelease identity follow-up
+
+The subsequent version-policy change prepares `2.0.0-beta.1`, with numeric
+FileVersion `2.0.0.1` and AssemblyVersion `2.0.0.0`. It supersedes earlier
+stable-looking version labels in these historical phase notes. About/Settings
+now retain prerelease labels from informational metadata; About version help
+exposes full Git build metadata when present. Version changes do not migrate
+schema 12 or alter capture, reveal, profiles or PIN behavior.
+
+221 unit tests and 53 isolated version-policy checks pass, including mocked
+execution of the actual release command and rejection of stale product/file/tag
+identities. All 18 PowerShell syntax checks, solution build, compiled WPF matrix,
+installer checks and isolated beta ZIP/checksum/install/uninstall smoke pass.
+The workflow is prepared to publish prereleases as non-Latest on an existing
+matching tag, but this work does not create any tag or publish a release. Live
+qualification gates remain open. See [release-process.md](release-process.md).
