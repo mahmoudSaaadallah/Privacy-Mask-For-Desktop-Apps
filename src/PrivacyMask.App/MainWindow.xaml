@@ -405,7 +405,7 @@
                             <Grid Margin="0,0,0,24"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Image Source="{StaticResource AboutShieldSymbol}" Width="78" Height="92" HorizontalAlignment="Left" AutomationProperties.Name="PrivacyMask shield"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="PrivacyMask" FontSize="32" FontWeight="Bold" TextWrapping="Wrap"/>
-                                    <TextBlock Text="{x:Static services:AboutInformation.VersionText}" Foreground="#5C667A" FontSize="18" Margin="0,6,0,0" AutomationProperties.Name="PrivacyMask product version"/>
+                                    <TextBlock Text="{x:Static services:AboutInformation.VersionText}" Foreground="#5C667A" FontSize="18" Margin="0,6,0,0" AutomationProperties.Name="PrivacyMask product version" ToolTip="{x:Static services:AboutInformation.BuildDescription}" AutomationProperties.HelpText="{x:Static services:AboutInformation.BuildDescription}"/>
                                 </StackPanel>
                             </Grid>
                             <controls:AdaptivePairPanel x:Name="AboutColumns" BreakWidth="680" Gap="18">

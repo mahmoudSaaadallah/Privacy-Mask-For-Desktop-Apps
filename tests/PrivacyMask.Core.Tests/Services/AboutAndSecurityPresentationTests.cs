@@ -15,7 +15,9 @@ public sealed class AboutAndSecurityPresentationTests
         Assert.Equal("mailto:mahmoud.saadallah73@gmail.com", AboutInformation.EmailUri.AbsoluteUri);
         Assert.Equal("https://github.com/mahmoudsaaadallah", AboutInformation.GitHubUri.AbsoluteUri);
         Assert.Equal("https://linkedin.com/in/mahmoudsaaadallah", AboutInformation.LinkedInUri.AbsoluteUri);
-        Assert.Equal($"Version {typeof(AboutInformation).Assembly.GetName().Version!.ToString(3)}", AboutInformation.VersionText);
+        var metadata = typeof(AboutInformation).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .Cast<System.Reflection.AssemblyInformationalVersionAttribute>().Single().InformationalVersion;
+        Assert.Equal($"Version {metadata.Split('+')[0]}", AboutInformation.VersionText);
     }
 
     [Fact]
