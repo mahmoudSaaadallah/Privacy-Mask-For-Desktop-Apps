@@ -68,6 +68,7 @@ public sealed class UpdateDownloadTests
     [InlineData("header")]
     [InlineData("http")]
     [InlineData("network")]
+    [InlineData("interrupted-read")]
     [InlineData("partial-response")]
     [InlineData("redirect")]
     [InlineData("invalid-pe")]
@@ -89,6 +90,7 @@ public sealed class UpdateDownloadTests
             }) { Content = new StreamContent(new MemoryStream(bytes)) };
             // StreamContent on a non-seekable source tests actual limits, not only headers.
             if (failure is "short" or "long" or "hash") response.Content = new StreamContent(new NonSeekStream(bytes));
+            if (failure == "interrupted-read") response.Content = new StreamContent(new NonSeekStream(bytes, fail: true));
             if (failure == "header") response.Content.Headers.ContentLength = bytes.Length + 1;
             if (failure == "redirect") response.Headers.Location = new Uri("https://example.com/untrusted?secret=redacted");
             return Task.FromResult(response);
@@ -163,6 +165,43 @@ public sealed class UpdateDownloadTests
         var count = f.Trust.Handler.Requests.Count;
         await Assert.ThrowsAsync<UpdateDownloadException>(() => stager.PrepareAsync(f.Candidate, f.Trust.Context, f.Root));
         Assert.Equal(count, f.Trust.Handler.Requests.Count);
+        f.AssertEmpty();
+    }
+
+    [Fact]
+    public async Task LockedPartialReportsIncompleteCleanupWithoutDeletingTheTarget()
+    {
+        using var f = new DownloadFixture();
+        using var stager = f.Stager();
+        FileStream? locked = null;
+        try
+        {
+            var progress = new InlineProgress<UpdateDownloadProgress>(p =>
+            {
+                if (p.Phase != UpdateDownloadPhase.Verifying) return;
+                var operation = Directory.GetDirectories(f.Root).Single();
+                locked = new FileStream(Path.Combine(operation, "package.zip"), FileMode.Open, FileAccess.Read, FileShare.None);
+                throw new InvalidOperationException("private-callback-message");
+            });
+            var error = await Assert.ThrowsAsync<UpdateDownloadException>(() => stager.PrepareAsync(f.Candidate, f.Trust.Context, f.Root, progress));
+            Assert.True(error.CleanupIncomplete);
+            Assert.Equal("download-failed", error.Reason);
+            Assert.DoesNotContain("private-callback-message", error.ToString());
+            Assert.True(File.Exists(locked!.Name));
+        }
+        finally { locked?.Dispose(); }
+    }
+
+    [Fact]
+    public async Task UnconfiguredTrustAndPreCancellationHaveNoSideEffects()
+    {
+        using var f = new DownloadFixture();
+        using var stager = new UpdateStager(new UpdateManifestVerifier([]), TimeProvider.System, f.Trust.Handler);
+        await Assert.ThrowsAsync<UpdateDownloadException>(() => stager.PrepareAsync(f.Candidate, f.Trust.Context, f.Root));
+        using var cancel = new CancellationTokenSource();
+        cancel.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => stager.PrepareAsync(f.Candidate, f.Trust.Context, f.Root, cancellationToken: cancel.Token));
+        Assert.Empty(f.Trust.Handler.Requests);
         f.AssertEmpty();
     }
 
