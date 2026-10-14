@@ -88,6 +88,9 @@ try {
   Assert-UpdateCheck (-not (Test-Path $badOutput)) 'unconfigured production policy fails closed'
   Assert-UpdateCheck (@(Get-ChildItem -LiteralPath $output -Filter '.verify-*').Count -eq 0) 'verification scratch cleanup'
   Write-Host "Passed $script:updateChecks signed package smoke checks on the real EXE; ephemeral test key, no publication or installed-app changes."
+  # Negative cases intentionally leave native exit code 1. Clear it ONLY after
+  # all assertions pass, so GitHub's pwsh wrapper doesn't misreport a failed suite.
+  $global:LASTEXITCODE = 0
 }
 finally {
   $env:PRIVACYMASK_UPDATE_PRIVATE_KEY_PEM = $previousSecret
