@@ -1,7 +1,8 @@
 # Signed update manifest contract, version 1
 
-Status: proposed wire contract, not a production verifier or signed release.
-JSON schemas check structure only; they do not authenticate an update.
+Status: wire contract implemented by the phase-2 developer release producer and
+offline verifier. No end-user verifier/client or production signed release is
+provided yet. JSON schemas check structure only; they do not authenticate an update.
 See [the delivery plan](in-app-updates.md) and [recovery rules](update-recovery.md).
 
 ## Release assets
@@ -150,10 +151,11 @@ replace key custody or protect against every compromised maintainer/CI action.
 `pwsh -File scripts/test-update-manifest-schema.ps1` exercises the schemas with
 synthetic metadata; it requires PowerShell 7's Test-Json, not an end-user
 dependency. CI runs the same checks. Passing these cases proves structural
-contract behavior only. Signature tests, strict duplicate-key parsing,
-cross-field/version checks, HTTP/download tests and real release authenticity
-belong to later implementation phases and must not be advertised as passing
-based on schema checks.
+contract behavior only. Phase-2 tooling separately tests actual exact-byte pinned
+signatures, strict duplicate-key parsing, semantic identity checks and actual
+EXE/ZIP validation with memory-only test keys. HTTP/download, installed-client
+trust, restart and crash recovery remain later phases. None is proven by schema
+checks or a passing publisher-only test. See [signing operations](update-signing-operations.md).
 
 ## References
 

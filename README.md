@@ -326,8 +326,11 @@ Press `Esc` or close the window to discard the preview and return to the tray.
 - Review [the in-app update delivery plan](docs/in-app-updates.md),
   [signed manifest contract](docs/update-manifest.md), and
   [recovery/threat model](docs/update-recovery.md) for the upcoming update system.
-  Phase 1 provides specifications and structural schema checks only; there is
-  no in-app update button yet. Keep using the installation procedure above.
+  Phase 2 adds developer signed-package tooling and a verified draft publisher;
+  there is no in-app update button yet. Keep using the installation procedure above.
+- Review [update signing operations](docs/update-signing-operations.md) before
+  publishing: production policy/environment are intentionally unconfigured,
+  so signed release publication fails closed until explicitly approved setup.
 - Run `pwsh -File scripts/test-update-manifest-schema.ps1` to verify the proposed
   update schemas. PowerShell 7 is required for this developer check only;
   end users do not need it. CI and release verification also run this check.

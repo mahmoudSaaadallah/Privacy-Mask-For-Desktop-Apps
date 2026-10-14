@@ -113,8 +113,14 @@ independent managed launcher/recovery worker. The
 [recovery/threat model](update-recovery.md) define the proposed boundaries and
 required tests. They are specifications, not implemented runtime capabilities.
 
-The first phase does not change the current installation layout, protection
-states, settings schema, privacy networking behavior, or version. Later runtime
+Phase 2 implements a developer-only `tools/PrivacyMask.ReleaseTool` producer and
+offline verifier; the application has no reference to it and installer payloads
+do not contain it. It uses built-in .NET cryptography/ZIP support with no added
+NuGet runtime dependencies. [Signing operations](update-signing-operations.md)
+describe the intentionally unconfigured production gate and test-key boundaries.
+
+Neither preparation phase changes installation layout, protection
+states, settings schema, privacy networking behavior, or app version. Later runtime
 integration must disclose optional GitHub update requests while retaining no
 content transmission and no telemetry. Users continue to install/update with
 the current installer until an explicitly qualified updater-capable release.

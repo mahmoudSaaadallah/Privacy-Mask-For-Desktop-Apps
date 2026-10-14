@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "minimumWindowsBuild": null,
+  "minimumUpdaterProtocol": 1,
+  "settingsCompatibility": {
+    "minimumReadableSchema": 1,
+    "maximumReadableSchema": 12,
+    "outputSchema": 12
+  },
+  "trustedKeys": []
+}

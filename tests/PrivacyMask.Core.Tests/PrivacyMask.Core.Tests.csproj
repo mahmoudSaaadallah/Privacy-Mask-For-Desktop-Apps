@@ -23,6 +23,7 @@
     <ProjectReference Include="..\..\src\PrivacyMask.Core\PrivacyMask.Core.csproj" />
     <ProjectReference Include="..\..\src\PrivacyMask.Windows\PrivacyMask.Windows.csproj" />
     <ProjectReference Include="..\..\src\PrivacyMask.App\PrivacyMask.App.csproj" />
+    <ProjectReference Include="..\..\tools\PrivacyMask.ReleaseTool\PrivacyMask.ReleaseTool.csproj" />
   </ItemGroup>
 
 </Project>

@@ -53,10 +53,11 @@ without informational metadata. Source archives without Git may lack a commit
 suffix; the UI does not invent one.
 
 Run `scripts/test-version-policy.ps1` for strict product/Windows identity,
-beta/rc/stable classification, wrong/stale package and tag rejection, and a
-mocked execution of the actual workflow publish command. It makes no network,
-clipboard, tag, release or installed-app changes. Local verification and both
-CI workflows run it. Package smoke checks compare both actual PE FileVersion
+beta/rc/stable classification, wrong/stale package and tag rejection, and
+publishing-workflow wiring. `test-release-publication.ps1` separately mocks the
+actual draft publisher and `test-release-source.ps1` mocks source gates. None
+makes network, clipboard, tag, release or installed-app changes. Local
+verification and both CI workflows run them. Package smoke checks compare PE FileVersion
 and ProductVersion with the version source, accepting SDK build metadata.
 
 ## Create and test a local release package
@@ -76,16 +77,23 @@ checksum beside the versioned ZIP.
 
 ## Publish a GitHub release
 
+First complete [protected signing setup](update-signing-operations.md). The
+committed production policy intentionally has no public keys/qualified OS
+baseline, so the new publisher currently fails closed. This is not an automatic
+environment/secret setup or permission to publish an existing version again.
+
 1. Merge the fully verified release changes into `main`.
 2. Create an annotated version tag matching the source, such as `v2.0.0-beta.2`, on the release commit.
 3. Push the tag to GitHub.
-4. The `release` workflow rejects a tag that does not match the product version,
-   builds and tests the project, creates the Windows ZIP and checksum, smoke
-   tests the package, and publishes both files on the matching GitHub Release.
-   Beta/rc suffixes are classified as **Pre-release** with `--latest=false`;
-   stable versions use normal release classification. `--verify-tag` prevents
-   the publishing command from inventing a missing tag. A failed publish exits
-   the job with an error. The `latest` download link is not a beta download link.
+4. The `release` workflow requires the named protected environment and a clean
+   merged exact version tag, builds/tests the project and normal Windows ZIP,
+   creates an app-only update ZIP plus signed manifest with the approved key,
+   and independently verifies them. It creates a Draft containing all five
+   assets, checks the uploaded sizes/SHA-256 digests/identities and source tag,
+   then publishes. Beta/rc remains **Pre-release** with `--latest=false`;
+   stable is explicitly Latest. `--verify-tag` prevents inventing a missing tag.
+   Missing signing configuration or any failed gate stops publication; upload
+   failure may leave an unpublished draft for explicit operator inspection.
 5. Download the published ZIP and perform the install/uninstall smoke test.
 
 Example tag commands:
@@ -108,7 +116,7 @@ remaining live keyboard/PIN/DPI/resource/stability gates in
 - Sign release executables and installers
 - Add an MSI or MSIX installer
 
-## Update-system preparation (phase 1 only)
+## Update-system preparation (phases 1 and 2)
 
 The proposed manifest/signature JSON schemas are versioned developer contracts,
 not release assets or authentication implementations. Run:
@@ -122,11 +130,14 @@ in-memory metadata, and makes no network, signing, installation, tag or release
 changes. Both CI and release workflows run it with `shell: pwsh`. Passing it
 does not establish that signatures, downloads, migrations or rollback work.
 
-The publisher still creates only the existing installer ZIP and checksum.
-Phase 2 will add protected signing, update-only artifacts and draft-to-publish
-gating. Key setup, immutable-release settings, tags and publication require
-their own explicit release authorization. Do not publish the synthetic test
-metadata or treat a missing update manifest as an unsigned update fallback.
+Phase 2 implements signed update-only packaging, offline verification and a
+tested draft publisher in isolated developer tooling. Run real-EXE tests with
+`pwsh -File scripts/test-signed-update-package.ps1` after publishing the current
+committed EXE. The tests use ephemeral memory-only private keys, not production
+credentials. Configuration/custody/OS gates remain deliberately pending; key
+setup, immutable-release settings, tags and publication require separate
+explicit authorization. Do not publish synthetic test metadata or treat a
+missing update manifest as an unsigned fallback. The app has no update client yet.
 
 This docs/developer-check delivery keeps `2.0.0-beta.2`, numeric identities and
 settings schema 12 unchanged. Apply the existing version policy when a later

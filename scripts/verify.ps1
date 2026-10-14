@@ -5,6 +5,8 @@ Set-Location $repoRoot
 
 & .\scripts\verify-powershell-syntax.ps1
 & .\scripts\test-version-policy.ps1
+& .\scripts\test-release-publication.ps1
+& .\scripts\test-release-source.ps1
 dotnet test PrivacyMask.Desktop.slnx
 if ($LASTEXITCODE -ne 0) {
   throw "dotnet test failed with exit code $LASTEXITCODE."

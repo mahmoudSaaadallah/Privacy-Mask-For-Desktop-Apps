@@ -1,8 +1,10 @@
 # In-app updates: delivery plan and architecture
 
-Status: phase 1 specification and contract checks only. No update button,
-network client, signing key, launcher, automatic installation, tag, or new
-release is provided by this phase. The current app remains `2.0.0-beta.2`.
+Status: phase 1 specifications and phase 2 developer signing/packaging tooling
+are implemented. Production signing/environment/OS qualification remain unset;
+see [signing operations](update-signing-operations.md). No update button,
+network client, production key, launcher, automatic installation, tag, or new
+release is supplied by this tooling delivery. The app remains `2.0.0-beta.2`.
 
 ## Current implementation and gaps
 
@@ -18,8 +20,10 @@ It force-stops the installed process and deletes the backup before checking
 that the replacement starts successfully. A restart failure is only a warning.
 These are useful installation primitives, not an in-app recovery guarantee.
 
-`release.yml` currently publishes the installer ZIP and SHA-256 file on a
-matching `v*` tag. It has no signed update manifest or update-only package.
+Before phase 2, `release.yml` published the installer ZIP and SHA-256 file on a
+matching `v*` tag. The new publisher requires signed app-only assets and a
+verified draft; it deliberately cannot publish until its production policy and
+environment are configured. This does not add an updater client to the app.
 `App.xaml.cs` acquires a session-local singleton before starting the shell;
 the update worker must not accidentally reactivate that old instance. Shell
 shutdown must finish its awaited disposal before a replacement is attempted;

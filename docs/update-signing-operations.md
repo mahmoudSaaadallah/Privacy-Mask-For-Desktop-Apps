@@ -1,0 +1,149 @@
+# Update signing and release operations
+
+Status: phase 2 provides developer packaging/verification and a draft publisher.
+No production key, protected GitHub environment, OS qualification, immutable
+release setting, tag or release was created by this change. In-app discovery,
+download, installation, stable launcher and recovery UI are still later phases.
+
+## Deliberate setup gate
+
+`build/update-release-policy.json` intentionally has `minimumWindowsBuild: null`
+and `trustedKeys: []`. Production signed packaging fails closed until both are
+reviewed and configured. This also blocks the new tag-driven release publisher:
+it does not silently publish an unsigned installer-only release instead.
+Normal local installer packaging remains available without a signing key.
+
+An owner must approve the following before an authorized release:
+
+1. Qualify the supported Windows baseline, schema compatibility and source
+   migrations. Put the actual minimum build into the policy, not the smoke
+   fixture's illustrative 19041. Verify output schema against `AppSettings`.
+2. Choose a NIST P-256 key custodian and an independent protected backup/recovery
+   process. Generate the production key outside development test automation.
+   Private input format is one unencrypted PKCS#8 `PRIVATE KEY` PEM block; the
+   secret store protects it at rest. Do not save it in this checkout, artifacts,
+   test fixtures, tickets, screenshots, chat, shell history, or command argv.
+3. Commit only its public SubjectPublicKeyInfo DER encoded as canonical Base64
+   and an immutable lower-case key ID in the policy through a reviewed PR.
+   Example shape below uses a placeholder, not a usable public key:
+
+   ```json
+   { "keyId": "release-key-1", "publicKeySpkiBase64": "<reviewed public SPKI Base64>" }
+   ```
+
+   The policy contains no private key and accepts no key URL. The first actual
+   update client/helper must embed the same reviewed trust roots in its build;
+   it may not learn keys from a fetched manifest or dynamically downloaded policy.
+4. Create GitHub environment `privacy-mask-release`, configure required human
+   review and deployment restrictions for the authorized `v*` release tags.
+   Prevent self-approval where supported. Check the exact merged commit/tag and
+   workflow before granting deployment approval. A job's environment name alone
+   does not prove protections were configured by the owner.
+5. Store `PRIVACYMASK_UPDATE_PRIVATE_KEY_PEM` as an **environment secret**, not
+   a repository-wide secret; set environment variable `PRIVACYMASK_UPDATE_KEY_ID`
+   to the matching reviewed ID. Never paste the secret into a command argument
+   or stdout. Use the organization's approved secret/vault input mechanism.
+6. Complete key custody, incident and normal bridge-rotation procedures in
+   [the manifest contract](update-manifest.md). Consider Authenticode separately;
+   this manifest signature does not remove Windows reputation warnings.
+7. Optionally enable GitHub immutable releases as a separate authorized repository
+   settings change, after verifying the complete draft publication flow. Do not
+   assume the workflow itself toggles that setting.
+
+The shipping source is still `2.0.0-beta.2`: this is tooling, not an application
+feature/version delivery. Never reuse an already published version/tag for new
+contents. Setup and tooling are not an instruction to publish beta.2 again.
+Prepare the next app delivery/version and qualified bootstrap at the appropriate
+later phase before promising end-user in-app updates.
+
+## Build and validate locally
+
+Requires .NET 10 SDK and PowerShell 7 for update tooling. These are developer
+requirements only, not new end-user dependencies. Keep keys out of the
+command line. With a clean committed checkout, an approved policy, an approved
+process-scoped signing environment and a matching key ID:
+
+```powershell
+.\scripts\package-win-x64-release.ps1
+pwsh -File .\scripts\package-win-x64-update.ps1 -KeyId release-key-1
+pwsh -File .\scripts\test-update-package.ps1
+```
+
+The normal publisher checks committed source provenance, exact product/numeric
+version, x64 PE architecture, key match, archive/file hashes, exact one-file ZIP,
+schema and policy. Existing signed asset filenames are never overwritten by the
+tool; choose a fresh dedicated output directory for a deliberate rebuild.
+The supplied application must have been built from HEAD; a stale ignored publish
+EXE is rejected even if its product version label happens to match.
+
+The tool is under `tools/PrivacyMask.ReleaseTool`, not referenced by the app,
+and is not included in the end-user installer or update ZIP. Keys are read only
+by the pack command from process environment. Verify needs only public policy.
+Private strings necessarily exist briefly in signing-process memory; disposing
+key objects and removing the child environment do not claim to erase every
+managed-string copy or defend against a compromised runner/administrator.
+
+## Automated tag release flow
+
+1. Human approval/version qualification and merge happen first. An explicitly
+   authorized exact product tag is pushed on the merged commit.
+2. `release.yml` uses full Git history, the named environment and per-tag
+   serialization. The source gate rejects a missing/mismatched tag, unmerged
+   source or dirty checkout before the signing step receives its secret.
+3. Build/test normal application and installer ZIP. Run update schema, signature,
+   archive, source-gate, publisher and ephemeral real-EXE checks.
+4. Expose the private secret only to the signed-package step. Missing/invalid
+   key, empty/unqualified policy or stale EXE stops the job. No generated test
+   key or unsigned fallback is allowed.
+5. Independently validate generated signed assets with the public policy.
+6. The publisher rechecks the remote tag (including annotated tags) against the
+   verified checkout commit, creates a Draft with exactly five assets, and
+   compares every remote uploaded asset's name/size/SHA-256 digest/state with
+   the local files. Recheck tag identity before publication.
+7. Only then clear Draft. Beta/rc is prerelease and not Latest; a stable release
+   is explicitly Latest. Confirm the expected published state from the API.
+
+The five files are the normal installer ZIP/checksum, app-only update ZIP,
+`update-manifest.json`, and `update-manifest.sig.json`. Scripts/settings/launcher
+are never allowed inside the v1 update ZIP. Public release notes are display
+text, not instructions to the updater.
+
+## Failure handling and operator recovery
+
+- No required asset/key/configuration: fail before publication. Normal manual
+  installation does not imply the signed publishing gate passed.
+- Upload failure, wrong/missing digest, duplicates or source/tag change: leave
+  the draft unpublished. Inspect the run/draft before an explicitly authorized
+  retry. The script deliberately does not overwrite assets, delete releases,
+  move tags, or resume an unknown partial draft automatically.
+- Publication/API-confirmation failure: inspect actual remote state first. The
+  edit may have succeeded despite losing its response; do not blindly publish
+  another release or claim rollback of a public release.
+- A published immutable release must not be patched in place. Correct the
+  source and publish a new reviewed version after normal qualification.
+- A compromised signing key requires the separate incident/verified repair
+  process. A valid signature does not fix a compromised source or runner.
+
+## Verification without production secrets
+
+```powershell
+.\scripts\verify.ps1
+pwsh -File .\scripts\test-update-manifest-schema.ps1
+.\scripts\package-win-x64-release.ps1 -SkipTests
+pwsh -File .\scripts\test-signed-update-package.ps1
+```
+
+Unit tests generate P-256 keys in memory; the real-EXE smoke suite writes only
+public fixture metadata into a scoped temporary directory. It verifies an actual
+published executable, modified manifest/archive rejection, refusal to overwrite
+assets, wrong source/key rejection and cleanup. It neither installs the update
+nor publishes a GitHub release. Publisher/source tests intercept every GitHub/Git
+command and exercise failure gates without external writes. Windows PowerShell
+5.1 remains supported for the existing installer and source/publisher tests;
+PowerShell 7 is used explicitly for cryptographic/schema packaging checks.
+
+## References
+
+- [GitHub environment protections](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments)
+- [GitHub release edit flags](https://cli.github.com/manual/gh_release_edit)
+- [.NET explicit signature format](https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.ecdsa.signdata?view=net-10.0)
