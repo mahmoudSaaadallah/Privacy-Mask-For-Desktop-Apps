@@ -83,6 +83,7 @@ public partial class MainWindow : Window
                 profile.ProfileId == previous.SelectedApplication?.ProfileId);
             if (selected is not null) viewModel.OpenApplication(selected);
             viewModel.SelectedPage = previous.SelectedPage;
+            if (previous.IsAdvancedZonesPage) viewModel.ShowAdvancedZones();
             previous.SettingsEdited -= QueuePreview;
             previous.Dispose();
         }
@@ -154,6 +155,25 @@ public partial class MainWindow : Window
         Navigate_Click(new System.Windows.Controls.Button { Tag = DesktopPage.Applications }, e);
     }
 
+    private void AdvancedZones_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CommitFocusedEditor() || !CommitGridEditors(this) || HasBindingErrors(this)) return;
+        ViewModel.ShowAdvancedZones();
+        FocusSelectedPage();
+    }
+
+    private void BackFromZones_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CommitFocusedEditor() || !CommitGridEditors(this) || HasBindingErrors(this))
+        {
+            System.Windows.MessageBox.Show(this, "Correct the highlighted zone value before going back. Your edits are retained.",
+                "Check this value", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        ViewModel.ShowPrimaryApplicationDetails();
+        FocusSelectedPage();
+    }
+
     private void FocusSelectedPage()
     {
         Dispatcher.BeginInvoke(() =>
@@ -164,7 +184,8 @@ public partial class MainWindow : Window
                 ApplicationSearchBox.Focus();
                 return;
             }
-            var pageName = ViewModel.IsApplicationDetailsPage ? "ApplicationDetailsPage" : $"{ViewModel.SelectedPage}Page";
+            var pageName = ViewModel.IsAdvancedZonesPage ? "AdvancedZonesPage"
+                : ViewModel.IsApplicationDetailsPage ? "ApplicationDetailsPage" : $"{ViewModel.SelectedPage}Page";
             if (FindName(pageName) is DependencyObject page) FocusFirstControl(page);
         }, System.Windows.Threading.DispatcherPriority.Input);
     }

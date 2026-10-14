@@ -76,10 +76,13 @@ internal static class Program
                     Drain();
                     Check(session.SelectedApplication.StartupMode == AppActivationMode.Manual, "Activation radio failed to update the shared edit session.");
                     session.SetSavedBaseline(session.ToModel());
-                    var expander = Find<Expander>(root).Single();
-                    expander.IsExpanded = true;
+                    session.ShowAdvancedZones();
                     Layout(root, size);
                     Check(Find<DataGrid>(root).Single().Columns.Count == 10, "Advanced fields lost.");
+                    Check(session.IsAdvancedZonesPage && !session.HasPendingChanges, "Zone navigation edited settings.");
+                    if (screenshots is not null) Render(root, size, scale, System.IO.Path.Combine(screenshots, $"AdvancedZones-{scale:0.00}.png"));
+                    session.ShowPrimaryApplicationDetails();
+                    Layout(root, size);
                     var detailScroller = (ScrollViewer)window.FindName("ApplicationDetailsPage");
                     Check(detailScroller.HorizontalScrollBarVisibility == ScrollBarVisibility.Disabled
                         && detailScroller.ExtentWidth <= detailScroller.ViewportWidth + 1,
