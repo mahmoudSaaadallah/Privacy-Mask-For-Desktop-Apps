@@ -10,7 +10,7 @@ if (-not $PublishedExecutable) { $PublishedExecutable = Join-Path $repoRoot 'des
 $tool = Join-Path $repoRoot 'tools/PrivacyMask.ReleaseTool/bin/Release/net10.0/PrivacyMask.ReleaseTool.dll'
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('PrivacyMask-signed-update-test-' + [Guid]::NewGuid().ToString('N'))
 $previousSecret = $env:PRIVACYMASK_UPDATE_PRIVATE_KEY_PEM
-$key = [Security.Cryptography.ECDsa]::Create([Security.Cryptography.ECCurve]::NamedCurves.nistP256)
+$key = [Security.Cryptography.ECDsa]::Create([Security.Cryptography.ECCurve+NamedCurves]::nistP256)
 $script:updateChecks = 0
 
 function Assert-UpdateCheck {
@@ -41,6 +41,11 @@ try {
   }
   # Only a PUBLIC test policy is written. The ephemeral private key never goes to disk.
   [IO.File]::WriteAllText($policyPath, ($policy | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
+  $unconfiguredPolicyPath = Join-Path $fixtureRoot 'unconfigured-policy.json'
+  $unconfiguredPolicy = ($policy | ConvertTo-Json -Depth 8) | ConvertFrom-Json
+  $unconfiguredPolicy.minimumWindowsBuild = $null
+  $unconfiguredPolicy.trustedKeys = @()
+  [IO.File]::WriteAllText($unconfiguredPolicyPath, ($unconfiguredPolicy | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
   $env:PRIVACYMASK_UPDATE_PRIVATE_KEY_PEM = $key.ExportPkcs8PrivateKeyPem()
   $output = Join-Path $fixtureRoot 'valid'
   $common = @('--output', $output, '--version', $identity.Version, '--file-version', $identity.FileVersion, '--commit', $commit, '--policy', $policyPath)
@@ -79,7 +84,7 @@ try {
   Assert-UpdateCheck (-not (Test-Path $badOutput)) 'wrong executable source produced no assets'
   Invoke-TestTool (@('pack', '--exe', $PublishedExecutable, '--key-id', 'ephemeral-test-key', '--output', $badOutput,
     '--version', $identity.Version, '--file-version', $identity.FileVersion, '--commit', $commit,
-    '--policy', (Join-Path $repoRoot 'build/update-release-policy.json'))) -ExpectFailure
+    '--policy', $unconfiguredPolicyPath)) -ExpectFailure
   Assert-UpdateCheck (-not (Test-Path $badOutput)) 'unconfigured production policy fails closed'
   Assert-UpdateCheck (@(Get-ChildItem -LiteralPath $output -Filter '.verify-*').Count -eq 0) 'verification scratch cleanup'
   Write-Host "Passed $script:updateChecks signed package smoke checks on the real EXE; ephemeral test key, no publication or installed-app changes."
