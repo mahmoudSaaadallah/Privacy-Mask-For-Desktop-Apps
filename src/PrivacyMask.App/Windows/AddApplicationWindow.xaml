@@ -5,7 +5,7 @@
  Foreground="{StaticResource InkBrush}" Background="{StaticResource CanvasBrush}"
  Icon="pack://application:,,,/PrivacyMask.App;component/Assets/PrivacyMask.ico"
  FontFamily="Segoe UI Variable Text" FontSize="14" WindowStartupLocation="CenterOwner" AutomationProperties.Name="Add an application to PrivacyMask">
- <Grid Margin="24"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+ <Grid Margin="24" Background="{StaticResource CanvasBrush}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <DockPanel Margin="0,0,0,12">
    <Button DockPanel.Dock="Right" Style="{StaticResource CircleHelp}" Content="i" AutomationProperties.Name="Application picker help" services:InformationHelp.Text="{Binding Text,ElementName=DescriptionText}"/>
    <TextBlock x:Name="HeadingText" Style="{StaticResource PageHeading}" Text="Add application" FontSize="24"/>
@@ -28,7 +28,7 @@
      <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem"><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="0"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem"><Border x:Name="Surface" Background="Transparent"><ContentPresenter/><Border.Style><Style TargetType="Border"><Setter Property="BorderBrush" Value="#EEF0F2"/><Setter Property="BorderThickness" Value="0,0,0,1"/></Style></Border.Style></Border><ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="#DCF4F3"/></Trigger><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource FocusBrush}"/><Setter TargetName="Surface" Property="BorderThickness" Value="1"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style></ListBox.ItemContainerStyle>
      <ListBox.ItemTemplate><DataTemplate DataType="{x:Type viewModels:ApplicationCandidateViewModel}">
       <Grid Margin="12,8" ToolTip="{Binding Candidate.ExecutablePath}"><Grid.ColumnDefinitions><ColumnDefinition Width="48"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-       <Image Width="34" Height="34" HorizontalAlignment="Left" Source="{Binding Icon}"/>
+       <Image Width="34" Height="34" HorizontalAlignment="Left"><Image.Style><Style TargetType="Image"><Setter Property="Source" Value="{Binding Icon}"/><Style.Triggers><DataTrigger Binding="{Binding Candidate.ProcessName}" Value="notepad"><Setter Property="Source" Value="{StaticResource NotepadSymbol}"/></DataTrigger></Style.Triggers></Style></Image.Style></Image>
        <StackPanel Grid.Column="1"><TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/><TextBlock Text="{Binding ExecutableName}" Foreground="{StaticResource MutedInkBrush}" FontSize="12" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/></StackPanel>
       </Grid>
      </DataTemplate></ListBox.ItemTemplate>

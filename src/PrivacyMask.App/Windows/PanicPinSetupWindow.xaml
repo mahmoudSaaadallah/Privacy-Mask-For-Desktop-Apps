@@ -3,9 +3,9 @@
  xmlns:services="clr-namespace:PrivacyMask.App.Services"
  Foreground="{StaticResource InkBrush}" Background="{StaticResource CanvasBrush}"
  Icon="pack://application:,,,/PrivacyMask.App;component/Assets/PrivacyMask.ico"
- FontFamily="Segoe UI Variable Text" FontSize="14" Width="540" Height="500" MinWidth="420" MinHeight="340"
+ FontFamily="Segoe UI Variable Text" FontSize="14" Width="540" Height="540" MinWidth="420" MinHeight="340"
  ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True" WindowStartupLocation="CenterScreen" Title="Create panic PIN" AutomationProperties.Name="Configure panic unlock PIN">
- <Grid Margin="24"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+ <Grid Margin="24" Background="{StaticResource CanvasBrush}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
  <Grid Margin="0,0,0,22"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
   <TextBlock x:Name="HeadingText" Text="Create panic PIN" Style="{StaticResource PageHeading}"/>
   <StackPanel Grid.Column="1" Margin="10,0,0,0"><Button Content="i" Style="{StaticResource CircleHelp}" HorizontalAlignment="Right" AutomationProperties.Name="Panic PIN help" services:InformationHelp.Text="{Binding Text,ElementName=DescriptionText}"/><TextBlock Text="4–8 digits" Foreground="{StaticResource MutedInkBrush}" Margin="0,6,0,0"/></StackPanel>
@@ -18,13 +18,14 @@
   </StackPanel>
   <TextBlock Text="New PIN" Margin="0,0,0,6"/><controls:PinEntry x:Name="NewPinBox" AutomationProperties.Name="New panic unlock PIN"/>
   <TextBlock Text="Confirm new PIN" Margin="0,20,0,6"/><controls:PinEntry x:Name="ConfirmPinBox" AutomationProperties.Name="Confirm new panic unlock PIN"/>
-  <Border Margin="0,14,0,0"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding Text,ElementName=ErrorText}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
+  
+ </StackPanel></ScrollViewer>
+ <Border Grid.Row="2" Margin="0,14,0,0"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding Text,ElementName=ErrorText}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
  <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
  <Border Width="21" Height="21" CornerRadius="11" Background="#CE142B" VerticalAlignment="Top"><TextBlock Text="!" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
  <TextBlock x:Name="ErrorText" Grid.Column="1" Foreground="#CE142B" TextWrapping="Wrap" Text="" AutomationProperties.LiveSetting="Assertive"/>
  </Grid></Border>
- </StackPanel></ScrollViewer>
- <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,10">
+ <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,10">
   <Button Content="_Cancel" IsCancel="True" Style="{StaticResource SecondaryButton}" MinWidth="116"/>
   <Button Content="_Save PIN" IsDefault="True" Style="{StaticResource PrimaryButton}" Click="Save_Click" MinWidth="128" Margin="12,0,0,0"/>
  </StackPanel>
