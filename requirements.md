@@ -14,6 +14,7 @@
 - .NET 10 SDK
 - Visual Studio 2022 with the `.NET desktop development` workload, or a compatible editor with WPF support
 - PowerShell 5.1 or later
+- PowerShell 7 for update schema checks and signed release packaging (not required by end users or the existing installer)
 - Git
 
 ## Optional tools

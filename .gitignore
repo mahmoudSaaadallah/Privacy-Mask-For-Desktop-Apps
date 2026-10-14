@@ -18,3 +18,11 @@ desktop-app/windows/win-x64/*BUILD-INFO.txt
 *.log
 *.tmp
 *.DS_Store
+
+# Defensive exclusions only; private signing material belongs in a secret vault,
+# never in this checkout. Reviewed public SPKI keys live in release policy JSON.
+*.private.pem
+*.p8
+*.pfx
+*.p12
+.privacy-mask-signing/
