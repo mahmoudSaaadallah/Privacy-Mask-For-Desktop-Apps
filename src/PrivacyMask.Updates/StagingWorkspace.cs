@@ -27,7 +27,8 @@ internal sealed class StagingWorkspace
         if (free < required) throw new ReleaseValidationException("Insufficient staging disk space.");
         Root = Path.Combine(root, "operation-" + Guid.NewGuid().ToString("N"));
         if (Directory.Exists(Root) || File.Exists(Root)) throw new ReleaseValidationException("Staging operation collision.");
-        var user = WindowsIdentity.GetCurrent().User ?? throw new ReleaseValidationException("Current user identity is unavailable.");
+        using var identity = WindowsIdentity.GetCurrent();
+        var user = identity.User ?? throw new ReleaseValidationException("Current user identity is unavailable.");
         var security = new DirectorySecurity();
         security.SetOwner(user);
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
