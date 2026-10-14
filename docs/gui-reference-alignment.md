@@ -187,3 +187,30 @@ installer checks and isolated beta ZIP/checksum/install/uninstall smoke pass.
 The workflow is prepared to publish prereleases as non-Latest on an existing
 matching tag, but this work does not create any tag or publish a release. Live
 qualification gates remain open. See [release-process.md](release-process.md).
+
+## Hover-help and consistent-sidebar fix (beta.2)
+
+The user reported PIN/Overview help appearing immediately after selecting the
+page. Navigation focuses the first control, which was an information button;
+InformationHelp's GotKeyboardFocus handler opened its tooltip. Focus now never
+opens visual help. Overview and Security opt into an inherited hover-only
+policy, suppressing explicit keyboard opening there as requested. Native WPF
+hover registration and UI Automation help text remain. Other pages keep explicit
+F1/Enter/Space opening. Tooltips close when their control/page becomes invisible.
+
+One shield/PM/PrivacyMask header and navy background now replace the different
+large-PM, compact-PM and About header variants. The existing About shield is
+reused as a frozen drawing; no new bitmap/runtime/UI dependency is added.
+Advanced editing still hides the sidebar. The executable/tray icon is unchanged.
+
+The source delivery advances to 2.0.0-beta.2, numeric FileVersion 2.0.0.2,
+AssemblyVersion 2.0.0.0 and schema 12. No tag or release is created.
+231 unit tests, 53 version-policy checks, 18 PowerShell syntax checks, zero-warning
+build, compiled WPF/DIP/edit-session checks, installer checks and the isolated
+beta.2 package/checksum/shortcut/install/uninstall smoke pass. New regression
+checks use routed focus/key events with a non-native input source; they verify
+no focus/key popups on the requested pages, inherited scope, native tooltip
+registration, accessible text, the same logo across six pages and unchanged
+settings. These are not live pointer-delay or screen-reader-announcement tests.
+Synthetic WPF previews cover Overview, Security and Settings with the unified
+brand. The installed user app/settings are untouched; live gates remain open.

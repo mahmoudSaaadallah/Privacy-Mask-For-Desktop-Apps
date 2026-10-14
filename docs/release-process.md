@@ -5,7 +5,7 @@ not committed to the source repository.
 
 ## Version policy
 
-The source currently prepares `2.0.0-beta.1`. This is a testing delivery, not a
+The source currently prepares `2.0.0-beta.2`. This is a testing delivery, not a
 stable release announcement. Publishing/tagging remains a separate authorized
 action after merge and qualification. A commit or PR is not itself a release.
 Earlier source builds displayed 2.0.0 while still unreleased; the beta suffix
@@ -35,10 +35,10 @@ on merge or by a Git hook.
 
 | Identity | Current value | Purpose |
 | --- | --- | --- |
-| Version | `2.0.0-beta.1` | UI label, archive filename and exact `v2.0.0-beta.1` tag |
+| Version | `2.0.0-beta.2` | UI label, archive filename and exact `v2.0.0-beta.2` tag |
 | InformationalVersion | `$(Version)` plus SDK Git metadata when available | Full build provenance; About shows the product before `+` and exposes the full value in its tooltip/help |
 | AssemblyVersion | `2.0.0.0` | Numeric assembly identity, stable throughout this prerelease cycle |
-| FileVersion | `2.0.0.1` | Numeric Windows file/build revision |
+| FileVersion | `2.0.0.2` | Numeric Windows file/build revision |
 
 Windows numeric fields cannot contain `beta` or `rc`. Increase FileVersion's
 fourth component for the next delivered beta/candidate/stable build of the same
@@ -77,7 +77,7 @@ checksum beside the versioned ZIP.
 ## Publish a GitHub release
 
 1. Merge the fully verified release changes into `main`.
-2. Create an annotated version tag matching the source, such as `v2.0.0-beta.1`, on the release commit.
+2. Create an annotated version tag matching the source, such as `v2.0.0-beta.2`, on the release commit.
 3. Push the tag to GitHub.
 4. The `release` workflow rejects a tag that does not match the product version,
    builds and tests the project, creates the Windows ZIP and checksum, smoke
@@ -91,8 +91,8 @@ checksum beside the versioned ZIP.
 Example tag commands:
 
 ```powershell
-git tag -a v2.0.0-beta.1 -m "PrivacyMask v2.0.0-beta.1"
-git push origin v2.0.0-beta.1
+git tag -a v2.0.0-beta.2 -m "PrivacyMask v2.0.0-beta.2"
+git push origin v2.0.0-beta.2
 ```
 
 These commands are a release procedure, not commands run by the current PR.

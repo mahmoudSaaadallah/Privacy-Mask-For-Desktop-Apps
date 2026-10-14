@@ -1,6 +1,14 @@
 # Changelog
 
-## 2.0.0-beta.1 - Unreleased
+## 2.0.0-beta.2 - Unreleased
+
+- Prevent information popups from opening automatically on focus or page navigation
+- Keep Overview/Security visual help hover-only while retaining accessible help text and explicit keyboard help elsewhere
+- Use the About shield/PM/PrivacyMask sidebar identity and navy background consistently across all sidebar pages
+- Add routed focus/key, inherited hover policy and persistent branding regression checks
+- Advance Windows file revision to 2.0.0.2 without changing settings schema or protection behavior
+
+## 2.0.0-beta.1 - Source snapshot (not published)
 
 - Prepare the first identifiable 2.0 testing delivery; stable 2.0.0 still requires final qualification
 - Show the semantic prerelease version in About and Settings, with full source metadata in About version help
