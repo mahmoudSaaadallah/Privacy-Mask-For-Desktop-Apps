@@ -146,7 +146,7 @@ public sealed class UpdateStager : IDisposable
             {
                 OperationCanceledException => "download-timeout",
                 UpdateHttpException http => http.Message,
-                ReleaseValidationException => "update-validation-failed",
+                ReleaseValidationException or BadImageFormatException or InvalidDataException => "update-validation-failed",
                 IOException or UnauthorizedAccessException => "staging-io-failed",
                 HttpRequestException => "download-network-failed",
                 _ => "download-failed"
