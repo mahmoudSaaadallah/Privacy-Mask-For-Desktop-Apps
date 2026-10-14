@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PrivacyMask proposed signed update manifest v1",
+  "description": "Structural validation only. Signature, duplicate-key, version, cross-field and filesystem policy checks are mandatory separately.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "appId", "repository", "version", "tag", "commitSha", "channel", "runtime", "minWindowsBuild", "minUpdaterProtocol", "package", "files", "settingsCompatibility"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "appId": { "const": "PrivacyMask.Desktop" },
+    "repository": { "const": "mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps" },
+    "version": { "$ref": "#/definitions/productVersion" },
+    "tag": { "type": "string", "maxLength": 129, "pattern": "^v[0-9A-Za-z.-]+$" },
+    "commitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "channel": { "enum": ["stable", "preview"] },
+    "runtime": { "const": "win-x64" },
+    "minWindowsBuild": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+    "minUpdaterProtocol": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assetName", "size", "sha256"],
+      "properties": {
+        "assetName": { "type": "string", "maxLength": 164, "pattern": "^PrivacyMask-[0-9A-Za-z.-]+-win-x64-update\\.zip$" },
+        "size": { "$ref": "#/definitions/fileSize" },
+        "sha256": { "$ref": "#/definitions/sha256" }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "size", "sha256"],
+        "properties": {
+          "path": { "const": "PrivacyMask.App.exe" },
+          "size": { "$ref": "#/definitions/fileSize" },
+          "sha256": { "$ref": "#/definitions/sha256" }
+        }
+      }
+    },
+    "settingsCompatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimumReadableSchema", "maximumReadableSchema", "outputSchema"],
+      "properties": {
+        "minimumReadableSchema": { "$ref": "#/definitions/settingsSchema" },
+        "maximumReadableSchema": { "$ref": "#/definitions/settingsSchema" },
+        "outputSchema": { "$ref": "#/definitions/settingsSchema" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "version": { "pattern": "-" } }, "required": ["version"] },
+      "then": { "properties": { "channel": { "const": "preview" } } },
+      "else": { "properties": { "channel": { "const": "stable" } } }
+    }
+  ],
+  "definitions": {
+    "productVersion": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?$"
+    },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "fileSize": { "type": "integer", "minimum": 1, "maximum": 536870912 },
+    "settingsSchema": { "type": "integer", "minimum": 1, "maximum": 2147483647 }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PrivacyMask proposed detached manifest signature v1",
+  "description": "Structure only; use a pinned P-256 key and SHA-256 to verify the exact UTF-8 manifest bytes. This schema is not cryptographic verification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["algorithm", "keyId", "signature"],
+  "properties": {
+    "algorithm": { "const": "ECDSA-P256-SHA256" },
+    "keyId": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "signature": { "type": "string", "minLength": 88, "maxLength": 88, "pattern": "^[A-Za-z0-9+/]{85}[AQgw]==$" }
+  }
+}
