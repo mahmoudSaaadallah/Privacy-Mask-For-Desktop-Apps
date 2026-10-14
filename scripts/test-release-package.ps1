@@ -76,17 +76,8 @@ try {
   }
 
   $packagedExePath = Join-Path $extractPath 'single-file\PrivacyMask.App.exe'
-  $expectedFileVersion = $versionIdentity.FileVersion
   $versionInfo = (Get-Item -LiteralPath $packagedExePath).VersionInfo
-  $actualFileVersion = $versionInfo.FileVersion
-  if ($actualFileVersion -ne $expectedFileVersion) {
-    throw "Packaged executable version '$actualFileVersion' does not match '$expectedFileVersion'."
-  }
-  $actualProductVersion = $versionInfo.ProductVersion
-  if ([string]::IsNullOrWhiteSpace($actualProductVersion) -or
-      $actualProductVersion.Split('+')[0] -cne $productVersion) {
-    throw "Packaged product version '$actualProductVersion' does not match '$productVersion'."
-  }
+  Assert-PrivacyMaskPackageVersion -Identity $versionIdentity -FileVersion $versionInfo.FileVersion -ProductVersion $versionInfo.ProductVersion
 
   $installerPath = Join-Path $extractPath 'Install-PrivacyMask.ps1'
   $uninstallerPath = Join-Path $extractPath 'Uninstall-PrivacyMask.ps1'

@@ -83,3 +83,17 @@ function Get-PrivacyMaskReleaseFlags {
   }
 }
 
+function Assert-PrivacyMaskPackageVersion {
+  param(
+    [Parameter(Mandatory = $true)]$Identity,
+    [Parameter(Mandatory = $true)][string]$FileVersion,
+    [Parameter(Mandatory = $true)][string]$ProductVersion
+  )
+  if ($FileVersion -cne $Identity.FileVersion) {
+    throw "Packaged executable version '$FileVersion' does not match '$($Identity.FileVersion)'."
+  }
+  if ([string]::IsNullOrWhiteSpace($ProductVersion) -or $ProductVersion.Split('+')[0] -cne $Identity.Version) {
+    throw "Packaged product version '$ProductVersion' does not match '$($Identity.Version)'."
+  }
+}
+

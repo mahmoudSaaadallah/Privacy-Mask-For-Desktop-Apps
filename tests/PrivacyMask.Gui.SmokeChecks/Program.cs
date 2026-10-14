@@ -165,6 +165,9 @@ internal static class Program
         var page = (ScrollViewer)window.FindName("AboutPage");
         var columns = (AdaptivePairPanel)window.FindName("AboutColumns");
         var emailActions = (AdaptivePairPanel)window.FindName("AboutEmailActions");
+        var version = Find<TextBlock>(page).Single(text => AutomationProperties.GetName(text) == "PrivacyMask product version");
+        Check(version.Text == AboutInformation.VersionText && (string)version.ToolTip == AboutInformation.BuildDescription,
+            "About did not display the semantic version or expose its build identity.");
         var shield = (DrawingImage)window.FindResource("AboutShieldSymbol");
         Check(shield.IsFrozen && shield.Drawing.Bounds.Width > 0 && shield.Drawing.Bounds.Height > 0,
             "About shield is not a reusable frozen vector.");

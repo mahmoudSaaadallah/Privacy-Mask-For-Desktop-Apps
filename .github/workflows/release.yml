@@ -24,6 +24,10 @@ jobs:
         shell: powershell
         run: .\scripts\verify-powershell-syntax.ps1
 
+      - name: Test version policy and prerelease classification
+        shell: powershell
+        run: .\scripts\test-version-policy.ps1
+
       - name: Validate version identity and release tag
         shell: powershell
         run: |

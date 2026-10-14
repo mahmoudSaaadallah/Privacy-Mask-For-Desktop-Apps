@@ -22,6 +22,10 @@ jobs:
         shell: powershell
         run: .\scripts\verify-powershell-syntax.ps1
 
+      - name: Test version policy and prerelease classification
+        shell: powershell
+        run: .\scripts\test-version-policy.ps1
+
       - name: Restore
         run: dotnet restore PrivacyMask.Desktop.slnx
 
