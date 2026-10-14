@@ -169,6 +169,30 @@ public sealed class UpdateDownloadTests
     }
 
     [Fact]
+    public async Task PreparationDoesNotCaptureTheCallingUiContext()
+    {
+        using var f = new DownloadFixture();
+        using var stager = f.Stager();
+        var uiContext = new SynchronizationContext();
+        var previous = SynchronizationContext.Current;
+        SynchronizationContext? observed = uiContext;
+        var called = false;
+        var progress = new InlineProgress<UpdateDownloadProgress>(_ => { called = true; observed = SynchronizationContext.Current; });
+        Task<StagedUpdate> pending;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(uiContext);
+            pending = stager.PrepareAsync(f.Candidate, f.Trust.Context, f.Root, progress);
+        }
+        finally { SynchronizationContext.SetSynchronizationContext(previous); }
+        var failure = await Assert.ThrowsAsync<UpdateDownloadException>(() => pending);
+        Assert.Equal("update-validation-failed", failure.Reason); // synthetic payload is not a PE
+        Assert.True(called);
+        Assert.NotSame(uiContext, observed);
+        f.AssertEmpty();
+    }
+
+    [Fact]
     public async Task LockedPartialReportsIncompleteCleanupWithoutDeletingTheTarget()
     {
         using var f = new DownloadFixture();

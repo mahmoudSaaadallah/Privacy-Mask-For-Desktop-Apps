@@ -56,7 +56,9 @@ Release withdrawal/key revocation also require the later recheck/incident policy
 - Headers-only completion, then explicit cancellation/deadline for **body reads**,
   hashing and writes. Ten-minute overall default, ten-second connect timeout,
   one operation per stager, no automatic retry. Caller must cancel and await
-  pending work before disposing the client.
+  pending work before disposing the client. Preparation yields off the caller's
+  synchronization context before crypto/disk checks, including synchronously
+  completing IO; progress can be marshalled back by the host's `IProgress`.
 - Download directly to `package.partial`, hashing with a 64 KiB buffer. Enforce
   signed size on actual reads even without Content-Length; reject a supplied
   mismatched length, truncation, overflow, altered hash and HTTP 206. Only rename

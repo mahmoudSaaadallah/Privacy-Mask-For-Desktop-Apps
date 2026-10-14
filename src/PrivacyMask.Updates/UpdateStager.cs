@@ -57,6 +57,8 @@ public sealed class UpdateStager : IDisposable
         var ct = linked.Token;
         try
         {
+            // Do not let synchronous disk/crypto completions run the preparation on a UI dispatcher.
+            await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
             ct.ThrowIfCancellationRequested();
             if (UpdateEligibility.CheckContext(context) is not null) throw new ReleaseValidationException("Unsupported installation context.");
             // Snapshot caller-owned arrays, then authenticate again. Never use mutable Manifest as authority.
