@@ -10,8 +10,8 @@
     "appId": { "const": "PrivacyMask.Desktop" },
     "repository": { "const": "mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps" },
     "version": { "$ref": "#/definitions/productVersion" },
-    "tag": { "type": "string", "maxLength": 129, "pattern": "^v[0-9A-Za-z.-]+$" },
-    "commitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "tag": { "type": "string", "maxLength": 129, "pattern": "^v[0-9A-Za-z.-]+$(?![\\s\\S])" },
+    "commitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$(?![\\s\\S])" },
     "channel": { "enum": ["stable", "preview"] },
     "runtime": { "const": "win-x64" },
     "minWindowsBuild": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
@@ -21,7 +21,7 @@
       "additionalProperties": false,
       "required": ["assetName", "size", "sha256"],
       "properties": {
-        "assetName": { "type": "string", "maxLength": 164, "pattern": "^PrivacyMask-[0-9A-Za-z.-]+-win-x64-update\\.zip$" },
+        "assetName": { "type": "string", "maxLength": 164, "pattern": "^PrivacyMask-[0-9A-Za-z.-]+-win-x64-update\\.zip$(?![\\s\\S])" },
         "size": { "$ref": "#/definitions/fileSize" },
         "sha256": { "$ref": "#/definitions/sha256" }
       }
@@ -63,9 +63,9 @@
     "productVersion": {
       "type": "string",
       "maxLength": 128,
-      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?$"
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?$(?![\\s\\S])"
     },
-    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$(?![\\s\\S])" },
     "fileSize": { "type": "integer", "minimum": 1, "maximum": 536870912 },
     "settingsSchema": { "type": "integer", "minimum": 1, "maximum": 2147483647 }
   }

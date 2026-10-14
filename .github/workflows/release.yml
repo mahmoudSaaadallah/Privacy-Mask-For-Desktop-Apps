@@ -31,6 +31,10 @@ jobs:
         shell: powershell
         run: .\scripts\test-version-policy.ps1
 
+      - name: Test proposed update manifest schemas
+        shell: pwsh
+        run: .\scripts\test-update-manifest-schema.ps1
+
       - name: Validate version identity and release tag
         shell: powershell
         run: |

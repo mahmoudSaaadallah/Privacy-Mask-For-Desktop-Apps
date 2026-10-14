@@ -7,7 +7,7 @@
   "required": ["algorithm", "keyId", "signature"],
   "properties": {
     "algorithm": { "const": "ECDSA-P256-SHA256" },
-    "keyId": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "keyId": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z0-9][a-z0-9-]*$(?![\\s\\S])" },
     "signature": { "type": "string", "minLength": 88, "maxLength": 88, "pattern": "^[A-Za-z0-9+/]{85}[AQgw]==$" }
   }
 }
