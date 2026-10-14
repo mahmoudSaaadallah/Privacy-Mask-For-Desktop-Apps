@@ -88,8 +88,12 @@ try {
   $publish = ($blocks[1].Groups['Body'].Value -replace '(?m)^          ', '')
   $publish = $publish.Replace('${{ github.ref_name }}', $current.ExpectedTag).Replace('${{ github.repository }}', 'fixture/repo')
   $captured = New-Object 'System.Collections.Generic.List[string]'
+  $previousReleaseTag = $env:PRIVACYMASK_RELEASE_TAG
+  $previousReleaseRepo = $env:PRIVACYMASK_RELEASE_REPOSITORY
   Push-Location $repoRoot
   try {
+    $env:PRIVACYMASK_RELEASE_TAG = $current.ExpectedTag
+    $env:PRIVACYMASK_RELEASE_REPOSITORY = 'fixture/repo'
     & {
       function gh {
         param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
@@ -99,7 +103,11 @@ try {
       & ([scriptblock]::Create($publish))
     }
   }
-  finally { Pop-Location }
+  finally {
+    $env:PRIVACYMASK_RELEASE_TAG = $previousReleaseTag
+    $env:PRIVACYMASK_RELEASE_REPOSITORY = $previousReleaseRepo
+    Pop-Location
+  }
   Assert-Policy ($captured.Count -gt 3 -and $captured[0] -eq 'release' -and $captured[1] -eq 'create' -and $captured[2] -ceq $current.ExpectedTag) 'Wrong release/tag command.'
   Assert-Policy ($captured -contains '--verify-tag') 'Publishing block omitted tag protection.'
   Assert-Policy (($captured -contains '--prerelease') -eq $current.IsPrerelease -and ($captured -contains '--latest=false') -eq $current.IsPrerelease) 'Publishing block misclassified prerelease.'
