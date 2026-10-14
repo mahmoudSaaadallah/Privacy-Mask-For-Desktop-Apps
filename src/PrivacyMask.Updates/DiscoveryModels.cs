@@ -25,11 +25,12 @@ public static class UpdateEligibility
     public static UpdateCheckStatus? CheckContext(UpdateCheckContext context)
     {
         if (!SemanticVersion.TryParse(context.InstalledVersion, out _) ||
-            !Enum.IsDefined(context.Channel) || !Enum.IsDefined(context.Installation) ||
-            context.WindowsBuild <= 0 || context.SettingsSchema <= 0 || context.UpdaterProtocol <= 0)
+            !Enum.IsDefined(context.Channel) || !Enum.IsDefined(context.Installation))
             return UpdateCheckStatus.InvalidContext;
         if (context.Installation != InstallationKind.Managed || context.Runtime != "win-x64")
             return UpdateCheckStatus.ManualUpdateRequired;
+        if (context.WindowsBuild <= 0 || context.SettingsSchema <= 0 || context.UpdaterProtocol <= 0)
+            return UpdateCheckStatus.InvalidContext;
         return null;
     }
 
