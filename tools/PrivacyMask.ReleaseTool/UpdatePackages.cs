@@ -91,6 +91,7 @@ public static class UpdatePackages
         if (archive.Length != manifest.Package.Size || Hash(archive) != manifest.Package.Sha256)
             throw new ReleaseValidationException("Archive hash/size does not match signed metadata.");
         archive.Position = 0;
+        UpdatePayload.ValidateArchiveLayout(archive);
         using var zip = new ZipArchive(archive, ZipArchiveMode.Read);
         ValidateEntry(zip, manifest.Files[0]);
         var scratch = Path.Combine(root, ".verify-" + Guid.NewGuid().ToString("N") + ".exe");

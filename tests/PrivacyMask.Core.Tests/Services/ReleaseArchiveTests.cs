@@ -48,6 +48,34 @@ public sealed class ReleaseArchiveTests
     }
 
     [Fact]
+    public void ValidatesDirectoryBoundsBeforeZipAllocation()
+    {
+        using var valid = Zip("PrivacyMask.App.exe");
+        UpdatePayload.ValidateArchiveLayout(valid);
+        Assert.Equal(0, valid.Position);
+        using var extra = Zip("PrivacyMask.App.exe", extra: true);
+        Assert.Throws<ReleaseValidationException>(() => UpdatePayload.ValidateArchiveLayout(extra));
+    }
+
+    [Theory]
+    [InlineData(4, 1)] // multiple disks
+    [InlineData(6, 1)]
+    [InlineData(8, 255)] // too many entries / ZIP64 sentinel
+    [InlineData(10, 255)]
+    [InlineData(12, 255)] // central directory size mismatch
+    [InlineData(16, 255)] // central directory offset mismatch
+    [InlineData(20, 1)] // comments not supported
+    [InlineData(0, 0)] // missing end signature
+    public void RejectsUnsupportedArchiveDirectory(int offset, byte value)
+    {
+        using var memory = Zip("PrivacyMask.App.exe");
+        var bytes = memory.ToArray();
+        bytes[bytes.Length - 22 + offset] = value;
+        using var malformed = new MemoryStream(bytes);
+        Assert.Throws<ReleaseValidationException>(() => UpdatePayload.ValidateArchiveLayout(malformed));
+    }
+
+    [Fact]
     public void StreamCopyEnforcesExactHashAndSize()
     {
         using var source = new MemoryStream(Payload);

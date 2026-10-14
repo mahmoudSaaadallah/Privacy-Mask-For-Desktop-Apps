@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
@@ -8,6 +9,26 @@ namespace PrivacyMask.Updates;
 /// <summary>Shared publisher/downloader checks. Never executes the payload.</summary>
 public static class UpdatePayload
 {
+    /// <summary>Bound central-directory allocation before ZipArchive parses untrusted entries.</summary>
+    public static void ValidateArchiveLayout(Stream archive)
+    {
+        if (!archive.CanSeek || archive.Length is < 22 or > ManifestRules.MaximumFileSize)
+            throw new ReleaseValidationException("Unsupported archive bounds.");
+        Span<byte> end = stackalloc byte[22];
+        archive.Position = archive.Length - end.Length;
+        archive.ReadExactly(end);
+        if (BinaryPrimitives.ReadUInt32LittleEndian(end) != 0x06054b50 ||
+            BinaryPrimitives.ReadUInt16LittleEndian(end[4..]) != 0 ||
+            BinaryPrimitives.ReadUInt16LittleEndian(end[6..]) != 0 ||
+            BinaryPrimitives.ReadUInt16LittleEndian(end[8..]) != 1 ||
+            BinaryPrimitives.ReadUInt16LittleEndian(end[10..]) != 1 ||
+            BinaryPrimitives.ReadUInt16LittleEndian(end[20..]) != 0 ||
+            BinaryPrimitives.ReadUInt32LittleEndian(end[12..]) is < 46 or > 4096 ||
+            (long)BinaryPrimitives.ReadUInt32LittleEndian(end[16..]) + BinaryPrimitives.ReadUInt32LittleEndian(end[12..]) != archive.Length - 22)
+            throw new ReleaseValidationException("Only a bounded single-entry ZIP without comments or ZIP64 is supported.");
+        archive.Position = 0;
+    }
+
     public static void InspectExecutable(string path, string version, string commit, string? expectedFileVersion = null)
     {
         using var stream = File.OpenRead(path);
