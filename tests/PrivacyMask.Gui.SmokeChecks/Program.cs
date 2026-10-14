@@ -5,6 +5,7 @@ using System.Windows.Automation;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using System.Windows.Input;
 using PrivacyMask.App;
 using PrivacyMask.App.Services;
 using PrivacyMask.App.ViewModels;
@@ -103,6 +104,7 @@ internal static class Program
                     Console.WriteLine($"Six pages and profile detail passed at simulated {scale:P0} DIP layout.");
                 }
                 Check(session.OverviewAppProfiles.Count == 6, "Dashboard is not bounded.");
+                CheckHelpAndSidebar(window, root, session);
                 CheckAboutReference(window, root, session, screenshots);
                 session.SelectedPage = DesktopPage.Security;
                 Layout(root, new Size(960, 520));
@@ -156,6 +158,49 @@ internal static class Program
             Console.Error.WriteLine(exception);
             return 1;
         }
+    }
+
+    private static void CheckHelpAndSidebar(MainWindow window, FrameworkElement root, SettingsViewModel session)
+    {
+        var before = System.Text.Json.JsonSerializer.Serialize(session.ToModel());
+        var icon = (Image)window.FindName("SidebarBrandIcon");
+        var header = (FrameworkElement)window.FindName("SidebarBrandHeader");
+        var expected = (DrawingImage)window.FindResource("AboutShieldSymbol");
+        foreach (var page in Enum.GetValues<DesktopPage>())
+        {
+            session.SelectedPage = page;
+            Layout(root, new Size(1000, 880));
+            Check(ReferenceEquals(icon.Source, expected) && header.Visibility == Visibility.Visible,
+                $"Sidebar branding changes on {page}.");
+            var pageRoot = (DependencyObject)window.FindName($"{page}Page");
+            var helpControls = Find<Button>(pageRoot).Where(button => InformationHelp.GetText(button) is not null).ToArray();
+            foreach (var control in helpControls)
+            {
+                var tip = (ToolTip)control.ToolTip;
+                control.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice, Environment.TickCount, null, control)
+                    { RoutedEvent = Keyboard.GotKeyboardFocusEvent });
+                Check(!tip.IsOpen, $"{page} help opened automatically on focus.");
+                Check(AutomationProperties.GetHelpText(control) == InformationHelp.GetText(control), "Help lost accessible text.");
+                Check(ToolTipService.GetIsEnabled(control) && ReferenceEquals(ToolTipService.GetToolTip(control), tip)
+                    && ReferenceEquals(tip.PlacementTarget, control), "Native hover help registration lost.");
+                var hoverOnly = page is DesktopPage.Overview or DesktopPage.Security;
+                Check(InformationHelp.GetHoverOnly(control) == hoverOnly, $"Wrong help policy on {page}.");
+                if (hoverOnly)
+                {
+                    foreach (var key in new[] { Key.F1, Key.Enter, Key.Space })
+                    {
+                        control.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, new TestInputSource(), Environment.TickCount, key)
+                            { RoutedEvent = Keyboard.PreviewKeyDownEvent });
+                        Check(!tip.IsOpen, $"{page} hover-only help opened from {key}.");
+                    }
+                }
+            }
+            if (page is DesktopPage.Overview or DesktopPage.Security)
+                Check(helpControls.Length > 0, "Target page has no information controls to verify.");
+        }
+        Check(System.Text.Json.JsonSerializer.Serialize(session.ToModel()) == before && !session.HasPendingChanges,
+            "Help/sidebar navigation changed settings.");
+        Console.WriteLine("Help/sidebar passed: focus never opens help, privacy pages are hover-only, native hover/accessible text remain and shield identity is constant.");
     }
 
     private static void CheckAboutReference(MainWindow window, FrameworkElement root, SettingsViewModel session, string? screenshots)
@@ -370,4 +415,12 @@ internal sealed class TestApplication : Application
 {
     protected override void OnStartup(StartupEventArgs e) { }
     protected override void OnExit(ExitEventArgs e) { }
+}
+
+// Routed-event source only: no native window, OS input or production runtime.
+internal sealed class TestInputSource : PresentationSource
+{
+    public override Visual RootVisual { get; set; } = new DrawingVisual();
+    public override bool IsDisposed => false;
+    protected override CompositionTarget GetCompositionTargetCore() => null!;
 }
