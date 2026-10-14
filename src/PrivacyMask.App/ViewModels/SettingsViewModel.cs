@@ -284,7 +284,6 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
                 RaisePropertyChanged(nameof(IsSecurityPage));
                 RaisePropertyChanged(nameof(IsSettingsPage));
                 RaisePropertyChanged(nameof(IsAboutPage));
-                RaisePropertyChanged(nameof(IsSecondaryDesignPage));
                 NotifyApplicationPages();
             }
         }
@@ -297,7 +296,6 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     public bool IsSecurityPage => SelectedPage == DesktopPage.Security;
     public bool IsSettingsPage => SelectedPage == DesktopPage.Settings;
     public bool IsAboutPage => SelectedPage == DesktopPage.About;
-    public bool IsSecondaryDesignPage => IsShortcutsPage || IsSecurityPage || IsSettingsPage;
 
     public static SettingsViewModel FromModel(
         AppSettings settings,

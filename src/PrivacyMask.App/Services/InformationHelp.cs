@@ -11,6 +11,20 @@ public static class InformationHelp
     public static readonly DependencyProperty TextProperty = DependencyProperty.RegisterAttached(
         "Text", typeof(string), typeof(InformationHelp), new PropertyMetadata(null, TextChanged));
 
+    public static readonly DependencyProperty HoverOnlyProperty = DependencyProperty.RegisterAttached(
+        "HoverOnly", typeof(bool), typeof(InformationHelp),
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits, HoverOnlyChanged));
+
+    public static bool GetHoverOnly(DependencyObject element) => (bool)element.GetValue(HoverOnlyProperty);
+    public static void SetHoverOnly(DependencyObject element, bool value) => element.SetValue(HoverOnlyProperty, value);
+
+    public static bool OpensFromKeyboard(bool hoverOnly, Key key) => !hoverOnly && key is Key.F1 or Key.Enter or Key.Space;
+
+    private static void HoverOnlyChanged(DependencyObject element, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true && element is FrameworkElement { ToolTip: ToolTip tip }) tip.IsOpen = false;
+    }
+
     public static string? GetText(DependencyObject element) => (string?)element.GetValue(TextProperty);
     public static void SetText(DependencyObject element, string? value) => element.SetValue(TextProperty, value);
 
@@ -27,25 +41,21 @@ public static class InformationHelp
         tooltip.Content = new TextBlock { Text = e.NewValue as string, TextWrapping = TextWrapping.Wrap, MaxWidth = 336 };
         if (e.OldValue is null && e.NewValue is not null)
         {
-            control.GotKeyboardFocus += Open;
             control.LostKeyboardFocus += Close;
             control.PreviewKeyDown += HelpKey;
             control.Unloaded += Unloaded;
+            control.IsVisibleChanged += VisibilityChanged;
         }
         else if (e.NewValue is null)
         {
-            control.GotKeyboardFocus -= Open;
             control.LostKeyboardFocus -= Close;
             control.PreviewKeyDown -= HelpKey;
             control.Unloaded -= Unloaded;
+            control.IsVisibleChanged -= VisibilityChanged;
             tooltip.IsOpen = false;
         }
     }
 
-    private static void Open(object sender, KeyboardFocusChangedEventArgs e)
-    {
-        if (sender is FrameworkElement { ToolTip: ToolTip tip }) tip.IsOpen = true;
-    }
     private static void Close(object sender, KeyboardFocusChangedEventArgs e)
     {
         if (sender is FrameworkElement { ToolTip: ToolTip tip }) tip.IsOpen = false;
@@ -54,9 +64,13 @@ public static class InformationHelp
     {
         if (sender is FrameworkElement { ToolTip: ToolTip tip }) tip.IsOpen = false;
     }
+    private static void VisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is false && sender is FrameworkElement { ToolTip: ToolTip tip }) tip.IsOpen = false;
+    }
     private static void HelpKey(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (e.Key is Key.F1 or Key.Enter or Key.Space && sender is FrameworkElement { ToolTip: ToolTip tip })
+        if (sender is FrameworkElement { ToolTip: ToolTip tip } control && OpensFromKeyboard(GetHoverOnly(control), e.Key))
         {
             tip.IsOpen = true;
             e.Handled = true;
