@@ -65,6 +65,11 @@ internal static class Program
                         session.SelectedPage = page;
                         Layout(root, size);
                         CheckFiniteControls(root);
+                        if (page == DesktopPage.About)
+                        {
+                            var email = Find<TextBox>((DependencyObject)window.FindName("AboutColumns")).Single(box => AutomationProperties.GetName(box) == "Support email address");
+                            Check(email.ExtentWidth <= email.ViewportWidth + 1, "About email text clipped at a scaled layout.");
+                        }
                         if (screenshots is not null) Render(root, size, scale, System.IO.Path.Combine(screenshots, $"{page}-{scale:0.00}.png"));
                     }
                     session.OpenApplication(session.AppProfiles[2]);
@@ -98,6 +103,7 @@ internal static class Program
                     Console.WriteLine($"Six pages and profile detail passed at simulated {scale:P0} DIP layout.");
                 }
                 Check(session.OverviewAppProfiles.Count == 6, "Dashboard is not bounded.");
+                CheckAboutReference(window, root, session, screenshots);
                 session.SelectedPage = DesktopPage.Security;
                 Layout(root, new Size(960, 520));
                 var globalHelp = Find<RadioButton>(root).Single(radio => AutomationProperties.GetName(radio) == "Explain global panic");
@@ -150,6 +156,50 @@ internal static class Program
             Console.Error.WriteLine(exception);
             return 1;
         }
+    }
+
+    private static void CheckAboutReference(MainWindow window, FrameworkElement root, SettingsViewModel session, string? screenshots)
+    {
+        var saved = System.Text.Json.JsonSerializer.Serialize(session.ToModel());
+        session.SelectedPage = DesktopPage.About;
+        var page = (ScrollViewer)window.FindName("AboutPage");
+        var columns = (AdaptivePairPanel)window.FindName("AboutColumns");
+        var emailActions = (AdaptivePairPanel)window.FindName("AboutEmailActions");
+        var shield = (DrawingImage)window.FindResource("AboutShieldSymbol");
+        Check(shield.IsFrozen && shield.Drawing.Bounds.Width > 0 && shield.Drawing.Bounds.Height > 0,
+            "About shield is not a reusable frozen vector.");
+        foreach (var (width, expectColumns, expectEmailRow) in new[] { (1280d, true, true), (1000d, true, false), (860d, false, true) })
+        {
+            Layout(root, new Size(width, 880));
+            Check(columns.IsSideBySide == expectColumns, $"About columns did not adapt at {width}.");
+            Check(emailActions.IsSideBySide == expectEmailRow, $"About email actions did not adapt at {width}.");
+            Check(page.HorizontalScrollBarVisibility == ScrollBarVisibility.Disabled && page.ExtentWidth <= page.ViewportWidth + 1,
+                $"About page requires horizontal scrolling at {width}.");
+            foreach (var action in Find<Button>(columns))
+            {
+                var bounds = action.TransformToAncestor(columns).TransformBounds(new Rect(new Point(), action.RenderSize));
+                Check(bounds.Left >= -1 && bounds.Right <= columns.ActualWidth + 1, $"About action clipped horizontally at {width}.");
+            }
+            if (screenshots is not null) Render(root, new Size(width, 880), 1, System.IO.Path.Combine(screenshots, $"About-reference-{width:0}.png"));
+        }
+        var address = Find<TextBox>(columns).Single(box => AutomationProperties.GetName(box) == "Support email address");
+        Check(address.IsReadOnly && address.Text == AboutInformation.SupportEmail, "About email is not the authoritative read-only value.");
+        var links = Find<Button>(columns).Where(button => button.Tag is string).ToArray();
+        Check(links.Count(button => (string)button.Tag == "email") == 1
+            && links.Count(button => (string)button.Tag == "github") == 2
+            && links.Count(button => (string)button.Tag == "linkedin") == 2, "About contact routes lost.");
+        Check(links.All(button => AutomationProperties.GetName(button).Length > 0), "About contact action lost its accessible name.");
+        var help = Find<Button>(columns).Single(button => AutomationProperties.GetName(button) == "Privacy and capture limitations");
+        Check(InformationHelp.GetText(help)!.Contains("Blur can retain detail"), "About lost full concealment guidance.");
+        var feedback = (TextBlock)window.FindName("ContactFeedback");
+        Check(feedback.Visibility == Visibility.Collapsed, "Empty contact feedback consumes space.");
+        feedback.Text = "Synthetic clipboard unavailable feedback";
+        Layout(root, new Size(1000, 880));
+        Check(feedback.Visibility == Visibility.Visible, "Contact feedback is hidden after an error.");
+        feedback.Text = string.Empty;
+        Check(System.Text.Json.JsonSerializer.Serialize(session.ToModel()) == saved && !session.HasPendingChanges,
+            "About presentation or navigation edited settings.");
+        Console.WriteLine("About reference passed: adaptive card/email layouts, unclipped actions, authoritative contacts, help and non-mutating feedback.");
     }
 
     private static void CheckReferenceDialogs(string? screenshots)

@@ -10,4 +10,6 @@ public static class AboutInformation
     public static string ProductVersion => typeof(AboutInformation).Assembly.GetName().Version?.ToString(3) ?? "unknown";
     public static string VersionText => $"Version {ProductVersion}";
     public static string ProductLabel => $"PrivacyMask {ProductVersion}";
+    public static string GitHubDisplay => GitHubUri.Host + GitHubUri.AbsolutePath.TrimEnd('/');
+    public static string LinkedInDisplay => LinkedInUri.Host + LinkedInUri.AbsolutePath.TrimEnd('/');
 }

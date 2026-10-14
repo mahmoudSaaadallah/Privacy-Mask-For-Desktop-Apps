@@ -129,3 +129,44 @@ Native title bars, successful modal user workflows, screen-reader behavior,
 real per-monitor DPI and runtime stability still require the live qualification
 gates in [gui-qualification.md](gui-qualification.md). Version remains unreleased
 2.0.0 and settings schema remains 12; no tag or release has been published.
+
+## About reference follow-up
+
+The later user request supplies a distinct About design; this follow-up now
+implements that page separately from the earlier excluded screen 12.
+
+- About heading and shield/product/version hero, then separate developer,
+  purpose, privacy-commitment, support and thank-you/capture-warning cards.
+- Lightweight frozen vector drawings supply the shield, portraits and support/
+  privacy symbols. The About sidebar uses shield/PM branding and a navy gradient.
+  Other page bodies and their branding remain unchanged; a parsed XAML comparison
+  confirms all seven other page bodies match merged main. The approved B
+  executable/tray/installer icon is not replaced by the decorative About shield.
+- Native adaptive panels keep two columns at readable widths and stack otherwise;
+  email/copy and Send email similarly share a row or stack. Both the 1000-DIP
+  default preview and the 1280-DIP wide preview follow the reference hierarchy.
+  The 860-DIP preview stacks with vertical scrolling, not horizontal page scrolling.
+- Read-only support email, copy feedback, Send email, GitHub/LinkedIn link rows and
+  external-link buttons reuse existing handlers and authoritative URI constants.
+  Display URLs derive from those same URI objects. Version derives from the app
+  assembly, not a hard-coded screenshot value. Empty copy feedback consumes no
+  space; failures remain visible. No clipboard or browser/email client is invoked
+  during automated verification.
+- The window-only sharing limitation remains visible. Contextual keyboard/pointer
+  help retains full-screen sharing limits, live-frame handling and the distinction
+  between blur and complete concealment. Optional contact links explicitly use
+  the user's configured email client/browser.
+
+212 unit tests pass. Compiled WPF checks pass the existing 100–200% simulated DIP
+matrix and About-specific 1280/1000/860-DIP transitions, email-text/action bounds,
+contact routes/accessible names, frozen shield, help, feedback and non-mutating
+navigation. Builds have zero warnings/errors; 17 PowerShell syntax checks,
+installer transaction/six entrypoint cases and isolated single-file ZIP/checksum/
+shortcut/install/uninstall smoke pass. Native WPF previews contain synthetic
+settings, not protected app content. The installed user app/settings are untouched.
+
+Real per-monitor DPI, keyboard/screen-reader announcements and native clipboard/
+contact-client launch/failure checks remain live release gates; automated layout
+and route checks are not evidence of those interactions. No new UI framework,
+runtime capture loop, version bump, schema migration, tag or release is introduced.
+Version remains unreleased 2.0.0 and schema 12.

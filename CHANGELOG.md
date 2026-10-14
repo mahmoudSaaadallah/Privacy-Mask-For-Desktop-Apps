@@ -2,6 +2,9 @@
 
 ## 2.0.0 - Unreleased
 
+- Match the About reference with shield page branding, separate developer/purpose/privacy cards and compact support/profile actions
+- Adapt About cards and email actions to wide, compact and stacked layouts while retaining authoritative contacts, assembly version and capture warnings
+- Verify unclipped About actions/email, accessible contact routes and non-mutating navigation/feedback without launching external apps
 - Align Add/Relink, PIN setup/change/unlock and first-launch windows with the supplied reference; leave About unchanged
 - Add explicit per-field PIN visibility controls with plaintext-display and closed-input cleanup
 - Open advanced zones in a full-width editor sharing Save/Discard and preserving all ten normalized zone settings
