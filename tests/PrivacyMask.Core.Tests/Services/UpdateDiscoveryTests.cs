@@ -192,4 +192,32 @@ public sealed class UpdateDiscoveryTests
         fixture.Handler.Intercept = null;
         Assert.Equal(UpdateCheckStatus.UpToDate, (await client.CheckAsync(fixture.Context)).Status);
     }
+
+    [Fact]
+    public async Task CandidateBudgetCannotTurnAnIncompleteCheckIntoUpToDate()
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        for (var i = 0; i < 11; i++) fixture.Handler.Releases.Add(fixture.Release($"2.0.0-beta.{i + 3}", 10 + i));
+        fixture.Handler.Intercept = (request, _) => Task.FromResult(request.RequestUri == GitHubUrls.ListPage(1)
+            ? fixture.Handler.Default(request) : new HttpResponseMessage(HttpStatusCode.NotFound));
+        using var client = fixture.Client();
+        var result = await client.CheckAsync(fixture.Context);
+        Assert.Equal(UpdateCheckStatus.Incomplete, result.Status);
+        Assert.Equal(10, result.RejectedReleases);
+        Assert.Equal(11, fixture.Handler.Requests.Count);
+    }
+
+    [Fact]
+    public async Task SharedVerifierRejectsNullArrayElementsEvenWithAnAuthenticSignature()
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        var release = fixture.Release();
+        var raw = JsonNode.Parse(fixture.Handler.Assets[101])!.AsObject();
+        raw["files"] = new JsonArray((JsonNode?)null);
+        var bytes = Encoding.UTF8.GetBytes(raw.ToJsonString());
+        var envelope = new SignatureEnvelope(ManifestRules.Algorithm, "test-key", Convert.ToBase64String(
+            fixture.Key.SignData(bytes, System.Security.Cryptography.HashAlgorithmName.SHA256,
+                System.Security.Cryptography.DSASignatureFormat.IeeeP1363FixedFieldConcatenation)));
+        Assert.Throws<ReleaseValidationException>(() => fixture.Verifier.Verify(bytes, ContractJson.Write(envelope)));
+    }
 }

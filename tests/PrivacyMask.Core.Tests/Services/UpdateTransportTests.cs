@@ -125,8 +125,8 @@ public sealed class UpdateTransportTests
         fixture.Handler.Intercept = (_, _) =>
         {
             var content = declared ? (HttpContent)new ByteArrayContent(new byte[1024 * 1024 + 1])
-                : new StreamContent(new MemoryStream(new byte[1024 * 1024 + 1]));
-            if (!declared) content.Headers.ContentLength = null;
+                : new UnknownLengthContent(new byte[1024 * 1024 + 1]);
+            if (!declared) Assert.Null(content.Headers.ContentLength);
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
         };
         using var client = fixture.Client();
@@ -202,5 +202,68 @@ public sealed class UpdateTransportTests
         Assert.DoesNotContain("secret", result.Reason!);
         fixture.Handler.Intercept = (_, _) => Task.FromResult(FakeUpdateHandler.Json("[{\"id\":1,\"id\":2}]"));
         Assert.Equal(UpdateCheckStatus.UnableToCheck, (await client.CheckAsync(fixture.Context)).Status);
+    }
+
+    [Fact]
+    public async Task FullPageBudgetNeverClaimsItSawAllReleases()
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        var page = 0;
+        fixture.Handler.Intercept = (_, _) =>
+        {
+            page++;
+            var entries = new JsonArray();
+            for (var i = 0; i < 30; i++) entries.Add(new JsonObject { ["id"] = page * 100 + i, ["draft"] = true });
+            return Task.FromResult(FakeUpdateHandler.Json(entries.ToJsonString()));
+        };
+        using var client = fixture.Client();
+        Assert.Equal(UpdateCheckStatus.Incomplete, (await client.CheckAsync(fixture.Context)).Status);
+        Assert.Equal(5, fixture.Handler.Requests.Count);
+    }
+
+    [Fact]
+    public async Task OversizedSignedMetadataIsBoundedBeforeParsingOrSignatureVerification()
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        fixture.Handler.Releases.Add(fixture.Release());
+        fixture.Handler.Assets[101] = new byte[ManifestRules.ManifestLimit + 1];
+        using var client = fixture.Client();
+        Assert.Equal(UpdateCheckStatus.UnableToCheck, (await client.CheckAsync(fixture.Context)).Status);
+        Assert.Equal(2, fixture.Handler.Requests.Count);
+    }
+
+    [Fact]
+    public async Task TimeoutIsNotConfusedWithUserCancellationOrUpToDate()
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        fixture.Handler.Intercept = (_, _) => throw new TaskCanceledException("private URL not returned");
+        using var client = fixture.Client();
+        var result = await client.CheckAsync(fixture.Context);
+        Assert.Equal(UpdateCheckStatus.UnableToCheck, result.Status);
+        Assert.Equal("timeout", result.Reason);
+    }
+
+    [Fact]
+    public async Task RedirectLoopStopsBeforeMakingAnotherRequest()
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        fixture.Handler.Releases.Add(fixture.Release());
+        fixture.Handler.Intercept = (request, _) =>
+        {
+            if (request.RequestUri == GitHubUrls.ListPage(1)) return Task.FromResult(fixture.Handler.Default(request));
+            var response = new HttpResponseMessage(HttpStatusCode.Redirect);
+            response.Headers.Location = request.RequestUri;
+            return Task.FromResult(response);
+        };
+        using var client = fixture.Client();
+        Assert.Equal(UpdateCheckStatus.UnableToCheck, (await client.CheckAsync(fixture.Context)).Status);
+        Assert.Equal(2, fixture.Handler.Requests.Count);
+    }
+
+    private sealed class UnknownLengthContent(byte[] bytes) : HttpContent
+    {
+        protected override bool TryComputeLength(out long length) { length = 0; return false; }
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) => stream.WriteAsync(bytes).AsTask();
+        protected override Task<Stream> CreateContentReadStreamAsync() => Task.FromResult<Stream>(new MemoryStream(bytes));
     }
 }
