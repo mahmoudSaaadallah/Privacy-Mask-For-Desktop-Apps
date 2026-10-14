@@ -323,6 +323,14 @@ Press `Esc` or close the window to discard the preview and return to the tray.
 - Review [docs/architecture.md](docs/architecture.md) for the project structure.
 - Review [docs/release-process.md](docs/release-process.md) for the local release flow.
 - Follow its beta/rc/stable version policy before the next shipped-app delivery; PRs and commits are not themselves GitHub releases.
+- Review [the in-app update delivery plan](docs/in-app-updates.md),
+  [signed manifest contract](docs/update-manifest.md), and
+  [recovery/threat model](docs/update-recovery.md) for the upcoming update system.
+  Phase 1 provides specifications and structural schema checks only; there is
+  no in-app update button yet. Keep using the installation procedure above.
+- Run `pwsh -File scripts/test-update-manifest-schema.ps1` to verify the proposed
+  update schemas. PowerShell 7 is required for this developer check only;
+  end users do not need it. CI and release verification also run this check.
 - Review [docs/troubleshooting.md](docs/troubleshooting.md) if builds or overlays are not behaving as expected.
 - Review [docs/performance-baseline.md](docs/performance-baseline.md) before and after performance-sensitive changes.
 - Review [docs/runtime-protection.md](docs/runtime-protection.md) for pause, panic-mask, and startup behavior.
