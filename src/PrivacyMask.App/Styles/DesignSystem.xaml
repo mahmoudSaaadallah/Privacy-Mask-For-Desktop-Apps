@@ -190,4 +190,13 @@
             <ControlTemplate.Triggers><Trigger Property="IsExpanded" Value="True"><Setter TargetName="Body" Property="Visibility" Value="Visible"/></Trigger></ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value></Setter>
     </Style>
+    <Style x:Key="ModeChip" TargetType="RadioButton">
+        <Setter Property="Padding" Value="16,12"/><Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton">
+            <Border x:Name="Surface" Background="#F1F3F5" CornerRadius="9" Padding="{TemplateBinding Padding}" BorderBrush="Transparent" BorderThickness="1">
+                <StackPanel Orientation="Horizontal"><TextBlock x:Name="Marker" Text="□" FontSize="18" Margin="0,0,10,0" VerticalAlignment="Center"/><ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True"/></StackPanel>
+            </Border>
+            <ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Surface" Property="Background" Value="#CDF0F0"/><Setter TargetName="Marker" Property="Text" Value="✓"/><Setter TargetName="Marker" Property="Foreground" Value="{StaticResource AccentBrush}"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource FocusBrush}"/></Trigger></ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
 </ResourceDictionary>

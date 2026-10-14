@@ -78,6 +78,7 @@ public partial class MainWindow : Window
         if (DataContext is SettingsViewModel previous)
         {
             viewModel.ApplicationSearch = previous.ApplicationSearch;
+            viewModel.PanicHelpScope = previous.PanicHelpScope;
             var selected = viewModel.AppProfiles.FirstOrDefault(profile =>
                 profile.ProfileId == previous.SelectedApplication?.ProfileId);
             if (selected is not null) viewModel.OpenApplication(selected);
@@ -339,6 +340,19 @@ public partial class MainWindow : Window
         catch (Exception)
         {
             ContactFeedback.Text = "Clipboard unavailable. Select and copy the email address above.";
+        }
+    }
+
+    private void CopyConfigurationPath_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(ViewModel.ConfigPath);
+        }
+        catch
+        {
+            System.Windows.MessageBox.Show(this, $"The clipboard is unavailable. Your settings path is:\n\n{ViewModel.ConfigPath}",
+                "Copy settings path", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 

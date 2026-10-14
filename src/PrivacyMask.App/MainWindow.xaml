@@ -223,7 +223,10 @@
         <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
         <Border Background="{StaticResource SidebarBrush}" Padding="10,24,6,24">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Margin="22,0,0,34"><TextBlock Text="PM" FontSize="36" FontWeight="Black" Foreground="White"/><TextBlock Text="PrivacyMask" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,0"/></StackPanel>
+                <Grid DockPanel.Dock="Top" Margin="12,0,0,28">
+                    <StackPanel Margin="10,0,0,6"><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsSecondaryDesignPage}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style><TextBlock Text="PM" FontSize="36" FontWeight="Black" Foreground="White"/><TextBlock Text="PrivacyMask" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,0"/></StackPanel>
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsSecondaryDesignPage,Converter={StaticResource BooleanToVisibility}}"><Border Width="44" Height="44" CornerRadius="7" Background="{StaticResource AccentBrush}" Margin="0,0,12,0"><TextBlock Text="PM" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="PrivacyMask" FontSize="14" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/></StackPanel>
+                </Grid>
                 <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
                     <Button Style="{StaticResource NavigationButton}" Tag="{x:Static viewModels:DesktopPage.Overview}" Click="Navigate_Click" AutomationProperties.Name="Overview"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" Width="28"/><TextBlock Text="Overview" Foreground="White" FontWeight="Normal"/></StackPanel></Button>
                     <Button Style="{StaticResource NavigationButton}" Tag="{x:Static viewModels:DesktopPage.Applications}" Click="Navigate_Click" AutomationProperties.Name="Applications"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80A;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" Width="28"/><TextBlock Text="Applications" Foreground="White" FontWeight="Normal"/></StackPanel></Button>
@@ -319,182 +322,100 @@
   </StackPanel>
  </ScrollViewer>
 </Grid>
-                    <ScrollViewer
-                        x:Name="ShortcutsPage"
-                        Visibility="{Binding IsShortcutsPage, Converter={StaticResource BooleanToVisibility}}"
-                        VerticalScrollBarVisibility="Auto">
-                        <StackPanel
-                            Margin="24">
-                            <TextBlock
-                                Style="{StaticResource PageHeading}"
-                                Text="Shortcuts"
-                                Margin="0,0,0,24" />
-                            <Border
-                                Style="{StaticResource Card}">
+
+                    <ScrollViewer x:Name="ShortcutsPage" Visibility="{Binding IsShortcutsPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="28">
+                            <TextBlock Text="Shortcuts" Style="{StaticResource PageHeading}" Margin="0,0,0,26"/>
+                            <Border Style="{StaticResource Card}" Padding="0" BorderBrush="#E7EBEE">
+                                <ItemsControl ItemsSource="{Binding ShortcutRows}">
+                                    <ItemsControl.ItemTemplate><DataTemplate DataType="{x:Type viewModels:HotkeyBindingViewModel}">
+                                        <Border BorderBrush="#EDF0F2" BorderThickness="0,0,0,1" Padding="18,22">
+                                            <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="Transparent"/><Style.Triggers><DataTrigger Binding="{Binding ShowRegistrationFailure}" Value="True"><Setter Property="Background" Value="#FFF4E2"/></DataTrigger></Style.Triggers></Style></Border.Style>
+                                            <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="66"/></Grid.ColumnDefinitions>
+                                                <WrapPanel Margin="0,0,16,0" VerticalAlignment="Center"><TextBlock Text="{Binding CompactTitle}" TextWrapping="Wrap" MaxWidth="180" VerticalAlignment="Center" FontWeight="SemiBold"/><Button Style="{StaticResource CircleHelp}" Content="i" Width="20" Height="20" MinWidth="20" MinHeight="20" Margin="6,0,0,0" services:InformationHelp.Text="{Binding InformationText}" AutomationProperties.Name="{Binding CompactTitle,StringFormat=Information about {0}}"/></WrapPanel>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ItemsControl ItemsSource="{Binding GestureKeys}">
+                                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal"><TextBlock Text="+" VerticalAlignment="Center" Margin="5,0" Visibility="{Binding HasSeparator,Converter={StaticResource BooleanToVisibility}}"/><Border Background="#F0F2F4" BorderBrush="#DDE2E6" BorderThickness="1" CornerRadius="5" Padding="10,8"><TextBlock Text="{Binding Text}" FontSize="13"/></Border></StackPanel></DataTemplate></ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <TextBlock Text="{Binding HoldDelayText}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <CheckBox Grid.Column="2" Style="{StaticResource Switch}" HorizontalAlignment="Right" IsChecked="{Binding Enabled,Mode=TwoWay}" AutomationProperties.Name="{Binding CompactTitle,StringFormat=Enable {0}}" AutomationProperties.HelpText="Enable or disable after Save. Scope and actual registration are explained by the information button."/>
+                                                <Grid Grid.Row="1" Grid.ColumnSpan="3" Margin="0,14,0,0" Visibility="{Binding HasAttentionMessage,Converter={StaticResource BooleanToVisibility}}">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <TextBlock Text="⚠" Foreground="#CF8200" FontSize="20"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AttentionHeading}" Foreground="#AC6500" FontWeight="SemiBold" Margin="0,3,14,0"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding AttentionDetail}" TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,3,0,0"/>
+                                                </Grid>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate></ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <ScrollViewer x:Name="SecurityPage" Visibility="{Binding IsSecurityPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="28">
+                            <TextBlock Text="Security" Style="{StaticResource PageHeading}" Margin="0,0,0,26"/>
+                            <Border Style="{StaticResource Card}" Padding="24">
                                 <StackPanel>
-                                    <TextBlock
-                                        FontSize="18"
-                                        FontWeight="SemiBold"
-                                        Text="Keyboard controls" />
-                                    <TextBlock
-                                        Margin="0,6,0,14"
-                                        Foreground="#51656E"
-                                        TextWrapping="Wrap"
-                                        Text="Enable the shortcuts you use, then save. Key combinations are shown for reference; remapping is not available here." />
-                                    <ItemsControl
-                                        ItemsSource="{Binding Hotkeys}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate
-                                                DataType="{x:Type viewModels:HotkeyBindingViewModel}">
-                                                <Border
-                                                    Margin="0,0,0,10"
-                                                    Padding="16"
-                                                    Background="White"
-                                                    CornerRadius="14">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition
-                                                                Width="*" />
-                                                            <ColumnDefinition
-                                                                Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <StackPanel>
-                                                            <TextBlock
-                                                                FontWeight="SemiBold"
-                                                                Text="{Binding DisplayName}" />
-                                                            <TextBlock
-                                                                Margin="0,4,0,0"
-                                                                Foreground="#51656E"
-                                                                FontSize="16"
-                                                                FontWeight="SemiBold"
-                                                                Text="{Binding GestureText}" />
-                                                            <TextBlock Text="{Binding ScopeSummary}" TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,8,18,0"/>
-                                                            <TextBlock
-                                                                Margin="0,4,0,0"
-                                                                Text="{Binding RegistrationStatus}"
-                                                                TextWrapping="Wrap">
-                                                                <TextBlock.Style>
-                                                                    <Style
-                                                                        TargetType="TextBlock">
-                                                                        <Setter
-                                                                            Property="Visibility"
-                                                                            Value="Visible" />
-                                                                        <Setter Property="Foreground" Value="{StaticResource MutedInkBrush}" />
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger
-                                                                                Binding="{Binding ShowRegistrationFailure}"
-                                                                                Value="True">
-                                                                                <Setter
-                                                                                    Property="Foreground"
-                                                                                    Value="{StaticResource DangerBrush}" />
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </TextBlock.Style>
-                                                            </TextBlock>
-                                                        </StackPanel>
-                                                        <CheckBox
-                                                            Grid.Column="1"
-                                                            VerticalAlignment="Center"
-                                                            AutomationProperties.Name="{Binding DisplayName, StringFormat=Enable {0}}"
-                                                            AutomationProperties.HelpText="Enable or disable this shortcut after saving. It remains scoped as described on the card."
-                                                            Content="Enabled"
-                                                            IsChecked="{Binding Enabled, Mode=TwoWay}" />
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                    <DockPanel Margin="0,0,0,24"><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="Create a 4–8 digit PIN, or change it after verifying the current PIN. Save changes on this page to persist it. Cancel leaves the existing PIN unchanged. Only a salted hardened verifier is stored." AutomationProperties.Name="Panic PIN information"/><TextBlock Text="Panic unlock PIN" FontSize="20" FontWeight="SemiBold"/></DockPanel>
+                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="28" Height="28" CornerRadius="14" Background="{Binding PanicPinIndicatorColor}" Margin="0,0,14,0"><TextBlock Text="{Binding PanicPinIndicator}" Foreground="White" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                            <TextBlock Text="{Binding PanicPinCompactStatus}" VerticalAlignment="Center" FontSize="16" AutomationProperties.Name="Panic PIN status" AutomationProperties.HelpText="{Binding PanicPinStatus}"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Content="{Binding PanicPinActionLabel}" Click="ConfigurePanicPin_Click" Style="{StaticResource PrimaryButton}" MinWidth="150"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
+                                <StackPanel>
+                                    <DockPanel><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="These tabs explain existing panic modes; they do not activate protection or change shortcut scope. Focused panic affects one app. Global panic covers every detected protected app. Wrong PIN, Cancel or closing unlock leaves protection active; hover and Alt cannot bypass panic." AutomationProperties.Name="Panic protection information"/><TextBlock Text="Panic protection" FontSize="20" FontWeight="SemiBold"/></DockPanel>
+                                    <TextBlock Text="Choose a mode to see how it works." Foreground="{StaticResource MutedInkBrush}" FontSize="12" Margin="0,10,0,14"/>
+                                    <WrapPanel>
+                                        <RadioButton Content="Active app" GroupName="PanicExplanation" Style="{StaticResource ModeChip}" IsChecked="{Binding PanicHelpScope,Converter={StaticResource EnumSelection},ConverterParameter={x:Static viewModels:PanicHelpScope.ActiveApp}}" Margin="0,0,14,8" AutomationProperties.Name="Explain focused app panic" AutomationProperties.HelpText="Information only; this does not change protection."/>
+                                        <RadioButton Content="All apps" GroupName="PanicExplanation" Style="{StaticResource ModeChip}" IsChecked="{Binding PanicHelpScope,Converter={StaticResource EnumSelection},ConverterParameter={x:Static viewModels:PanicHelpScope.AllApps}}" Margin="0,0,0,8" AutomationProperties.Name="Explain global panic" AutomationProperties.HelpText="Information only; this does not change protection."/>
+                                    </WrapPanel>
+                                    <TextBlock Text="{Binding PanicScopeSummary}" TextWrapping="Wrap" Margin="0,8,0,0" AutomationProperties.LiveSetting="Polite"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
+                                <StackPanel>
+                                    <DockPanel Margin="0,0,0,22"><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="All settings stay on this device. PrivacyMask has no cloud account or background telemetry. The PIN guards panic unlock, not Windows sign-in or access to the local settings file." AutomationProperties.Name="Local settings information"/><TextBlock Text="Local settings" FontSize="20" FontWeight="SemiBold"/></DockPanel>
+                                    <StackPanel Orientation="Horizontal"><Canvas Width="36" Height="36" Margin="0,0,20,0"><Ellipse Width="28" Height="10" Canvas.Left="4" Canvas.Top="2" Stroke="{StaticResource InkBrush}" StrokeThickness="2"/><Path Data="M4,7 L4,28 C4,34 32,34 32,28 L32,7 M4,16 C4,22 32,22 32,16 M4,24 C4,30 32,30 32,24" Stroke="{StaticResource InkBrush}" StrokeThickness="2"/></Canvas><TextBlock Text="No cloud account" VerticalAlignment="Center" FontSize="16"/></StackPanel>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
-                    <ScrollViewer
-                        x:Name="SecurityPage"
-                        Visibility="{Binding IsSecurityPage, Converter={StaticResource BooleanToVisibility}}"
-                        VerticalScrollBarVisibility="Auto">
-                        <StackPanel
-                            Margin="24">
-                            <TextBlock
-                                Style="{StaticResource PageHeading}"
-                                Text="Security"
-                                Margin="0,0,0,24" />
-                            <Border Style="{StaticResource Card}">
+
+                    <ScrollViewer x:Name="SettingsPage" Visibility="{Binding IsSettingsPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="28">
+                            <TextBlock Text="Settings" Style="{StaticResource PageHeading}" Margin="0,0,0,26"/>
+                            <Border Style="{StaticResource Card}" Padding="24">
                                 <StackPanel>
-                                    <TextBlock
-                                        FontWeight="SemiBold"
-                                        FontSize="20"
-                                        Text="Panic unlock PIN" />
-                                    <TextBlock
-                                        Margin="0,6,0,10"
-                                        Foreground="#51656E"
-                                        TextWrapping="Wrap"
-                                        Text="{Binding PanicPinStatus}" />
-                                    <Button
-                                        MinWidth="110"
-                                        Padding="10,7"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource PrimaryButton}"
-                                        AutomationProperties.HelpText="Add or change the PIN required to disable panic masks."
-                                        Click="ConfigurePanicPin_Click"
-                                        Content="{Binding PanicPinActionLabel}" />
-                                    <TextBlock Text="Save changes after adding or changing your PIN here. Canceling the dialog leaves the current PIN unchanged." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,14,0,0"/>
+                                    <TextBlock Text="Startup" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                                    <DockPanel Margin="0,12,0,18"><CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsChecked="{Binding LaunchAtLogin,Mode=TwoWay}" AutomationProperties.Name="Launch when I sign in" AutomationProperties.HelpText="Starts PrivacyMask for this Windows user after saving. Existing preferences are preserved on updates."/><TextBlock Text="Launch when I sign in" VerticalAlignment="Center"/></DockPanel>
+                                    <Border Height="1" Background="#EEF1F3"/>
+                                    <DockPanel Margin="0,18,0,4"><CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsChecked="{Binding StartMinimized,Mode=TwoWay}" AutomationProperties.Name="Start minimized to tray" AutomationProperties.HelpText="Keep the settings window hidden on startup after saving."/><TextBlock Text="Start minimized to tray" VerticalAlignment="Center"/></DockPanel>
                                 </StackPanel>
                             </Border>
-                            <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+                            <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
                                 <StackPanel>
-                                    <TextBlock Text="How panic protection works" FontSize="20" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Focused app: Ctrl + Shift + H covers only the active protected application. Other applications are unchanged." TextWrapping="Wrap" Margin="0,12,0,0"/>
-                                    <TextBlock Text="All apps: Panic mask all from Overview or the tray covers every detected protected application." TextWrapping="Wrap" Margin="0,12,0,0"/>
-                                    <TextBlock Text="A correct PIN is required to unlock either mode. Wrong PIN, Cancel, or closing the unlock dialog leaves the mask active. Hover and hold-to-reveal cannot bypass panic." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,12,0,0"/>
-                                    <TextBlock Text="Stored locally as a salted, hardened verifier — never as the PIN digits. This PIN protects panic unlock, not Windows sign-in or access to the settings file. Panic state is not restored after restarting PrivacyMask." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,12,0,0"/>
+                                    <TextBlock Text="About" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal"><Border Width="48" Height="48" Background="{StaticResource AccentBrush}" CornerRadius="8" Margin="0,0,18,0"><TextBlock Text="PM" Foreground="White" FontWeight="Bold" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="{x:Static services:AboutInformation.ProductLabel}" VerticalAlignment="Center" FontSize="18" FontWeight="SemiBold"/></StackPanel>
+                                        <Button Grid.Column="1" Content="About" Style="{StaticResource SecondaryButton}" Tag="{x:Static viewModels:DesktopPage.About}" Click="Navigate_Click" MinWidth="110"/>
+                                    </Grid>
                                 </StackPanel>
                             </Border>
-                        </StackPanel>
-                    </ScrollViewer>
-                    <ScrollViewer
-                        x:Name="SettingsPage"
-                        Visibility="{Binding IsSettingsPage, Converter={StaticResource BooleanToVisibility}}"
-                        VerticalScrollBarVisibility="Auto">
-                        <StackPanel
-                            Margin="24">
-                            <TextBlock
-                                Style="{StaticResource PageHeading}"
-                                Text="Settings"
-                                Margin="0,0,0,24" />
-                            <Border
-                                Margin="0,0,0,18"
-                                Padding="18"
-                                Background="#F8F4ED"
-                                CornerRadius="20">
-                                <StackPanel>
-                                    <TextBlock
-                                        FontSize="18"
-                                        FontWeight="SemiBold"
-                                        Text="Startup" />
-                                    <TextBlock
-                                        Margin="0,6,0,18"
-                                        Foreground="#51656E"
-                                        TextWrapping="Wrap"
-                                        Text="Choose how PrivacyMask starts for this Windows user. Save to apply these preferences." />
-                                    <CheckBox
-                                        Content="_Launch when I sign in"
-                                        Margin="0,0,0,14"
-                                        AutomationProperties.HelpText="Starts PrivacyMask automatically for the current Windows user."
-                                        IsChecked="{Binding LaunchAtLogin, Mode=TwoWay}" />
-                                    <CheckBox
-                                        Content="Start _minimized to tray"
-                                        AutomationProperties.HelpText="Keeps the settings window hidden when PrivacyMask starts automatically."
-                                        IsChecked="{Binding StartMinimized, Mode=TwoWay}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource Card}">
-                                <StackPanel>
-                                    <TextBlock Text="Local configuration" FontSize="18" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Settings stay on this device. Updates preserve them; uninstalling removes them." TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" Margin="0,8,0,12"/>
-                                    <TextBox Text="{Binding ConfigPath, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" AutomationProperties.Name="Settings file location" Padding="0" Margin="0,0,0,16"/>
-                                    <Button Content="Open settings folder" HorizontalAlignment="Left" Click="OpenConfigurationFolder_Click" Style="{StaticResource SecondaryButton}" AutomationProperties.HelpText="Open the directory containing your local settings in Windows Explorer."/>
-                                </StackPanel>
+                            <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <Path Data="M6,1 L20,1 27,8 27,32 6,32 Z M20,1 L20,8 27,8 M11,15 L22,15 M11,21 L22,21 M11,27 L18,27" Stroke="{StaticResource InkBrush}" StrokeThickness="1.5" Width="30" Height="34" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                    <DockPanel Grid.Column="1" Margin="0,0,20,0" VerticalAlignment="Center"><Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="{Binding ConfigPath}" AutomationProperties.Name="Configuration file path"/><TextBlock Text="Configuration file" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/></DockPanel>
+                                    <Button Grid.Column="2" Content="Show location" Style="{StaticResource SecondaryButton}" Click="OpenConfigurationFolder_Click" AutomationProperties.HelpText="Open the local settings folder. Right-click or Shift+F10 to copy the settings file path."><Button.ContextMenu><ContextMenu><MenuItem Header="Copy file path" Click="CopyConfigurationPath_Click"/></ContextMenu></Button.ContextMenu></Button>
+                                </Grid>
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
@@ -573,8 +494,7 @@
                             IsEnabled="{Binding CanSave}"
                             Click="Save_Click" />
                     </StackPanel>
-                    <TextBlock
-                        Text="{Binding EditStatus}" VerticalAlignment="Center" TextWrapping="Wrap"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource MutedInkBrush}"/><Style.Triggers><DataTrigger Binding="{Binding HasPendingChanges}" Value="True"><Setter Property="Foreground" Value="#D88D00"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><Border Width="16" Height="16" CornerRadius="8" Background="#E2A12A" Margin="0,0,9,0" Visibility="{Binding HasPendingChanges,Converter={StaticResource BooleanToVisibility}}"><TextBlock Text="!" Foreground="White" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="{Binding EditStatus}" VerticalAlignment="Center" TextWrapping="Wrap"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource MutedInkBrush}"/><Style.Triggers><DataTrigger Binding="{Binding HasPendingChanges}" Value="True"><Setter Property="Foreground" Value="#D88D00"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></StackPanel>
                 </DockPanel>
             </Border>
         </Grid>

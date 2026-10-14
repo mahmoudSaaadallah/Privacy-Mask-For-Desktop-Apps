@@ -52,3 +52,32 @@ renders; the application retains standard Windows title-bar behavior.
 Live keyboard, screen-reader and real per-monitor DPI qualification remain
 outstanding as recorded in [gui-qualification.md](gui-qualification.md).
 Version remains unreleased 2.0.0 and settings schema remains 12.
+
+## Secondary-page reference follow-up
+
+Shortcuts, Security and Settings now follow the user's second reference.
+These pages use its compact inline sidebar branding while the earlier
+Overview/Applications/detail layouts keep their original reference wordmark.
+About remains a sidebar destination.
+
+- Shortcuts: one grouped panel, concise titles, adjacent information controls,
+  configured keycaps, enable switches, an inline 0.5-second hold delay, and
+  amber conflict rows. Descriptions move to accessible help. Conflict and
+  pending messages follow actual registration/edit state, not the mockup.
+- Security: compact PIN status/Add-or-Change action, explanatory Active app /
+  All apps tabs, and local-settings information. The tabs explain existing
+  controls; they do not activate protection or persist a new panic scope.
+  This distinction is visible and included in accessibility/help text.
+- Settings: startup switches, assembly-derived About identity/navigation, and
+  a configuration-file action. Full path is in information help; right-click
+  or Shift+F10 on Show location retains Copy file path. Pending edits retain
+  the shared Save/Discard bar.
+
+206 unit tests pass. Compiled WPF checks verify startup-switch binding and
+non-mutating panic-tab selection/retention alongside existing 100–200% layout
+and edit-session checks. Builds have zero warnings/errors; 17 script syntax
+checks, installer transaction/entrypoint checks and the isolated package smoke
+test pass. Separate synthetic render processes produced all three page
+previews; software rendering is used only by the preview tool, not by the app.
+Live external-link/clipboard, keyboard, screen-reader and per-monitor testing
+remain outstanding. Version 2.0.0 and schema 12 are unchanged.
