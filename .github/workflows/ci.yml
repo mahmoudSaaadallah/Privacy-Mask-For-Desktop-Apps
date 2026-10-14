@@ -30,6 +30,10 @@ jobs:
         shell: powershell
         run: .\scripts\test-release-publication.ps1
 
+      - name: Test approved release source gate without Git writes
+        shell: powershell
+        run: .\scripts\test-release-source.ps1
+
       - name: Test proposed update manifest schemas
         shell: pwsh
         run: .\scripts\test-update-manifest-schema.ps1
