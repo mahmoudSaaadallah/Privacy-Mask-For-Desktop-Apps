@@ -59,8 +59,8 @@ cadence, opt-out persistence and UI; this client does not schedule itself.
   a failed verification as UpToDate.
 - Anonymous GETs only, fixed repository, static User-Agent and supported explicit
   API version. No PAT, cookies, profile/window information, paths or PIN data.
-  Handler injection is a trusted test/host seam; use the default production
-  handler with automatic redirects/cookies disabled.
+  Handler injection is internal to the test assembly only; production callers
+  always use the handler with automatic redirects/cookies/credentials disabled.
 - At most five pages of 30 releases, 1 MiB decompressed JSON per page, 16 JSON
   levels, 4096-byte Link header and ten metadata candidates per check. Actual
   stream bounds apply without Content-Length: manifest <=64 KiB, signature <=4 KiB.

@@ -12,6 +12,14 @@ namespace PrivacyMask.Core.Tests.Services;
 public sealed class UpdateTransportTests
 {
     [Fact]
+    public void ProductionApiCannotOverrideRedirectCookieOrCredentialPolicy()
+    {
+        Assert.All(typeof(GitHubReleaseClient).GetConstructors(), constructor =>
+            Assert.DoesNotContain(constructor.GetParameters(), parameter => typeof(HttpMessageHandler).IsAssignableFrom(parameter.ParameterType)));
+        Assert.Throws<ArgumentNullException>(() => new GitHubReleaseClient(null!));
+    }
+
+    [Fact]
     public async Task UsesBoundedEtagCacheOnlyAfterServerRevalidation()
     {
         using var fixture = new UpdateDiscoveryFixture();

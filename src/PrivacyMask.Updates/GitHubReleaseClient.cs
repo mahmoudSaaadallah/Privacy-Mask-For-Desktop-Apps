@@ -16,11 +16,14 @@ public sealed class GitHubReleaseClient : IDisposable
     private readonly TimeProvider _time;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
-    // Handler injection is for trusted hosts/tests. Default transport disables
-    // automatic redirects, cookies and credentials; no HttpClient is shared with UI.
-    public GitHubReleaseClient(UpdateManifestVerifier verifier, TimeProvider? timeProvider = null,
-        HttpMessageHandler? handler = null)
+    // Production callers cannot accidentally inject a handler that follows
+    // redirects or sends credentials before our URI checks run.
+    public GitHubReleaseClient(UpdateManifestVerifier verifier, TimeProvider? timeProvider = null)
+        : this(verifier, timeProvider, null) { }
+
+    internal GitHubReleaseClient(UpdateManifestVerifier verifier, TimeProvider? timeProvider, HttpMessageHandler? handler)
     {
+        ArgumentNullException.ThrowIfNull(verifier);
         _verifier = verifier;
         _time = timeProvider ?? TimeProvider.System;
         _transport = new(_time, handler);
