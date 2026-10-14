@@ -16,14 +16,26 @@ public partial class AddApplicationWindow : Window
     private readonly IReadOnlySet<string> _protectedProcessNames;
     private readonly string? _relinkProfileName;
     private bool _selectedFromBrowse;
+    private readonly Func<IReadOnlyList<DesktopApplicationCandidate>> _loadCandidates;
 
     public AddApplicationWindow(
         DesktopApplicationCatalog catalog,
         IReadOnlySet<string> protectedProcessNames,
         string? relinkProfileName = null)
+        : this(catalog, protectedProcessNames, relinkProfileName,
+            () => catalog.GetAvailableRunningApplications(protectedProcessNames))
+    {
+    }
+
+    internal AddApplicationWindow(
+        DesktopApplicationCatalog catalog,
+        IReadOnlySet<string> protectedProcessNames,
+        string? relinkProfileName,
+        Func<IReadOnlyList<DesktopApplicationCandidate>> loadCandidates)
     {
         _catalog = catalog;
         _protectedProcessNames = protectedProcessNames;
+        _loadCandidates = loadCandidates;
         _relinkProfileName = string.IsNullOrWhiteSpace(relinkProfileName)
             ? null
             : relinkProfileName.Trim();
@@ -165,7 +177,7 @@ public partial class AddApplicationWindow : Window
 
     private void RefreshApplications()
     {
-        var candidates = _catalog.GetAvailableRunningApplications(_protectedProcessNames);
+        var candidates = _loadCandidates();
         SelectedApplication = null;
         _selectedFromBrowse = false;
         ConfirmButton.IsEnabled = false;

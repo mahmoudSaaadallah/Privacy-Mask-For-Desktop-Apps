@@ -122,106 +122,60 @@
     <StackPanel Margin="0,0,0,8"><TextBlock Text="Height" Margin="0,0,0,6"/><StackPanel Orientation="Horizontal"><TextBox Style="{StaticResource ReferenceInput}" Width="76" Padding="8" Text="{Binding HoverRevealHeightPixels,UpdateSourceTrigger=LostFocus}" PreviewTextInput="NumericTextBox_PreviewTextInput" AutomationProperties.Name="Hover reveal height"/><TextBlock Text="px" Margin="8,0,0,0" VerticalAlignment="Center"/></StackPanel></StackPanel>
    </WrapPanel>
   </Grid>
-  <Border BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" CornerRadius="6" Padding="12" Background="#F5F5F5" Margin="0,20,0,0">
-   <StackPanel>
-
-    <Expander Style="{StaticResource ReferenceExpander}"
-                                                        AutomationProperties.Name="Advanced privacy zones"
-                                                        AutomationProperties.HelpText="Expand to edit normalized zone coordinates, styles, blur strength, and reveal behavior."
-                                                        Header="_Advanced privacy zones">
-                                                        <StackPanel
-                                                            Margin="0,10,0,0">
-<DockPanel Margin="0,0,0,16"><Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="Apply preset" Tag="{Binding}" Click="ApplyPreset_Click"/><ComboBox Margin="0,0,16,0" Padding="8" ItemsSource="{Binding Presets}" DisplayMemberPath="DisplayName" SelectedValuePath="PresetId" SelectedValue="{Binding SelectedPresetId}" AutomationProperties.Name="Layout preset"/></DockPanel>
-                                                            <TextBlock
-                                                                Margin="0,0,0,8"
-                                                                Foreground="#51656E"
-                                                                TextWrapping="Wrap"
-                                                                Text="X, Y, width, and height use 0.00–1.00 coordinates and must stay inside the app. Blur strength supports 0–100%." />
-                                                            <DataGrid
-                                                                AutoGenerateColumns="False"
-                                                                AutomationProperties.Name="Privacy zones"
-                                                                AutomationProperties.HelpText="Advanced settings. Edit normalized regions from zero to one and a blur strength from zero to one hundred percent."
-                                                                CanUserAddRows="False"
-                                                                HeadersVisibility="Column"
-                                                                ItemsSource="{Binding Zones}"
-                                                                RowBackground="#FCFAF6"
-                                                                AlternatingRowBackground="#F7F1E7"
-                                                                BorderThickness="0"
-                                                                GridLinesVisibility="Horizontal"
-                                                                MinHeight="260">
-                                                                <DataGrid.Columns>
-                                                                    <DataGridCheckBoxColumn
-                                                                        Binding="{Binding Enabled, Mode=TwoWay}"
-                                                                        Header="On"
-                                                                        Width="55" />
-                                                                    <DataGridTextColumn
-                                                                        Binding="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                                        Header="Zone"
-                                                                        Width="170" />
-                                                                    <DataGridTextColumn
-                                                                        Binding="{Binding X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                                        Header="X"
-                                                                        Width="70" />
-                                                                    <DataGridTextColumn
-                                                                        Binding="{Binding Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                                        Header="Y"
-                                                                        Width="70" />
-                                                                    <DataGridTextColumn
-                                                                        Binding="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                                        Header="W"
-                                                                        Width="70" />
-                                                                    <DataGridTextColumn
-                                                                        Binding="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                                        Header="H"
-                                                                        Width="70" />
-                                                                    <DataGridTemplateColumn
-                                                                        Header="Style"
-                                                                        Width="130">
-                                                                        <DataGridTemplateColumn.CellTemplate>
-                                                                            <DataTemplate>
-                                                                                <TextBlock
-                                                                                    Text="{Binding StyleDisplayName}" />
-                                                                            </DataTemplate>
-                                                                        </DataGridTemplateColumn.CellTemplate>
-                                                                        <DataGridTemplateColumn.CellEditingTemplate>
-                                                                            <DataTemplate>
-                                                                                <ComboBox
-                                                                                    ItemsSource="{Binding MaskStylesSource, ElementName=SettingsWindow}"
-                                                                                    DisplayMemberPath="DisplayName"
-                                                                                    SelectedValue="{Binding Style, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                                                    SelectedValuePath="Value" />
-                                                                            </DataTemplate>
-                                                                        </DataGridTemplateColumn.CellEditingTemplate>
-                                                                    </DataGridTemplateColumn>
-                                                                    <DataGridTextColumn
-                                                                        Binding="{Binding SurfaceIntensityPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F0}"
-                                                                        Header="Blur %"
-                                                                        Width="90" />
-                                                                    <DataGridCheckBoxColumn
-                                                                        Binding="{Binding RevealOnHover, Mode=TwoWay}"
-                                                                        Header="Hover reveal"
-                                                                        Width="110" />
-                                                                    <DataGridCheckBoxColumn
-                                                                        Binding="{Binding HideDuringTemporaryReveal, Mode=TwoWay}"
-                                                                        Header="Hold reveal"
-                                                                        Width="105" />
-                                                                </DataGrid.Columns>
-                                                            </DataGrid>
-                                                        </StackPanel>
-                                                    </Expander>
-   </StackPanel>
-  </Border>
+  <Button Content="⌄  Advanced privacy zones  ›" Style="{StaticResource SecondaryButton}" HorizontalContentAlignment="Left" Margin="0,20,0,0" Click="AdvancedZones_Click" AutomationProperties.Name="Advanced privacy zones" AutomationProperties.HelpText="Open the full zone editor. Changes share this application's Save and Discard session."/>
   <StackPanel Orientation="Horizontal" Margin="0,20,0,0" Visibility="{Binding IsCustom,Converter={StaticResource BooleanToVisibility}}">
    <Button Content="Relink application" Style="{StaticResource SecondaryButton}" Click="RelinkApplication_Click" Tag="{Binding}" Margin="0,0,12,0"/>
    <Button Content="Remove profile" Background="Transparent" BorderThickness="0" Foreground="{StaticResource DangerBrush}" Click="RemoveApplication_Click" Tag="{Binding}"/>
   </StackPanel>
  </StackPanel>
 </DataTemplate>
+    <DataTemplate x:Key="AdvancedZonesTemplate" DataType="{x:Type viewModels:AppProfileViewModel}">
+        <Grid>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <DockPanel Margin="0,0,0,16">
+                <Button DockPanel.Dock="Right" Content="←  _Back" Style="{StaticResource SecondaryButton}" VerticalAlignment="Top" Click="BackFromZones_Click"/>
+                <StackPanel><TextBlock Text="Application settings" Style="{StaticResource PageHeading}" FontSize="24"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0"><Image Style="{StaticResource ApplicationIcon}" Width="28" Height="28" Margin="0,0,10,0"/><TextBlock Text="{Binding CardDisplayName}" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel>
+                </StackPanel>
+            </DockPanel>
+            <Grid Grid.Row="1" Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <TextBlock Text="Preset" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                <ComboBox Grid.Column="1" Style="{StaticResource ReferenceCombo}" ItemsSource="{Binding Presets}" DisplayMemberPath="DisplayName" SelectedValuePath="PresetId" SelectedValue="{Binding SelectedPresetId}" AutomationProperties.Name="Layout preset" Margin="0,0,14,0"/>
+                <Button Grid.Column="2" Content="_Apply preset" Style="{StaticResource SecondaryButton}" Tag="{Binding}" Click="ApplyPreset_Click"/>
+            </Grid>
+            <DockPanel Grid.Row="2" Margin="0,0,0,12">
+                <Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" AutomationProperties.Name="Zone coordinates help" services:InformationHelp.Text="X, Y, Width and Height are fractions of the application window, from 0 to 1. A full-window zone is 0, 0, 1, 1. Values must stay inside the application. Blur % is the zone's 0–100% multiplier. Hover and Hold control normal reveal; panic masks never reveal."/>
+                <TextBlock Text="Coordinates relative to the application (0–1)" Foreground="{StaticResource MutedInkBrush}" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </DockPanel>
+            <DataGrid Grid.Row="3" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column"
+                      ItemsSource="{Binding Zones}" Background="White" RowBackground="White" AlternatingRowBackground="#FBFCFD"
+                      BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" GridLinesVisibility="All"
+                      HorizontalGridLinesBrush="#E3E8ED" VerticalGridLinesBrush="#E3E8ED" RowHeight="34"
+                      MinHeight="150" EnableRowVirtualization="True" EnableColumnVirtualization="True"
+                      AutomationProperties.Name="Privacy zones" AutomationProperties.HelpText="Coordinates are relative fractions, not pixels. All ten settings remain editable.">
+                <DataGrid.ColumnHeaderStyle><Style TargetType="DataGridColumnHeader"><Setter Property="Background" Value="#F0F3F7"/><Setter Property="Padding" Value="8"/><Setter Property="BorderBrush" Value="#DFE5EB"/><Setter Property="BorderThickness" Value="0,0,1,1"/></Style></DataGrid.ColumnHeaderStyle>
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="On" Width="40" Binding="{Binding Enabled,Mode=TwoWay}"/>
+                    <DataGridTextColumn Header="Zone" Width="*" MinWidth="120" Binding="{Binding DisplayName,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
+                    <DataGridTextColumn Header="X" Width="60" Binding="{Binding X,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged,StringFormat=F2}"/>
+                    <DataGridTextColumn Header="Y" Width="60" Binding="{Binding Y,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged,StringFormat=F2}"/>
+                    <DataGridTextColumn Header="Width" Width="70" Binding="{Binding Width,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged,StringFormat=F2}"/>
+                    <DataGridTextColumn Header="Height" Width="70" Binding="{Binding Height,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged,StringFormat=F2}"/>
+                    <DataGridTemplateColumn Header="Style" Width="125"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding StyleDisplayName}" VerticalAlignment="Center" Margin="6,0"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><ComboBox ItemsSource="{Binding MaskStylesSource,RelativeSource={RelativeSource AncestorType=Window}}" DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectedValue="{Binding Style,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Blur %" Width="65" Binding="{Binding SurfaceIntensityPercent,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged,StringFormat=F0}"/>
+                    <DataGridCheckBoxColumn Header="Hover" Width="60" Binding="{Binding RevealOnHover,Mode=TwoWay}"/>
+                    <DataGridCheckBoxColumn Header="Hold" Width="60" Binding="{Binding HideDuringTemporaryReveal,Mode=TwoWay}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </DataTemplate>
     </Window.Resources>
 
     <Grid>
-        <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Border Background="{StaticResource SidebarBrush}" Padding="10,24,6,24">
+        <Grid.ColumnDefinitions><ColumnDefinition><ColumnDefinition.Style><Style TargetType="ColumnDefinition"><Setter Property="Width" Value="220"/><Style.Triggers><DataTrigger Binding="{Binding IsAdvancedZonesPage}" Value="True"><Setter Property="Width" Value="0"/></DataTrigger></Style.Triggers></Style></ColumnDefinition.Style></ColumnDefinition><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Border Background="{StaticResource SidebarBrush}" Padding="10,24,6,24"><Border.Style><Style TargetType="Border"><Style.Triggers><DataTrigger Binding="{Binding IsAdvancedZonesPage}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
             <DockPanel>
                 <Grid DockPanel.Dock="Top" Margin="12,0,0,28">
                     <StackPanel Margin="10,0,0,6"><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsSecondaryDesignPage}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style><TextBlock Text="PM" FontSize="36" FontWeight="Black" Foreground="White"/><TextBlock Text="PrivacyMask" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,0"/></StackPanel>
@@ -315,7 +269,8 @@
    <TextBlock Grid.Row="2" Text="{Binding ApplicationEmptyMessage}" Visibility="{Binding HasNoMatchingApplications,Converter={StaticResource BooleanToVisibility}}" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"/>
   </Grid>
  </Border>
- <ScrollViewer x:Name="ApplicationDetailsPage" Visibility="{Binding IsApplicationDetailsPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+ <ContentControl x:Name="AdvancedZonesPage" Margin="28" Content="{Binding SelectedApplication}" ContentTemplate="{StaticResource AdvancedZonesTemplate}" Visibility="{Binding IsAdvancedZonesPage,Converter={StaticResource BooleanToVisibility}}"/>
+ <ScrollViewer x:Name="ApplicationDetailsPage" Visibility="{Binding IsPrimaryApplicationDetailsPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
   <StackPanel Margin="24">
    <Button Content="←  Back to Applications" HorizontalAlignment="Left" Background="Transparent" BorderThickness="0" Foreground="#007AFF" Click="BackToApplications_Click" Margin="0,0,0,20"/>
    <ContentControl Content="{Binding SelectedApplication}" ContentTemplate="{StaticResource ApplicationDetailTemplate}" />

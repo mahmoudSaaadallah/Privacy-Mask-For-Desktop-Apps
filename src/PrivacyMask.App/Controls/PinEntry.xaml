@@ -1,0 +1,28 @@
+<UserControl x:Class="PrivacyMask.App.Controls.PinEntry"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="False">
+    <Border x:Name="Outline" Background="White" BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" CornerRadius="6">
+        <Grid MinHeight="40">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+            <PasswordBox x:Name="MaskedInput" MaxLength="8" Padding="12,8" Background="Transparent" BorderThickness="0" FontSize="18" PasswordChanged="MaskedInput_Changed"/>
+            <TextBox x:Name="VisibleInput" MaxLength="8" Padding="12,8" Background="Transparent" BorderThickness="0" FontSize="18" Visibility="Collapsed" TextChanged="VisibleInput_Changed"/>
+            <ToggleButton x:Name="RevealButton" Grid.Column="1" Background="Transparent" BorderThickness="0" IsChecked="False"
+                          ToolTip="Show PIN" AutomationProperties.Name="Show PIN" Checked="Reveal_Changed" Unchecked="Reveal_Changed">
+                <ToggleButton.Template><ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Focus" BorderBrush="Transparent" BorderThickness="1" CornerRadius="4" Margin="3">
+                        <Viewbox Width="21" Height="16"><Canvas Width="24" Height="18">
+                            <Path Data="M1,9 Q12,-5 23,9 Q12,23 1,9 Z" Stroke="{StaticResource MutedInkBrush}" StrokeThickness="1.8"/>
+                            <Ellipse Width="6" Height="6" Canvas.Left="9" Canvas.Top="6" Stroke="{StaticResource MutedInkBrush}" StrokeThickness="1.8"/>
+                            <Path x:Name="Slash" Data="M3,1 L21,17" Stroke="{StaticResource MutedInkBrush}" StrokeThickness="1.8" Visibility="Collapsed"/>
+                        </Canvas></Viewbox>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Focus" Property="BorderBrush" Value="{StaticResource FocusBrush}"/></Trigger>
+                        <Trigger Property="IsChecked" Value="True"><Setter TargetName="Slash" Property="Visibility" Value="Visible"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate></ToggleButton.Template>
+            </ToggleButton>
+        </Grid>
+    </Border>
+</UserControl>

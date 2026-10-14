@@ -23,6 +23,23 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private bool _isRuntimeActionBusy;
     private readonly HashSet<AppProfileViewModel> _overviewProfiles = [];
     private PanicHelpScope _panicHelpScope;
+    private bool _advancedZonesOpen;
+
+    public bool IsAdvancedZonesPage => IsApplicationDetailsPage && _advancedZonesOpen;
+    public bool IsPrimaryApplicationDetailsPage => IsApplicationDetailsPage && !_advancedZonesOpen;
+
+    public void ShowAdvancedZones()
+    {
+        if (!IsApplicationDetailsPage) return;
+        _advancedZonesOpen = true;
+        NotifyApplicationPages();
+    }
+
+    public void ShowPrimaryApplicationDetails()
+    {
+        _advancedZonesOpen = false;
+        NotifyApplicationPages();
+    }
 
     public PanicHelpScope PanicHelpScope
     {
@@ -155,12 +172,14 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     public void OpenApplication(AppProfileViewModel profile)
     {
         if (!AppProfiles.Contains(profile)) return;
+        _advancedZonesOpen = false;
         SelectedPage = DesktopPage.Applications;
         SelectedApplication = profile;
     }
 
     public void ShowApplicationList()
     {
+        _advancedZonesOpen = false;
         SelectedApplication = null;
         SelectedPage = DesktopPage.Applications;
     }
@@ -170,6 +189,8 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         RaisePropertyChanged(nameof(IsSaveBarVisible));
         RaisePropertyChanged(nameof(IsApplicationListPage));
         RaisePropertyChanged(nameof(IsApplicationDetailsPage));
+        RaisePropertyChanged(nameof(IsAdvancedZonesPage));
+        RaisePropertyChanged(nameof(IsPrimaryApplicationDetailsPage));
     }
 
     private void RefreshApplicationFilter()

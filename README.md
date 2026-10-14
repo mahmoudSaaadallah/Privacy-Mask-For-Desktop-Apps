@@ -232,8 +232,11 @@ Each profile card reports whether its application is protected now, waiting for
 focus, paused, disabled, not running, or no longer detected at its saved path.
 The information button provides contextual help on hover or keyboard focus;
 press `F1`, `Enter`, or `Space` to open it, and `Esc` to dismiss it.
-Profile details contain the primary appearance and hover controls. Expand
-**Advanced privacy zones** for presets and all individual zone settings.
+Profile details contain the primary appearance and hover controls. Open
+**Advanced privacy zones** for the full-width preset and zone editor. **Back**
+returns to the same profile without losing edits; Save/Discard uses the shared
+settings session. Coordinates remain relative fractions (0–1), not fixed pixels,
+so zones adapt to the application's changing window size.
 Search in the application picker narrows running candidates; check the selected
 executable path before confirming. Browsing to an executable remains available.
 For a custom application that moved or changed its executable after an update,
@@ -259,6 +262,12 @@ Changing it requires the current PIN. PrivacyMask stores only a salted,
 computationally hardened verifier in the local settings file, never the digits
 you entered. Canceling the unlock window or entering an incorrect PIN leaves
 the panic mask active.
+
+PIN fields are masked by default. Each eye button explicitly shows or hides
+only that field. Hiding it clears the plaintext display; closing the dialog
+clears all PIN inputs. Incorrect-PIN feedback remains beside the input and
+visible even when the fields need to scroll. Unlock removes the panic mask;
+normal privacy settings still apply, rather than promising a timed reveal.
 
 If another program has already reserved a configured global shortcut,
 PrivacyMask shows a tray warning and marks that shortcut as unavailable in the

@@ -15,17 +15,18 @@ public partial class PanicPinUnlockWindow : Window
             ?? throw new ArgumentNullException(nameof(credential));
         InitializeComponent();
         WindowWorkAreaSizer.Fit(this);
-        DescriptionText.Text = $"Enter the panic unlock PIN to reveal {targetName}.";
-        PinBox.Focus();
+        HeadingText.Text = $"Unlock {targetName}";
+        DescriptionText.Text = "Enter your panic PIN to remove this panic mask. Normal privacy settings still apply.";
+        PinBox.FocusInput();
     }
 
     private void Unlock_Click(object sender, RoutedEventArgs e)
     {
         if (!PanicPinService.Verify(PinBox.Password, _credential))
         {
-            ErrorText.Text = "Incorrect PIN. The panic mask remains active.";
+            ErrorText.Text = "Incorrect PIN. Mask remains active.";
             PinBox.Clear();
-            PinBox.Focus();
+            PinBox.FocusInput();
             return;
         }
 

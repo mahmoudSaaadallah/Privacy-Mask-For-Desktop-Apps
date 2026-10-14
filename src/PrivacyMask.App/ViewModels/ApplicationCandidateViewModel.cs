@@ -19,6 +19,7 @@ public sealed class ApplicationCandidateViewModel
     public string DisplayName => Candidate.DisplayName;
 
     public string ProcessSummary => $"Process: {Candidate.ProcessName}.exe";
+    public string ExecutableName => $"{Candidate.ProcessName}.exe";
 
     public string WindowSummary => Candidate.IsRunning
         ? $"Window: {Candidate.WindowTitle}"
