@@ -28,7 +28,10 @@ function Invoke-PrivacyMaskGh {
     $sha = if ($script:fault -eq 'moved-tag' -and $script:created) { '2' * 40 } else { $script:expectedCommit }
     return (@{ object = @{ type = 'commit'; sha = $sha } } | ConvertTo-Json -Depth 8 -Compress)
   }
-  $assets = @($script:assetMetadata | ConvertTo-Json -Depth 8 | ConvertFrom-Json)
+  # Windows PowerShell 5.1 emits a top-level parsed JSON array as one pipeline
+  # item. Clone inside an object so the fixture models actual release API shape.
+  $assetClone = @{ assets = $script:assetMetadata } | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+  $assets = @($assetClone.assets)
   if ($script:fault -eq 'wrong-digest') { $assets[0].digest = 'sha256:' + ('0' * 64) }
   if ($script:fault -eq 'missing-digest') { $assets[0].PSObject.Properties.Remove('digest') }
   if ($script:fault -eq 'duplicate-asset') { $assets[1].name = $assets[0].name }
