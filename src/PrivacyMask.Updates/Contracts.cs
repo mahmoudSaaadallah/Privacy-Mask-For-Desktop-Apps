@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-namespace PrivacyMask.ReleaseTool;
+namespace PrivacyMask.Updates;
 
 public sealed record PayloadFile(string Path, long Size, string Sha256);
 public sealed record UpdateArchive(string AssetName, long Size, string Sha256);
@@ -80,7 +80,7 @@ public static class ManifestRules
         if (manifest.SchemaVersion != 1 || manifest.AppId != AppId || manifest.Repository != Repository ||
             !IsVersion(manifest.Version) || manifest.Tag != "v" + manifest.Version || !IsCommit(manifest.CommitSha) ||
             manifest.Channel != (manifest.Version.Contains('-') ? "preview" : "stable") || manifest.Runtime != "win-x64" ||
-            manifest.MinWindowsBuild <= 0 || manifest.MinUpdaterProtocol != 1)
+            manifest.MinWindowsBuild <= 0 || manifest.MinUpdaterProtocol <= 0)
             throw new ReleaseValidationException("Unsupported or inconsistent update identity/compatibility.");
         if (manifest.Package.AssetName != ArchiveName(manifest.Version) || !IsHash(manifest.Package.Sha256) ||
             manifest.Package.Size is <= 0 or > MaximumFileSize || manifest.Files.Length != 1)
@@ -109,7 +109,7 @@ public static class ManifestRules
         foreach (var key in policy.TrustedKeys)
         {
             if (!IsKeyId(key.KeyId) || !ids.Add(key.KeyId)) throw new ReleaseValidationException("Invalid or duplicate trusted key ID.");
-            using var publicKey = ManifestSigning.ImportPublicKey(key.PublicKeySpkiBase64);
+            using var publicKey = UpdateManifestVerifier.ImportPublicKey(key.PublicKeySpkiBase64);
         }
     }
 }

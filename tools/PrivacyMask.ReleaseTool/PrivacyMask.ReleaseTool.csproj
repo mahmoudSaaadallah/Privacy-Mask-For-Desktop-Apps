@@ -6,4 +6,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/PrivacyMask.Updates/PrivacyMask.Updates.csproj" />
+  </ItemGroup>
 </Project>

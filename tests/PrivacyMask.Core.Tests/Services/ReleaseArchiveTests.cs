@@ -2,6 +2,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using PrivacyMask.ReleaseTool;
+using PrivacyMask.Updates;
 
 namespace PrivacyMask.Core.Tests.Services;
 

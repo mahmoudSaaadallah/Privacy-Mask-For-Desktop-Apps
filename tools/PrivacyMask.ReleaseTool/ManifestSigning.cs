@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using PrivacyMask.Updates;
 
 namespace PrivacyMask.ReleaseTool;
 
@@ -6,16 +7,7 @@ public static class ManifestSigning
 {
     public static ECDsa ImportPublicKey(string spkiBase64)
     {
-        var bytes = Convert.FromBase64String(spkiBase64);
-        var key = ECDsa.Create();
-        try
-        {
-            key.ImportSubjectPublicKeyInfo(bytes, out var consumed);
-            if (consumed != bytes.Length) throw new ReleaseValidationException("Unexpected bytes in pinned public key.");
-            AssertP256(key);
-            return key;
-        }
-        catch { key.Dispose(); throw; }
+        return UpdateManifestVerifier.ImportPublicKey(spkiBase64);
     }
 
     private static void AssertP256(ECDsa key)
@@ -50,21 +42,7 @@ public static class ManifestSigning
     public static UpdateManifest Verify(byte[] manifestBytes, byte[] envelopeBytes, ReleasePolicy policy)
     {
         ManifestRules.Validate(policy);
-        if (manifestBytes.Length is 0 or > ManifestRules.ManifestLimit)
-            throw new ReleaseValidationException("Invalid manifest length.");
-        var signature = ContractJson.Read<SignatureEnvelope>(envelopeBytes, ManifestRules.SignatureLimit);
-        if (signature.Algorithm != ManifestRules.Algorithm || !ManifestRules.IsKeyId(signature.KeyId))
-            throw new ReleaseValidationException("Unsupported signature algorithm or key ID.");
-        var pinned = policy.TrustedKeys.SingleOrDefault(key => key.KeyId == signature.KeyId)
-            ?? throw new ReleaseValidationException("Signature key is not pinned.");
-        var bytes = Convert.FromBase64String(signature.Signature);
-        if (bytes.Length != 64 || Convert.ToBase64String(bytes) != signature.Signature)
-            throw new ReleaseValidationException("Signature must use canonical Base64 P1363 format.");
-        using var key = ImportPublicKey(pinned.PublicKeySpkiBase64);
-        if (!key.VerifyData(manifestBytes, bytes, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation))
-            throw new ReleaseValidationException("Manifest authentication failed.");
-        var manifest = ContractJson.Read<UpdateManifest>(manifestBytes, ManifestRules.ManifestLimit);
-        ManifestRules.Validate(manifest);
+        var manifest = new UpdateManifestVerifier(policy.TrustedKeys).Verify(manifestBytes, envelopeBytes);
         if (manifest.MinWindowsBuild != policy.MinimumWindowsBuild || manifest.MinUpdaterProtocol != policy.MinimumUpdaterProtocol ||
             manifest.SettingsCompatibility != policy.SettingsCompatibility)
             throw new ReleaseValidationException("Manifest does not match the reviewed release policy.");

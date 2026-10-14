@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
+using PrivacyMask.Updates;
 
 namespace PrivacyMask.ReleaseTool;
 
