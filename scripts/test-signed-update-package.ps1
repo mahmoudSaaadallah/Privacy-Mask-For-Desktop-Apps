@@ -51,6 +51,8 @@ try {
   $common = @('--output', $output, '--version', $identity.Version, '--file-version', $identity.FileVersion, '--commit', $commit, '--policy', $policyPath)
   Invoke-TestTool (@('pack', '--exe', $PublishedExecutable, '--key-id', 'ephemeral-test-key') + $common)
   Invoke-TestTool (@('verify') + $common)
+  dotnet run --project tests/PrivacyMask.Updates.SmokeChecks --configuration Release -- $output $policyPath $identity.Version $commit
+  if ($LASTEXITCODE -ne 0) { throw 'Real executable staging smoke failed.' }
   foreach ($item in @(
     @{ File = 'update-manifest.json'; Schema = 'docs/contracts/update-manifest.schema.json' },
     @{ File = 'update-manifest.sig.json'; Schema = 'docs/contracts/update-signature.schema.json' }
