@@ -38,6 +38,10 @@
             <Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="FontWeight" Value="Normal"/>
             <Setter Property="MinHeight" Value="28"/>
         </Style>
+        <Style x:Key="AboutInformationButton" TargetType="Button" BasedOn="{StaticResource InformationButton}">
+            <Setter Property="Width" Value="40"/><Setter Property="Height" Value="40"/><Setter Property="FontSize" Value="22"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Grid><Ellipse x:Name="Surface" Fill="#EAF1F7"/><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Grid><ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="Stroke" Value="{StaticResource FocusBrush}"/><Setter TargetName="Surface" Property="StrokeThickness" Value="2"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+        </Style>
         <BooleanToVisibilityConverter
             x:Key="BooleanToVisibility" />
         <services:PageSelectionConverter
@@ -191,11 +195,15 @@
 
     <Grid>
         <Grid.ColumnDefinitions><ColumnDefinition><ColumnDefinition.Style><Style TargetType="ColumnDefinition"><Setter Property="Width" Value="220"/><Style.Triggers><DataTrigger Binding="{Binding IsAdvancedZonesPage}" Value="True"><Setter Property="Width" Value="0"/></DataTrigger></Style.Triggers></Style></ColumnDefinition.Style></ColumnDefinition><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <Border Background="{StaticResource SidebarBrush}" Padding="10,24,6,24"><Border.Style><Style TargetType="Border"><Style.Triggers><DataTrigger Binding="{Binding IsAdvancedZonesPage}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
+        <Border Padding="10,24,6,24"><Border.Style><Style TargetType="Border"><Setter Property="Background" Value="{StaticResource SidebarBrush}"/><Style.Triggers><DataTrigger Binding="{Binding IsAdvancedZonesPage}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger><DataTrigger Binding="{Binding IsAboutPage}" Value="True"><Setter Property="Background"><Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#102940" Offset="0"/><GradientStop Color="#142438" Offset="1"/></LinearGradientBrush></Setter.Value></Setter></DataTrigger></Style.Triggers></Style></Border.Style>
             <DockPanel>
                 <Grid DockPanel.Dock="Top" Margin="12,0,0,28">
-                    <StackPanel Margin="10,0,0,6"><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsSecondaryDesignPage}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style><TextBlock Text="PM" FontSize="36" FontWeight="Black" Foreground="White"/><TextBlock Text="PrivacyMask" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,0"/></StackPanel>
+                    <StackPanel Margin="10,0,0,6"><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsSecondaryDesignPage}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger><DataTrigger Binding="{Binding IsAboutPage}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style><TextBlock Text="PM" FontSize="36" FontWeight="Black" Foreground="White"/><TextBlock Text="PrivacyMask" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,2,0,0"/></StackPanel>
                     <StackPanel Orientation="Horizontal" Visibility="{Binding IsSecondaryDesignPage,Converter={StaticResource BooleanToVisibility}}"><Border Width="44" Height="44" CornerRadius="7" Background="{StaticResource AccentBrush}" Margin="0,0,12,0"><TextBlock Text="PM" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="PrivacyMask" FontSize="14" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/></StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="8,8,0,10" Visibility="{Binding IsAboutPage,Converter={StaticResource BooleanToVisibility}}">
+                        <Image Source="{StaticResource AboutShieldSymbol}" Width="48" Height="58" Margin="0,0,12,0"/>
+                        <StackPanel VerticalAlignment="Center"><TextBlock Text="PM" FontSize="32" FontWeight="Bold" Foreground="White"/><TextBlock Text="PrivacyMask" FontSize="16" FontWeight="SemiBold" Foreground="White"/></StackPanel>
+                    </StackPanel>
                 </Grid>
                 <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
                     <Button Style="{StaticResource NavigationButton}" Tag="{x:Static viewModels:DesktopPage.Overview}" Click="Navigate_Click" AutomationProperties.Name="Overview"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" Width="28"/><TextBlock Text="Overview" Foreground="White" FontWeight="Normal"/></StackPanel></Button>
@@ -203,7 +211,7 @@
                     <Button Style="{StaticResource NavigationButton}" Tag="{x:Static viewModels:DesktopPage.Shortcuts}" Click="Navigate_Click" AutomationProperties.Name="Shortcuts"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE765;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" Width="28"/><TextBlock Text="Shortcuts" Foreground="White" FontWeight="Normal"/></StackPanel></Button>
                     <Button Style="{StaticResource NavigationButton}" Tag="{x:Static viewModels:DesktopPage.Security}" Click="Navigate_Click" AutomationProperties.Name="Security"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE83D;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" Width="28"/><TextBlock Text="Security" Foreground="White" FontWeight="Normal"/></StackPanel></Button>
                     <Button Style="{StaticResource NavigationButton}" Tag="{x:Static viewModels:DesktopPage.Settings}" Click="Navigate_Click" AutomationProperties.Name="Settings"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" Width="28"/><TextBlock Text="Settings" Foreground="White" FontWeight="Normal"/></StackPanel></Button>
-                    <Button Style="{StaticResource NavigationButton}" Tag="{x:Static viewModels:DesktopPage.About}" Click="Navigate_Click" AutomationProperties.Name="About"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" Width="28"/><TextBlock Text="About" Foreground="White" FontWeight="Normal"/></StackPanel></Button>
+                    <Button Style="{StaticResource NavigationButton}" Tag="{x:Static viewModels:DesktopPage.About}" Click="Navigate_Click" AutomationProperties.Name="About"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="White" Width="28"/><TextBlock Text="About" Foreground="White"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="FontWeight" Value="Normal"/><Style.Triggers><DataTrigger Binding="{Binding IsAboutPage}" Value="True"><Setter Property="FontWeight" Value="SemiBold"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></StackPanel></Button>
                 </StackPanel></ScrollViewer>
             </DockPanel>
         </Border>
@@ -452,7 +460,7 @@
                                                 </Border>
                                                 <Button Tag="email" Click="DeveloperContact_Click" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right" AutomationProperties.Name="Send support email"><StackPanel Orientation="Horizontal"><Path Data="M0,9 L23,0 15,24 11,14 0,9 M11,14 L23,0" Fill="White" Width="20" Height="21" Stretch="Uniform" Margin="0,0,9,0"/><AccessText Text="_Send email" VerticalAlignment="Center"/></StackPanel></Button>
                                             </controls:AdaptivePairPanel>
-                                            <TextBlock x:Name="ContactFeedback" Text="" TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" AutomationProperties.LiveSetting="Polite" Margin="0,6,0,0"/>
+                                            <TextBlock x:Name="ContactFeedback" Text="" TextWrapping="Wrap" Foreground="{StaticResource MutedInkBrush}" AutomationProperties.LiveSetting="Polite" Margin="0,6,0,0"><TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed"/></Trigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
                                             <Border Height="1" Background="#E7ECF0" Margin="0,16,0,18"/>
                                             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="62"/><ColumnDefinition Width="*"/><ColumnDefinition Width="32"/></Grid.ColumnDefinitions>
                                                 <Border Style="{StaticResource AboutIconCircle}"><Image Source="{StaticResource AboutGitHubSymbol}" Width="27" Height="27"/></Border>
@@ -473,7 +481,7 @@
                                     </Border>
                                     <Border Style="{StaticResource AboutCard}" Margin="0,14,0,0">
                                         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="56"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                            <Button Content="i" Style="{StaticResource CircleHelp}" Width="40" Height="40" Background="#E9F0F6" VerticalAlignment="Top"
+                                            <Button Content="ⓘ" Style="{StaticResource AboutInformationButton}" VerticalAlignment="Top"
                                                     AutomationProperties.Name="Privacy and capture limitations" services:InformationHelp.Text="Designed for local privacy and best-effort full-screen sharing. Window-only sharing may omit the mask. Blur can retain detail; use solid redact or panic for complete concealment. Live-blur frames stay in memory and are never saved or sent. Optional contact links open your configured email client or browser."/>
                                             <StackPanel Grid.Column="1"><TextBlock Text="Thank you for using PrivacyMask." FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
                                                 <TextBlock Text="Window-only sharing may bypass the mask." Style="{StaticResource AboutBody}" Margin="0,8,0,0"/>
