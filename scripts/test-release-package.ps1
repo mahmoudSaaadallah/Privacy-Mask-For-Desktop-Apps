@@ -8,11 +8,12 @@ Set-StrictMode -Version Latest
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'PrivacyMask.Build.ps1')
-$productVersion = Get-PrivacyMaskProductVersion -RepoRoot $repoRoot
+$versionIdentity = Get-PrivacyMaskVersionIdentity -RepoRoot $repoRoot
+$productVersion = $versionIdentity.Version
 $assetBaseName = "PrivacyMask-$productVersion-win-x64"
 $assetFileName = "$assetBaseName.zip"
 
-if (-not [string]::IsNullOrWhiteSpace($ExpectedTag) -and $ExpectedTag -ne "v$productVersion") {
+if (-not [string]::IsNullOrWhiteSpace($ExpectedTag) -and $ExpectedTag -cne $versionIdentity.ExpectedTag) {
   throw "Release tag '$ExpectedTag' does not match product version '$productVersion'. Expected 'v$productVersion'."
 }
 
@@ -75,11 +76,8 @@ try {
   }
 
   $packagedExePath = Join-Path $extractPath 'single-file\PrivacyMask.App.exe'
-  $expectedFileVersion = "$productVersion.0"
-  $actualFileVersion = (Get-Item -LiteralPath $packagedExePath).VersionInfo.FileVersion
-  if ($actualFileVersion -ne $expectedFileVersion) {
-    throw "Packaged executable version '$actualFileVersion' does not match '$expectedFileVersion'."
-  }
+  $versionInfo = (Get-Item -LiteralPath $packagedExePath).VersionInfo
+  Assert-PrivacyMaskPackageVersion -Identity $versionIdentity -FileVersion $versionInfo.FileVersion -ProductVersion $versionInfo.ProductVersion
 
   $installerPath = Join-Path $extractPath 'Install-PrivacyMask.ps1'
   $uninstallerPath = Join-Path $extractPath 'Uninstall-PrivacyMask.ps1'

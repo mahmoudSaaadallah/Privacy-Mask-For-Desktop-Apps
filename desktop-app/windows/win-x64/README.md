@@ -5,14 +5,17 @@ application files are intentionally not stored in Git.
 
 ## Install a GitHub release
 
-1. Open the [latest PrivacyMask release](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases/latest).
-2. Download the versioned Windows archive, for example `PrivacyMask-1.1.0-win-x64.zip`.
+1. Open [PrivacyMask releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). **Pre-release** builds are for testing; `latest` selects stable releases.
+2. Download the archive matching your chosen release, for example `PrivacyMask-2.0.0-beta.1-win-x64.zip`.
 3. Extract the whole ZIP; do not run the installer from inside the archive.
 4. Double-click `Install-PrivacyMask.cmd`.
 5. Start PrivacyMask from the Desktop or Start Menu shortcut.
 
 No administrator access is required. The installer copies the executable to
 `%LocalAppData%\PrivacyMask.Desktop` and creates shortcuts for the current user.
+The source version does not mean a matching release has already been published.
+About shows the product version, including beta/rc, and its version tooltip
+shows full build metadata. Windows file versions remain numeric.
 
 ## Portable use
 

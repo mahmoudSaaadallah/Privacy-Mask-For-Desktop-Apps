@@ -11,6 +11,9 @@ permissions:
 jobs:
   package-windows:
     runs-on: windows-latest
+    env:
+      PRIVACYMASK_RELEASE_TAG: ${{ github.ref_name }}
+      PRIVACYMASK_RELEASE_REPOSITORY: ${{ github.repository }}
 
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +26,16 @@ jobs:
       - name: Validate PowerShell syntax
         shell: powershell
         run: .\scripts\verify-powershell-syntax.ps1
+
+      - name: Test version policy and prerelease classification
+        shell: powershell
+        run: .\scripts\test-version-policy.ps1
+
+      - name: Validate version identity and release tag
+        shell: powershell
+        run: |
+          . .\scripts\PrivacyMask.Build.ps1
+          Get-PrivacyMaskReleaseFlags -RepoRoot $PWD.Path -Tag $env:PRIVACYMASK_RELEASE_TAG | Out-Null
 
       - name: Restore
         run: dotnet restore PrivacyMask.Desktop.slnx
@@ -47,7 +60,7 @@ jobs:
 
       - name: Smoke test release package and tag
         shell: powershell
-        run: .\scripts\test-release-package.ps1 -ExpectedTag "${{ github.ref_name }}"
+        run: .\scripts\test-release-package.ps1 -ExpectedTag $env:PRIVACYMASK_RELEASE_TAG
 
       - name: Publish GitHub release
         shell: powershell
@@ -57,9 +70,12 @@ jobs:
           . .\scripts\PrivacyMask.Build.ps1
           $version = Get-PrivacyMaskProductVersion -RepoRoot $PWD.Path
           $assetBaseName = "PrivacyMask-$version-win-x64"
-          gh release create "${{ github.ref_name }}" `
+          $releaseFlags = @(Get-PrivacyMaskReleaseFlags -RepoRoot $PWD.Path -Tag $env:PRIVACYMASK_RELEASE_TAG)
+          gh release create $env:PRIVACYMASK_RELEASE_TAG `
             ".\artifacts\release\$assetBaseName.zip" `
             ".\artifacts\release\$assetBaseName.zip.sha256" `
-            --repo "${{ github.repository }}" `
+            --repo $env:PRIVACYMASK_RELEASE_REPOSITORY `
             --generate-notes `
-            --title "PrivacyMask ${{ github.ref_name }}"
+            --title "PrivacyMask $env:PRIVACYMASK_RELEASE_TAG" `
+            @releaseFlags
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub release publishing failed.' }

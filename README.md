@@ -2,6 +2,11 @@
 
 PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
+The current source targets `2.0.0-beta.1`, a testing build, not a declaration
+that a stable 2.0.0 release has been published. Check the releases page for
+available downloads. About and Settings show the product version; hover the
+About version for full build/source metadata and the numeric Windows file version.
+
 ## Highlights
 
 - Windows-first WPF tray application
@@ -39,8 +44,8 @@ Minimum requirements:
 
 You do not need the source code or the .NET SDK to install a published release.
 
-1. Open the [latest GitHub release](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases/latest).
-2. Download the versioned Windows archive, for example `PrivacyMask-2.0.0-win-x64.zip`, and extract the whole archive.
+1. Open [GitHub releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). Releases marked **Pre-release** are testing builds; the `latest` link is for stable releases.
+2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.1-win-x64.zip` for beta.1, and extract the whole archive.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
 5. Complete onboarding. Use **Add application** to select a running program or browse to its `.exe` file.
@@ -62,10 +67,11 @@ installation in `%LocalAppData%\PrivacyMask.Desktop`.
 The matching `.sha256` release asset can be used to verify the downloaded ZIP:
 
 ```powershell
-(Get-FileHash .\PrivacyMask-2.0.0-win-x64.zip -Algorithm SHA256).Hash
+(Get-FileHash .\PrivacyMask-2.0.0-beta.1-win-x64.zip -Algorithm SHA256).Hash
 ```
 
-Compare the output with the hash in `PrivacyMask-2.0.0-win-x64.zip.sha256`.
+Compare the output with the hash in `PrivacyMask-2.0.0-beta.1-win-x64.zip.sha256`.
+Use the actual versioned filenames if you downloaded another release.
 
 ## One-click install from source
 
@@ -151,8 +157,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-win-x64-release.ps1
 
 Release package output:
 
-- `artifacts/release/PrivacyMask-2.0.0-win-x64.zip`
-- `artifacts/release/PrivacyMask-2.0.0-win-x64.zip.sha256`
+- `artifacts/release/PrivacyMask-2.0.0-beta.1-win-x64.zip`
+- `artifacts/release/PrivacyMask-2.0.0-beta.1-win-x64.zip.sha256`
 
 ## Repository layout
 
@@ -312,6 +318,7 @@ Press `Esc` or close the window to discard the preview and return to the tray.
 
 - Review [docs/architecture.md](docs/architecture.md) for the project structure.
 - Review [docs/release-process.md](docs/release-process.md) for the local release flow.
+- Follow its beta/rc/stable version policy before the next shipped-app delivery; PRs and commits are not themselves GitHub releases.
 - Review [docs/troubleshooting.md](docs/troubleshooting.md) if builds or overlays are not behaving as expected.
 - Review [docs/performance-baseline.md](docs/performance-baseline.md) before and after performance-sensitive changes.
 - Review [docs/runtime-protection.md](docs/runtime-protection.md) for pause, panic-mask, and startup behavior.
