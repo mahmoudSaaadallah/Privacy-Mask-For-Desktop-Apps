@@ -297,9 +297,13 @@ Security's **Active app / All apps** tabs explain the existing panic controls;
 selecting a tab does not activate a mask or change shortcut scope.
 About now shows the product version, developer details, privacy commitment,
 and capture limitations directly in the sidebar page. Bugs and suggestions
-can be sent to `mahmoud.saadallah73@gmail.com` using **Email developer**, or
-the address can be copied with **Copy email**. GitHub and LinkedIn buttons
-open the developer's existing public profiles.
+can be sent to `mahmoud.saadallah73@gmail.com` using **Send email**, or
+the address can be copied with the copy button beside it. GitHub and LinkedIn
+profile rows and their external-link buttons open the same public profiles.
+About uses two columns when there is enough room and stacks its cards on
+narrower windows. Extended capture/blur limitations are in the information
+button beside the visible window-sharing warning. The shield is page branding;
+the previously approved executable and tray icon stays unchanged.
 Press `Ctrl+S` or **Save changes** to save the complete session, or **Discard**
 to restore saved values across all pages; both keep the selected page open.
 Press `Esc` or close the window to discard the preview and return to the tray.
