@@ -165,6 +165,7 @@ Release package output:
 - `src/PrivacyMask.Core`: core models, settings, presets, and profile resolution
 - `src/PrivacyMask.Windows`: Windows interop, startup registration, and window discovery
 - `src/PrivacyMask.App`: WPF app shell, settings UI, onboarding, overlay rendering, and hotkeys
+- `src/PrivacyMask.Updates`: shared public update trust/read-only discovery; not yet referenced by the shipped app
 - `tests/PrivacyMask.Core.Tests`: unit tests
 - `docs`: architecture and release notes
 - `scripts`: verification, publish, and local install scripts
@@ -326,7 +327,8 @@ Press `Esc` or close the window to discard the preview and return to the tray.
 - Review [the in-app update delivery plan](docs/in-app-updates.md),
   [signed manifest contract](docs/update-manifest.md), and
   [recovery/threat model](docs/update-recovery.md) for the upcoming update system.
-  Phase 2 adds developer signed-package tooling and a verified draft publisher;
+  Phase 3 adds a [read-only discovery library](docs/update-discovery.md) with
+  offline HTTP tests, alongside signed-package tooling and a verified draft publisher;
   there is no in-app update button yet. Keep using the installation procedure above.
 - Review [update signing operations](docs/update-signing-operations.md) before
   publishing: production policy/environment are intentionally unconfigured,

@@ -2,8 +2,9 @@
 
 Status: phase 2 provides developer packaging/verification and a draft publisher.
 No production key, protected GitHub environment, OS qualification, immutable
-release setting, tag or release was created by this change. In-app discovery,
-download, installation, stable launcher and recovery UI are still later phases.
+release setting, tag or release was created by this change. Phase 3 supplies an
+isolated [discovery library](update-discovery.md) sharing public verification.
+App activation/UI, download, installation, launcher and recovery remain later phases.
 
 ## Deliberate setup gate
 
