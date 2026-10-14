@@ -102,5 +102,33 @@ remaining live keyboard/PIN/DPI/resource/stability gates in
 
 ## Future improvements
 
+- Implement the staged [in-app update plan](in-app-updates.md), with a
+  [signed manifest](update-manifest.md) and qualified
+  [launcher/rollback protocol](update-recovery.md).
 - Sign release executables and installers
 - Add an MSI or MSIX installer
+
+## Update-system preparation (phase 1 only)
+
+The proposed manifest/signature JSON schemas are versioned developer contracts,
+not release assets or authentication implementations. Run:
+
+```powershell
+pwsh -File .\scripts\test-update-manifest-schema.ps1
+```
+
+This check needs PowerShell 7 on a developer/CI machine only, uses synthetic
+in-memory metadata, and makes no network, signing, installation, tag or release
+changes. Both CI and release workflows run it with `shell: pwsh`. Passing it
+does not establish that signatures, downloads, migrations or rollback work.
+
+The publisher still creates only the existing installer ZIP and checksum.
+Phase 2 will add protected signing, update-only artifacts and draft-to-publish
+gating. Key setup, immutable-release settings, tags and publication require
+their own explicit release authorization. Do not publish the synthetic test
+metadata or treat a missing update manifest as an unsigned update fallback.
+
+This docs/developer-check delivery keeps `2.0.0-beta.2`, numeric identities and
+settings schema 12 unchanged. Apply the existing version policy when a later
+PR actually changes the shipped application, and qualify a first manual
+bootstrap installation before advertising subsequent in-app updates.

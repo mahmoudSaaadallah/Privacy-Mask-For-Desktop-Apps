@@ -103,3 +103,18 @@ overlay enumeration, including owned tool windows used by some desktop apps.
 - No telemetry
 - No cloud service dependency
 - No captured-frame persistence or transmission
+
+## Planned in-app updates
+
+[The update delivery plan](in-app-updates.md) separates release discovery,
+signed metadata verification, streaming download, shell coordination, and an
+independent managed launcher/recovery worker. The
+[manifest contract](update-manifest.md) and
+[recovery/threat model](update-recovery.md) define the proposed boundaries and
+required tests. They are specifications, not implemented runtime capabilities.
+
+The first phase does not change the current installation layout, protection
+states, settings schema, privacy networking behavior, or version. Later runtime
+integration must disclose optional GitHub update requests while retaining no
+content transmission and no telemetry. Users continue to install/update with
+the current installer until an explicitly qualified updater-capable release.
