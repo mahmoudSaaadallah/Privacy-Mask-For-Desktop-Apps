@@ -2,7 +2,9 @@
 
 Status: library and offline HTTP-fixture tests implemented. The App does not
 reference/instantiate this library yet. No button, scheduler, live update check,
-ZIP downloader, installer, production key or release is added. Product/settings
+installer, production key or release is added by phase 3. The separate
+[phase 4 library](update-download.md) now implements offline-tested ZIP staging,
+still without App integration. Product/settings
 versions remain `2.0.0-beta.2` / 12. See [delivery phases](in-app-updates.md).
 
 ## Shared trust and host contract
@@ -11,7 +13,8 @@ versions remain `2.0.0-beta.2` / 12. See [delivery phases](in-app-updates.md).
 strict JSON and `UpdateManifestVerifier` moved there so release tooling and the
 future app use the same rules. Private signing remains in ReleaseTool; Updates
 has no private-key PEM importer, signer, environment secret reader, profile/PIN
-reference, file writer or process launcher. App/Core/Windows have no project
+reference or process launcher. Discovery does not write files; the separate
+phase 4 stager writes only owned staging files. App/Core/Windows have no project
 reference to it, so the installed app's payload, behavior and privacy are unchanged.
 
 The verifier snapshots at most 16 reviewed public P-256 SPKI keys and rejects
