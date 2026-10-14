@@ -2,6 +2,10 @@
 
 ## 2.0.0 - Unreleased
 
+- Align Add/Relink, PIN setup/change/unlock and first-launch windows with the supplied reference; leave About unchanged
+- Add explicit per-field PIN visibility controls with plaintext-display and closed-input cleanup
+- Open advanced zones in a full-width editor sharing Save/Discard and preserving all ten normalized zone settings
+- Qualify synthetic picker search/relink, startup switches, PIN errors/cleanup and advanced navigation at bounded layouts
 - Align Shortcuts, Security and Settings with the supplied reference: compact keycap rows, status cards, startup switches and inline branding
 - Keep shortcut conflict/pending feedback data-driven and expose non-mutating explanations of focused/global panic
 - Retain About navigation and local configuration-path copying in the compact Settings layout

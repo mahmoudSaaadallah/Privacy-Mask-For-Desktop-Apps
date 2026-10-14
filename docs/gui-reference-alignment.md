@@ -81,3 +81,51 @@ test pass. Separate synthetic render processes produced all three page
 previews; software rendering is used only by the preview tool, not by the app.
 Live external-link/clipboard, keyboard, screen-reader and per-monitor testing
 remain outstanding. Version 2.0.0 and schema 12 are unchanged.
+
+## Dialog and advanced-editor reference follow-up
+
+Reference screens 07–11 are implemented; screen 12 (About) is intentionally
+excluded. A parsed-markup comparison against merged main confirms the existing
+About page is unchanged. The approved executable/tray icon is also retained.
+
+- Add/Relink: compact searchable running-app rows, refresh, separate executable
+  browsing, profile name, selected target path, and relink-preservation help.
+  Existing process exclusions and enrollment/relink behavior remain unchanged.
+- Create/Change PIN: uncluttered fields, 4–8 digit hint and information help.
+  Current PIN is shown only when a credential exists. An explicit eye button
+  reveals each field independently; hiding clears the plaintext TextBox and
+  closing clears both visible and masked inputs. No PIN binding or logging is
+  introduced. Clearing controls is not a guarantee of managed-memory zeroing.
+- Unlock: target-specific heading, adjacent assertive error, Keep locked and
+  Unlock actions. Cancel/incorrect PIN do not authorize unlocking. Copy states
+  the actual behavior: removing panic restores ordinary privacy settings, not
+  a new timed-reveal mechanism.
+- Advanced zones: full-width subpage with hidden sidebar, application identity,
+  Back, preset controls and a white grid. It stays inside the existing main
+  settings window, not a second conflicting edit session. Save/Discard preserves
+  the selected editor and profile. All ten fields remain available, including
+  Blur %, which is absent from the illustrative reference. Coordinates are
+  explicitly 0–1 fractions, not fabricated 1920×1080 pixel dimensions. The grid
+  can scroll horizontally at narrow widths without expanding the entire form.
+- First launch: three code-native vector illustrations, compact shortcut help,
+  supplied startup preferences as switches, and Get started. Extended privacy,
+  capture and reveal guidance remains available in accessible information help.
+
+210 unit tests pass. Compiled WPF checks cover the 100/125/150/200% DIP main-page
+matrix, full-width zones, selected-zone Save/Discard, synthetic picker search,
+empty state, refresh and relink, startup switch round trips, PIN mismatch,
+non-digit/wrong-current/wrong-unlock validation, reveal/edit/hide/close cleanup,
+adjacent unlock feedback, and action bounds at nominal and 420×340 layouts.
+The internal picker test constructor injects synthetic inventory; these tests
+do not enumerate real applications or initialize production privacy runtime.
+Builds have zero warnings/errors. All 17 PowerShell syntax checks, installer
+transactions, six entrypoint cases and isolated single-file ZIP/hash/shortcut/
+install/uninstall checks pass. The installed user app/settings are untouched.
+
+Visual previews are native WPF content renders with synthetic apps and blank PIN
+fields, not screen captures of protected content. Preview-only software rendering
+avoids offscreen retained-render artifacts; production rendering is unchanged.
+Native title bars, successful modal user workflows, screen-reader behavior,
+real per-monitor DPI and runtime stability still require the live qualification
+gates in [gui-qualification.md](gui-qualification.md). Version remains unreleased
+2.0.0 and settings schema remains 12; no tag or release has been published.
