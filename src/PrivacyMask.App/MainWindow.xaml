@@ -227,7 +227,7 @@
                 Background="{StaticResource CanvasBrush}">
                 <Grid>
 
-                    <ScrollViewer x:Name="OverviewPage" Visibility="{Binding IsOverviewPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer x:Name="OverviewPage" services:InformationHelp.HoverOnly="True" Visibility="{Binding IsOverviewPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto">
                      <StackPanel Margin="28">
                       <DockPanel Margin="0,0,0,26"><Button DockPanel.Dock="Right" Content="?" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="Pause all and Panic mask all affect every protected app immediately. Mask settings below use Save and Discard." AutomationProperties.Name="Overview help"/><TextBlock Text="Overview" Style="{StaticResource PageHeading}"/></DockPanel>
                       <Border Background="{Binding ProtectionBannerBackground}" CornerRadius="10" Padding="24" Margin="0,0,0,26">
@@ -334,7 +334,7 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <ScrollViewer x:Name="SecurityPage" Visibility="{Binding IsSecurityPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer x:Name="SecurityPage" services:InformationHelp.HoverOnly="True" Visibility="{Binding IsSecurityPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="28">
                             <TextBlock Text="Security" Style="{StaticResource PageHeading}" Margin="0,0,0,26"/>
                             <Border Style="{StaticResource Card}" Padding="24">
