@@ -133,7 +133,7 @@
         <Grid>
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
             <DockPanel Margin="0,0,0,16">
-                <Button DockPanel.Dock="Right" Content="←  _Back" Style="{StaticResource SecondaryButton}" Click="BackFromZones_Click"/>
+                <Button DockPanel.Dock="Right" Content="←  _Back" Style="{StaticResource SecondaryButton}" VerticalAlignment="Top" Click="BackFromZones_Click"/>
                 <StackPanel><TextBlock Text="Application settings" Style="{StaticResource PageHeading}" FontSize="24"/>
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0"><Image Style="{StaticResource ApplicationIcon}" Width="28" Height="28" Margin="0,0,10,0"/><TextBlock Text="{Binding CardDisplayName}" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel>
                 </StackPanel>
@@ -148,7 +148,7 @@
                 <TextBlock Text="Coordinates relative to the application (0–1)" Foreground="{StaticResource MutedInkBrush}" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/>
             </DockPanel>
             <DataGrid Grid.Row="3" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column"
-                      ItemsSource="{Binding Zones}" RowBackground="White" AlternatingRowBackground="#FBFCFD"
+                      ItemsSource="{Binding Zones}" Background="White" RowBackground="White" AlternatingRowBackground="#FBFCFD"
                       BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" GridLinesVisibility="All"
                       HorizontalGridLinesBrush="#E3E8ED" VerticalGridLinesBrush="#E3E8ED" RowHeight="34"
                       MinHeight="150" EnableRowVirtualization="True" EnableColumnVirtualization="True"
