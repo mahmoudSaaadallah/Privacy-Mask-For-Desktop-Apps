@@ -1,8 +1,8 @@
 # Signed update manifest contract, version 1
 
-Status: wire contract implemented by the phase-2 developer release producer and
-offline verifier. No end-user verifier/client or production signed release is
-provided yet. JSON schemas check structure only; they do not authenticate an update.
+Status: wire contract implemented by phase-2 tooling and phase-3 shared public
+verifier/discovery library. App integration and production signed release remain
+pending. JSON schemas check structure only; they do not authenticate an update.
 See [the delivery plan](in-app-updates.md) and [recovery rules](update-recovery.md).
 
 ## Release assets
@@ -153,8 +153,9 @@ synthetic metadata; it requires PowerShell 7's Test-Json, not an end-user
 dependency. CI runs the same checks. Passing these cases proves structural
 contract behavior only. Phase-2 tooling separately tests actual exact-byte pinned
 signatures, strict duplicate-key parsing, semantic identity checks and actual
-EXE/ZIP validation with memory-only test keys. HTTP/download, installed-client
-trust, restart and crash recovery remain later phases. None is proven by schema
+EXE/ZIP validation with memory-only test keys. Phase 3 adds bounded read-only HTTP
+fixtures sharing public verification. ZIP download, installed-client activation,
+restart and crash recovery remain later phases. None is proven by schema
 checks or a passing publisher-only test. See [signing operations](update-signing-operations.md).
 
 ## References

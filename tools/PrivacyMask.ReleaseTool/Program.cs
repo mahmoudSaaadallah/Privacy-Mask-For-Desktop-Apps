@@ -1,3 +1,5 @@
+using PrivacyMask.Updates;
+
 namespace PrivacyMask.ReleaseTool;
 
 public static class Program

@@ -1,10 +1,14 @@
 # Architecture Overview
 
-PrivacyMask is split into three projects:
+The shipped application is split into three projects:
 
 - `PrivacyMask.Core`: models, contracts, defaults, preset selection, and settings persistence
 - `PrivacyMask.Windows`: Win32 interop, startup registration, and desktop window discovery
 - `PrivacyMask.App`: WPF tray shell, settings UI, onboarding, overlays, and hotkey orchestration
+
+`PrivacyMask.Updates` is an isolated public-trust/discovery library for later
+app integration. Only release tooling/tests reference it currently; it is not
+part of the end-user application's project graph.
 
 ## Runtime flow
 
@@ -119,7 +123,10 @@ do not contain it. It uses built-in .NET cryptography/ZIP support with no added
 NuGet runtime dependencies. [Signing operations](update-signing-operations.md)
 describe the intentionally unconfigured production gate and test-key boundaries.
 
-Neither preparation phase changes installation layout, protection
+Phase 3 shares public contracts/verifier through `PrivacyMask.Updates` and adds
+[read-only discovery](update-discovery.md) without private signing in that library.
+
+None of these preparation phases changes installation layout, protection
 states, settings schema, privacy networking behavior, or app version. Later runtime
 integration must disclose optional GitHub update requests while retaining no
 content transmission and no telemetry. Users continue to install/update with

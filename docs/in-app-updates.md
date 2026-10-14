@@ -1,10 +1,12 @@
 # In-app updates: delivery plan and architecture
 
-Status: phase 1 specifications and phase 2 developer signing/packaging tooling
-are implemented. Production signing/environment/OS qualification remain unset;
+Status: phase 1 specifications, phase 2 signing/packaging tooling and phase 3
+[read-only discovery library](update-discovery.md) are implemented.
+Production signing/environment/OS qualification remain unset;
 see [signing operations](update-signing-operations.md). No update button,
-network client, production key, launcher, automatic installation, tag, or new
-release is supplied by this tooling delivery. The app remains `2.0.0-beta.2`.
+live network activation, production key, launcher, automatic installation, tag,
+or new release is supplied. App has no discovery-library reference or UI yet
+and remains `2.0.0-beta.2`.
 
 ## Current implementation and gaps
 
@@ -82,6 +84,9 @@ found. Interpret release notes as display-only text, never commands or HTML.
 | `UpdateCoordinator` | Single operation, edit-session decisions, panic and restart consent |
 | Installed launcher/recovery worker | Installation lock, journal, file changes, readiness and rollback |
 
+`PrivacyMask.Updates` shares public trust and implements discovery with offline
+HTTP fixtures; release tooling alone owns private signing. The App does not
+reference the new library until the later integration delivery.
 Core policy tests remain independent of WPF and HTTP. The App owns UI and shell
 integration. Windows-specific process, filesystem, IPC and launcher behavior
 belongs outside the Core policy. The worker is short-lived, not a Windows
@@ -206,6 +211,7 @@ that these guarantees have already been implemented or tested.
 ## Related specifications and sources
 
 - [Signed manifest contract](update-manifest.md)
+- [Read-only discovery and host contract](update-discovery.md)
 - [Recovery and threat model](update-recovery.md)
 - [Release process and version policy](release-process.md)
 - [GUI and live release qualification](gui-qualification.md)

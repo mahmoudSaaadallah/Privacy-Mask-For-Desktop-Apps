@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using PrivacyMask.ReleaseTool;
+using PrivacyMask.Updates;
 
 namespace PrivacyMask.Core.Tests.Services;
 
@@ -113,7 +114,7 @@ public sealed class ReleaseManifestTests
             original with { Channel = "stable" },
             original with { Repository = "other/repo" },
             original with { Runtime = "win-arm64" },
-            original with { MinUpdaterProtocol = 2 },
+            original with { MinUpdaterProtocol = 0 },
             original with { Package = original.Package with { AssetName = "wrong.zip" } },
             original with { Files = [original.Files[0] with { Path = "../PrivacyMask.App.exe" }] },
             original with { Files = [original.Files[0], original.Files[0]] },

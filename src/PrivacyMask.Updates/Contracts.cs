@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-namespace PrivacyMask.ReleaseTool;
+namespace PrivacyMask.Updates;
 
 public sealed record PayloadFile(string Path, long Size, string Sha256);
 public sealed record UpdateArchive(string AssetName, long Size, string Sha256);
@@ -32,14 +32,20 @@ public static class ContractJson
 
     public static T Read<T>(byte[] bytes, int maximumBytes)
     {
+        using var document = ReadDocument(bytes, maximumBytes);
+        return JsonSerializer.Deserialize<T>(bytes, Options) ?? throw new ReleaseValidationException("JSON must be an object.");
+    }
+
+    public static JsonDocument ReadDocument(byte[] bytes, int maximumBytes)
+    {
         if (bytes.Length == 0 || bytes.Length > maximumBytes ||
             bytes.AsSpan().StartsWith(new byte[] { 0xef, 0xbb, 0xbf }))
             throw new ReleaseValidationException("Invalid JSON byte length or encoding.");
         // Strict decoding rejects invalid UTF-8 before JSON parsing or normalization.
         _ = new System.Text.UTF8Encoding(false, true).GetString(bytes);
-        using var document = JsonDocument.Parse(bytes, new JsonDocumentOptions { MaxDepth = 16 });
-        CheckDuplicates(document.RootElement);
-        return JsonSerializer.Deserialize<T>(bytes, Options) ?? throw new ReleaseValidationException("JSON must be an object.");
+        var document = JsonDocument.Parse(bytes, new JsonDocumentOptions { MaxDepth = 16 });
+        try { CheckDuplicates(document.RootElement); return document; }
+        catch { document.Dispose(); throw; }
     }
 
     private static void CheckDuplicates(JsonElement element)
@@ -80,13 +86,14 @@ public static class ManifestRules
         if (manifest.SchemaVersion != 1 || manifest.AppId != AppId || manifest.Repository != Repository ||
             !IsVersion(manifest.Version) || manifest.Tag != "v" + manifest.Version || !IsCommit(manifest.CommitSha) ||
             manifest.Channel != (manifest.Version.Contains('-') ? "preview" : "stable") || manifest.Runtime != "win-x64" ||
-            manifest.MinWindowsBuild <= 0 || manifest.MinUpdaterProtocol != 1)
+            manifest.MinWindowsBuild <= 0 || manifest.MinUpdaterProtocol <= 0)
             throw new ReleaseValidationException("Unsupported or inconsistent update identity/compatibility.");
-        if (manifest.Package.AssetName != ArchiveName(manifest.Version) || !IsHash(manifest.Package.Sha256) ||
+        if (manifest.Package is null || manifest.Files is null || manifest.SettingsCompatibility is null ||
+            manifest.Package.AssetName != ArchiveName(manifest.Version) || !IsHash(manifest.Package.Sha256) ||
             manifest.Package.Size is <= 0 or > MaximumFileSize || manifest.Files.Length != 1)
             throw new ReleaseValidationException("Invalid update archive contract.");
         var file = manifest.Files[0];
-        if (file.Path != "PrivacyMask.App.exe" || !IsHash(file.Sha256) || file.Size is <= 0 or > MaximumFileSize ||
+        if (file is null || file.Path != "PrivacyMask.App.exe" || !IsHash(file.Sha256) || file.Size is <= 0 or > MaximumFileSize ||
             file.Size > checked(manifest.Package.Size * 100))
             throw new ReleaseValidationException("Invalid app-only payload contract or expansion ratio.");
         Validate(manifest.SettingsCompatibility);
@@ -109,7 +116,7 @@ public static class ManifestRules
         foreach (var key in policy.TrustedKeys)
         {
             if (!IsKeyId(key.KeyId) || !ids.Add(key.KeyId)) throw new ReleaseValidationException("Invalid or duplicate trusted key ID.");
-            using var publicKey = ManifestSigning.ImportPublicKey(key.PublicKeySpkiBase64);
+            using var publicKey = UpdateManifestVerifier.ImportPublicKey(key.PublicKeySpkiBase64);
         }
     }
 }
