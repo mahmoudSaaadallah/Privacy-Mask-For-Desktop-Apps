@@ -186,6 +186,7 @@ internal static class Program
         ((CheckBox)onboarding.FindName("LaunchAtLoginCheckBox")).IsChecked = false;
         ((CheckBox)onboarding.FindName("StartMinimizedCheckBox")).IsChecked = true;
         Check(!onboarding.LaunchAtLogin && onboarding.StartMinimized, "Onboarding switches failed.");
+        ((CheckBox)onboarding.FindName("LaunchAtLoginCheckBox")).IsChecked = true;
         CheckDialogLayout(onboarding, "FirstLaunch", screenshots, 584, 568);
         onboarding.Close();
 
@@ -236,6 +237,11 @@ internal static class Program
             "Wrong PIN unlocked panic or retained input.");
         Check(((TextBlock)unlock.FindName("HeadingText")).Text == "Unlock Notepad", "Unlock target absent.");
         CheckDialogLayout(unlock, "UnlockPanic", screenshots, 492, 440);
+        var unlockRoot = (FrameworkElement)unlock.Content;
+        Layout(unlockRoot, new Size(492, 440));
+        var inputBottom = unlockPin.TransformToAncestor(unlockRoot).Transform(new Point(0, unlockPin.ActualHeight)).Y;
+        var errorTop = ((TextBlock)unlock.FindName("ErrorText")).TransformToAncestor(unlockRoot).Transform(new Point()).Y;
+        Check(errorTop >= inputBottom && errorTop - inputBottom <= 28, "Unlock error is separated from its PIN input.");
         unlock.Close();
         Check(PanicPinService.Verify("1234", credential), "Dialog changed the original credential.");
         Console.WriteLine("Reference dialogs passed: synthetic picker/search/relink, startup switches, PIN validation/reveal/cleanup and bounded layouts.");

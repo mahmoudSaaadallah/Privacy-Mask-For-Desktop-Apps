@@ -5,19 +5,21 @@
  Icon="pack://application:,,,/PrivacyMask.App;component/Assets/PrivacyMask.ico"
  FontFamily="Segoe UI Variable Text" FontSize="14" Width="540" Height="500" MinWidth="420" MinHeight="340"
  ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True" WindowStartupLocation="CenterScreen" Title="Unlock panic mask" AutomationProperties.Name="Unlock panic mask">
- <Grid Margin="24" Background="{StaticResource CanvasBrush}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+ <Grid Margin="24" Background="{StaticResource CanvasBrush}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
  <StackPanel Margin="0,0,0,32"><TextBlock x:Name="HeadingText" Text="Unlock panic mask" Style="{StaticResource PageHeading}"/><TextBlock x:Name="DescriptionText" Foreground="{StaticResource MutedInkBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel>
- <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
+ <Grid Grid.Row="1" VerticalAlignment="Top"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+ <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
   <TextBlock Text="PIN" Margin="0,0,0,6"/>
   <controls:PinEntry x:Name="PinBox" AutomationProperties.Name="Panic unlock PIN"/>
   
  </StackPanel></ScrollViewer>
- <Border Grid.Row="2" Margin="0,14,0,0"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding Text,ElementName=ErrorText}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
+ <Border Grid.Row="1" Margin="0,14,0,0"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding Text,ElementName=ErrorText}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Border.Style>
  <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
  <Border Width="21" Height="21" CornerRadius="11" Background="#CE142B" VerticalAlignment="Top"><TextBlock Text="!" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
  <TextBlock x:Name="ErrorText" Grid.Column="1" Foreground="#CE142B" TextWrapping="Wrap" Text="" AutomationProperties.LiveSetting="Assertive"/>
  </Grid></Border>
- <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,10">
+ </Grid>
+ <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,10">
   <Button Content="_Keep locked" IsCancel="True" Style="{StaticResource SecondaryButton}" MinWidth="132"/>
   <Button Content="_Unlock" IsDefault="True" Style="{StaticResource PrimaryButton}" Click="Unlock_Click" MinWidth="114" Margin="12,0,0,0"/>
  </StackPanel>
