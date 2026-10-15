@@ -18,6 +18,7 @@ else {
 
 $distributionRoot = Join-Path $repoRoot 'desktop-app\windows\win-x64'
 $publishedExecutable = Join-Path $distributionRoot 'single-file\PrivacyMask.App.exe'
+$publishedLauncher = Join-Path $distributionRoot 'single-file\PrivacyMask.Launcher.exe'
 $assetBaseName = "PrivacyMask-$productVersion-win-x64"
 $stagingPath = Join-Path $outputPath $assetBaseName
 $archivePath = Join-Path $outputPath "$assetBaseName.zip"
@@ -27,6 +28,9 @@ $checksumPath = "$archivePath.sha256"
 
 if (-not (Test-Path -LiteralPath $publishedExecutable -PathType Leaf)) {
   throw "Published executable not found at '$publishedExecutable'."
+}
+if (-not (Test-Path -LiteralPath $publishedLauncher -PathType Leaf)) {
+  throw "Published launcher not found at '$publishedLauncher'."
 }
 
 New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
@@ -55,6 +59,9 @@ foreach ($packageFile in $packageFiles) {
 Copy-Item `
   -LiteralPath $publishedExecutable `
   -Destination (Join-Path $stagingPath 'single-file\PrivacyMask.App.exe')
+Copy-Item `
+  -LiteralPath $publishedLauncher `
+  -Destination (Join-Path $stagingPath 'single-file\PrivacyMask.Launcher.exe')
 
 Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $checksumPath -Force -ErrorAction SilentlyContinue
