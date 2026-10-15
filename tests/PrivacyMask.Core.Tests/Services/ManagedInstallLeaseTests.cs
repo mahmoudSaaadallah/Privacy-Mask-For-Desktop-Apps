@@ -34,6 +34,18 @@ public sealed class ManagedInstallLeaseTests
         f.Lease.AssertHeld();
     }
 
+    [Fact]
+    public void Open_reads_the_private_marker_identity_before_acquiring_the_lease()
+    {
+        using var fixture = new RecoveryFixture();
+        fixture.Lease.Dispose();
+
+        using var reopened = ManagedInstallLease.Open(fixture.Root);
+
+        Assert.Equal(fixture.InstallId, reopened.InstallId);
+        reopened.AssertHeld();
+    }
+
     private static int ProbeFileLease(string root)
     {
         var powershell = Path.Combine(Environment.GetEnvironmentVariable("SystemRoot")!, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
