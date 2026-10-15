@@ -19,12 +19,12 @@ internal sealed record PipeProcessIdentity(int ProcessId, long CreationUtcTicks,
     internal void ValidateLive()
     {
         if (!OperatingSystem.IsWindows() || ProcessId <= 0 || CreationUtcTicks <= 0 || !Path.IsPathFullyQualified(ExecutablePath))
-            throw new ReleaseValidationException("Invalid readiness process identity.");
+            throw new ReleaseValidationException("Invalid update process identity.");
         StagingWorkspace.AssertSafe(ExecutablePath);
         using var actual = Process.GetProcessById(ProcessId);
         if (actual.HasExited || actual.StartTime.ToUniversalTime().Ticks != CreationUtcTicks ||
             !string.Equals(ImagePath(actual), ExecutablePath, StringComparison.OrdinalIgnoreCase))
-            throw new ReleaseValidationException("Readiness process identity changed.");
+            throw new ReleaseValidationException("Update process identity changed.");
     }
 
     private static unsafe string ImagePath(Process process)
@@ -34,7 +34,7 @@ internal sealed record PipeProcessIdentity(int ProcessId, long CreationUtcTicks,
         uint count = (uint)buffer.Length;
         fixed (char* path = buffer)
             if (!QueryFullProcessImageName(process.SafeHandle, 0, path, ref count))
-                throw new ReleaseValidationException("Unable to identify readiness process image.");
+                throw new ReleaseValidationException("Unable to identify update process image.");
         return new string(buffer[..checked((int)count)]);
     }
 
@@ -47,7 +47,7 @@ internal sealed record PipeProcessIdentity(int ProcessId, long CreationUtcTicks,
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException();
         uint pid;
         var success = serverSide ? GetNamedPipeClientProcessId(pipe.SafePipeHandle, out pid) : GetNamedPipeServerProcessId(pipe.SafePipeHandle, out pid);
-        if (!success || pid != ProcessId) throw new ReleaseValidationException("Unexpected readiness pipe peer.");
+        if (!success || pid != ProcessId) throw new ReleaseValidationException("Unexpected update pipe peer.");
         ValidateLive();
     }
 
