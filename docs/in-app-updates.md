@@ -212,6 +212,7 @@ that these guarantees have already been implemented or tested.
 
 - [Signed manifest contract](update-manifest.md)
 - [Read-only discovery and host contract](update-discovery.md)
+- [Verified download and staging boundaries](update-download.md)
 - [Recovery and threat model](update-recovery.md)
 - [Release process and version policy](release-process.md)
 - [GUI and live release qualification](gui-qualification.md)

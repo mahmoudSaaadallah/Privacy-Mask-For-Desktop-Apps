@@ -62,7 +62,22 @@ internal sealed class GitHubTransport : IDisposable
         return new(bytes, link);
     }
 
-    public async Task<byte[]> GetAssetAsync(long id, Uri browserAsset, int limit, CancellationToken cancellationToken)
+    public Task<byte[]> GetAssetAsync(long id, Uri browserAsset, int limit, CancellationToken cancellationToken) =>
+        ReadAssetAsync(id, browserAsset, content => ReadBoundedAsync(content, limit, cancellationToken), cancellationToken);
+
+    public Task<bool> DownloadAssetAsync(long id, Uri browserAsset, Stream output, UpdateArchive expected,
+        IProgress<long>? progress, CancellationToken cancellationToken) =>
+        ReadAssetAsync(id, browserAsset, async content =>
+        {
+            if (content.Headers.ContentLength is { } length && length != expected.Size)
+                throw new ReleaseValidationException("Download length does not match signed metadata.");
+            await using var input = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            await UpdatePayload.CopyVerifiedAsync(input, output, expected.Size, expected.Sha256, progress, cancellationToken).ConfigureAwait(false);
+            return true;
+        }, cancellationToken);
+
+    private async Task<T> ReadAssetAsync<T>(long id, Uri browserAsset, Func<HttpContent, Task<T>> consume,
+        CancellationToken cancellationToken)
     {
         var api = GitHubUrls.AssetApi(id);
         var current = api;
@@ -81,7 +96,7 @@ internal sealed class GitHubTransport : IDisposable
                 continue;
             }
             EnsureSuccess(response);
-            return await ReadBoundedAsync(response.Content, limit, cancellationToken).ConfigureAwait(false);
+            return await consume(response.Content).ConfigureAwait(false);
         }
         throw new UpdateHttpException(UpdateCheckStatus.UnableToCheck, "too-many-redirects");
     }
