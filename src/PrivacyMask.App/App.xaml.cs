@@ -50,13 +50,16 @@ public partial class App : System.Windows.Application
             {
                 Current.Dispatcher.BeginInvoke(() => _coordinator?.HandleExternalActivation());
             });
-            await _coordinator.StartAsync();
-            if (_updateStartup is not null)
+            await AppStartupSequence.RunAsync(
+                _coordinator.StartAsync,
+                _updateStartup is null ? null : ConfirmUpdateAsync,
+                _updateStartup is null ? null : _coordinator.CompleteInteractiveStartupAsync);
+
+            async System.Threading.Tasks.Task ConfirmUpdateAsync()
             {
-                await _updateStartup.SignalReadyAndConfirmCommitAsync(updateDeadline!.Token);
+                await _updateStartup!.SignalReadyAndConfirmCommitAsync(updateDeadline!.Token);
                 _updateStartup.Dispose();
                 _updateStartup = null;
-                await _coordinator.CompleteInteractiveStartupAsync();
             }
         }
         catch (Exception exception)
