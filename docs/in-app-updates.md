@@ -7,7 +7,9 @@ and internal phase-5a/b/c.1/c.2 recovery/prototype/[preparation](update-preparat
 slices and the [phase-5d.1 awaited shell lifecycle](update-shell-lifecycle.md)
 foundation plus [phase-5d.2 authenticated App readiness](update-app-readiness.md)
 and [phase-5d.3 stable launcher/migration](update-stable-launcher.md) are
-implemented. Phase 5 as a whole is not complete.
+implemented, along with the internal
+[phase-5d.4 authenticated handoff contract](update-handoff.md). Phase 5 as a
+whole is not complete.
 Production signing/environment/OS qualification remain unset;
 see [signing operations](update-signing-operations.md). No update button,
 live network activation, production key, automatic in-app installation, tag, or
@@ -243,7 +245,10 @@ source to beta.4. The [phase-5d.3 stable launcher/migration](update-stable-launc
 makes managed startup and crash recovery reachable from beta.5 installations,
 routes shortcuts/startup through the launcher and qualifies legacy migration.
 It does not authorize an update, activate discovery/network UI or implement
-authenticated old-process exit.
+authenticated old-process exit. The [phase-5d.4 handoff contract](update-handoff.md)
+adds strict apply arguments and a mutually authenticated, single-use App/launcher
+shutdown exchange. It remains disconnected from normal App and launcher paths
+until the runtime consent, panic, edit and settings-writer gates are integrated.
 
 ## Related specifications and sources
 
