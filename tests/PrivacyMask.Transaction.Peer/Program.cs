@@ -33,7 +33,7 @@ try
         }
         return 31;
     }
-    if (mode is not ("Ready" or "WrongNonce" or "WrongOperation" or "Disconnect" or "ExitAfterReady")) return 31;
+    if (mode is not ("Ready" or "WrongNonce" or "WrongOperation" or "Disconnect" or "ExitAfterReady" or "WrongReceipt" or "NoReceipt")) return 31;
     using var parent = Process.GetProcessById(parentId);
     _ = parent.SafeHandle;
     // Fixture parent is the smoke host, NOT a production stable launcher. Real App must pin its launcher path.
@@ -54,7 +54,8 @@ try
     if (journal.InstallId != args[2] || journal.OperationId != args[3] || journal.Step != RecoveryStep.Committed) return 31;
     using (var receipt = ManagedInstallLease.CreatePrivateFile(Path.Combine(root, "fixture-receipt.txt")))
         receipt.Write(Encoding.UTF8.GetBytes("committed:" + args[6]));
-    await pipe.WriteAsync(ReadinessWire.Encode(ReadinessMessage.Receipt, session, challenge), deadline.Token);
+    if (mode == "WrongReceipt") challenge[0] ^= 1;
+    if (mode != "NoReceipt") await pipe.WriteAsync(ReadinessWire.Encode(ReadinessMessage.Receipt, session, challenge), deadline.Token);
     // Stay alive until the harness releases this exact test instance; no background service remains.
     while (!File.Exists(Path.Combine(root, "fixture-stop"))) await Task.Delay(20, deadline.Token);
     return 0;

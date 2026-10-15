@@ -19,9 +19,9 @@ Environment.SetEnvironmentVariable("DOTNET_BUNDLE_EXTRACT_BASE_DIR", cache);
 try
 {
     using var assets = new FixtureAssets(fixture, args[1]);
-    var cases = new[] { "ReadyNormal", "ReadyMinimized", "StillRunning", "ExitTimeout", "DeletedRelease", "NoSpace", "CorruptTarget",
+    var cases = new[] { "ReadyNormal", "ReadyMinimized", "StillRunning", "ExitTimeout", "OldCrashed", "DeletedRelease", "NoSpace", "CorruptTarget",
         "ChangedSettings", "Collision", "CancelBefore", "CancelAfterArmed", "LockedApp", "LockedRecovery", "Exit", "WrongNonce",
-        "WrongOperation", "Disconnect", "Stall", "ExitAfterReady", "MigrateThenFail", "ReceiptLost", "IoAfterReplace",
+        "WrongOperation", "Disconnect", "Stall", "ExitAfterReady", "MigrateThenFail", "ReceiptLost", "WrongReceipt", "NoReceipt", "IoAfterReplace",
         "CrashHandoff", "CrashReplacing", "CrashReplaced", "CrashAwaiting", "CrashReady", "CrashCommitTemp", "CrashCommitPromoted" };
     foreach (var scenario in cases)
     {
@@ -65,7 +65,7 @@ static async Task RunCase(string scenario, string oldExecutable, FixtureAssets a
     var absent = scenario == "MigrateThenFail";
     if (!absent) { Write(primary, originalSettings); Write(secondary, []); }
     var mode = scenario switch {
-        "Exit" or "WrongNonce" or "WrongOperation" or "Disconnect" or "Stall" or "ExitAfterReady" or "MigrateThenFail" => scenario,
+        "Exit" or "WrongNonce" or "WrongOperation" or "Disconnect" or "Stall" or "ExitAfterReady" or "MigrateThenFail" or "WrongReceipt" or "NoReceipt" => scenario,
         "LockedRecovery" => "Exit", _ => "Ready" };
     Write(Path.Combine(root, "fixture-mode.txt"), Encoding.UTF8.GetBytes(mode));
     using var lease = new ManagedInstallLease(root, installId);
@@ -117,8 +117,18 @@ static async Task RunCase(string scenario, string oldExecutable, FixtureAssets a
             try { await exit.WaitAsync(TimeSpan.FromMilliseconds(250)); throw new InvalidOperationException("Expected exit timeout."); }
             catch (TimeoutException) { Check(!old.HasExited, "timeout does not kill old app"); }
         }
-        await old.StandardInput.WriteLineAsync("exit");
+        await old.StandardInput.WriteLineAsync(scenario == "OldCrashed" ? "invalid-exit" : "exit");
         await old.StandardInput.FlushAsync();
+        if (scenario == "OldCrashed")
+        {
+            try { await exit.WaitAsync(TimeSpan.FromSeconds(10)); throw new InvalidOperationException("Expected unclean exit rejection."); }
+            catch (ReleaseValidationException) { }
+            Check((await worker.ApplyAsync(operationId, context, exit, false)).Outcome == TransactionOutcome.Rejected, "abnormal old exit does not authorize replacement");
+            Check(new RecoveryJournalStore(lease).Read() == prepared && RecoveryRestorer.Inspect(app, ManifestRules.MaximumFileSize) == prepared.OriginalApp,
+                "abnormal old exit leaves journal/app alone");
+            Console.WriteLine("Transaction " + scenario + ": passed");
+            return;
+        }
         await exit.WaitAsync(TimeSpan.FromSeconds(10));
         Check(old.HasExited && old.ExitCode == 0, scenario + ": exact old process exited cooperatively");
         if (scenario is "StillRunning" or "ExitTimeout")
@@ -146,7 +156,7 @@ static async Task RunCase(string scenario, string oldExecutable, FixtureAssets a
             result = await worker.ApplyAsync(operationId, context, exit, scenario == "ReadyMinimized", cancellation.Token);
             var expected = scenario switch {
                 "ReadyNormal" or "ReadyMinimized" or "CancelAfterArmed" => TransactionOutcome.Committed,
-                "ReceiptLost" => TransactionOutcome.CommittedReceiptLost,
+                "ReceiptLost" or "WrongReceipt" or "NoReceipt" => TransactionOutcome.CommittedReceiptLost,
                 "DeletedRelease" or "NoSpace" or "CorruptTarget" or "ChangedSettings" or "Collision" or "CancelBefore" => TransactionOutcome.Rejected,
                 "LockedRecovery" => TransactionOutcome.RepairRequired, _ => TransactionOutcome.RecoveredFiles };
             Check(result.Outcome == expected, scenario + ": expected " + expected + ", actual " + result.Outcome + "/" + result.Reason);

@@ -44,7 +44,7 @@ internal sealed class AppProcessExit : IDisposable
         deadline.CancelAfter(timeout);
         try { await _process.WaitForExitAsync(deadline.Token).ConfigureAwait(false); }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested) { throw new TimeoutException("Graceful exit deadline expired."); }
-        if (!_process.HasExited) throw new ReleaseValidationException("Installed process is still alive.");
+        if (!_process.HasExited || _process.ExitCode != 0) throw new ReleaseValidationException("Installed process did not exit cleanly.");
         _observedExit = true;
     }
 
