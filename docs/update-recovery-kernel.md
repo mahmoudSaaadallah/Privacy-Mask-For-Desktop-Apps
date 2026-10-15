@@ -159,7 +159,13 @@ Run `scripts/verify.ps1`; the existing xUnit project includes all new cases.
 The existing signed real-EXE staging suite must also keep passing to avoid
 regressing phase 4, but it is not real apply/recovery qualification.
 
-Next phase-5 work, in order:
+Next phase-5 work:
+
+The separate [phase-5b developer prototype](update-bootstrap-prototype.md) now
+exercises process-bound readiness and packaging/resource measurements, but does
+not activate a production launcher or satisfy the remaining runtime gates.
+
+Remaining steps, in order:
 
 - Prototype the stable launcher/helper and measure published size, RAM/startup
   overhead and Windows baseline compatibility; choose packaging from evidence.
