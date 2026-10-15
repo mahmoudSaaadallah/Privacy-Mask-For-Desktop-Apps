@@ -85,6 +85,13 @@ and replacement. `Prepared` is a recovery record, **never apply permission**.
    1 through the existing journal store. The journal records only hashes/sizes,
    versions and IDs; sensitive settings remain in private local backup files.
 
+The private managed layout is a prerequisite for **every** future settings
+writer, including a newly created primary/backup under an elevated account.
+The synthetic migration fixture explicitly assigns user ownership and asserts
+it; using Windows' elevated default owner instead is correctly rejected by the
+kernel. This does not qualify the real App settings writer/installer migration
+for that layout; that integration must preserve the same ownership contract.
+
 Preparation yields off the calling UI context. Files are hashed/copied as streams,
 with a 64 KiB copy buffer and at most the bounded signed metadata in arrays,
 not an archive/app-sized allocation. Failures expose bounded reason codes, not

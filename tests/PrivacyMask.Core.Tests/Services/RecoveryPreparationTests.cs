@@ -54,11 +54,19 @@ public sealed class RecoveryPreparationTests
 
         // Logical interrupted apply: the retained baseline is usable by the existing rollback kernel.
         File.WriteAllBytes(f.Install.App, f.Install.NewApp);
-        File.WriteAllText(f.Install.Primary, "replacement migration primary");
-        File.WriteAllText(f.Install.Secondary, "replacement migration backup");
+        WriteReplacement(f.Install.Primary, "replacement migration primary");
+        WriteReplacement(f.Install.Secondary, "replacement migration backup");
         f.Install.Reopen();
-        Assert.Equal(RecoveryOutcome.Recovered, new RecoveryRestorer(f.Install.Lease).Recover().Outcome);
+        Assert.Equal(new RecoveryResult(RecoveryOutcome.Recovered), new RecoveryRestorer(f.Install.Lease).Recover());
         f.Install.AssertOriginal();
+
+        static void WriteReplacement(string path, string text)
+        {
+            var bytes = Encoding.UTF8.GetBytes(text);
+            if (File.Exists(path)) File.WriteAllBytes(path, bytes);
+            else PreparationFixture.Write(path, bytes); // Explicit SID owner even on elevated CI workers.
+            ManagedInstallLease.AssertPrivate(path);
+        }
     }
 
     [Theory]
