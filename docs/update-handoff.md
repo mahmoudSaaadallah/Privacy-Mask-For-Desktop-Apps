@@ -4,7 +4,10 @@ Status: phase 5d.4 internal handoff contract is implemented after the
 [stable launcher delivery](update-stable-launcher.md). It does not activate
 update discovery, add UI, close the running App or replace installed files by
 itself. Source remains `2.0.0-beta.5` because this contract is unreachable from
-normal runtime paths.
+normal runtime paths at that historical boundary. The subsequent
+[runtime handoff delivery](update-runtime-handoff.md) connects the App/launcher
+adapters in beta.6 and adds the final `ReadyToExit` acknowledgement; compiled
+production trust and end-user UI remain gated.
 
 ## Purpose
 
@@ -59,8 +62,9 @@ SingleFile and Native-AOT CI jobs.
 
 ## Remaining integration
 
-The next slice must connect this contract to the real App and stable launcher:
-serialize update consent with Save/Discard and panic state, freeze settings
-writers, spawn the launcher, arm awaited `ApplicationShutdown`, capture clean
-App exit and call `UpdateTransaction`. Production trust keys, update discovery
+The subsequent [runtime slice](update-runtime-handoff.md) connects this contract
+to the real App and stable launcher: it serializes update consent with
+Save/Discard and panic state, freezes settings writers, spawns the launcher,
+awaits `ApplicationShutdown`, captures clean App exit and calls
+`UpdateTransaction`. Production trust keys, update discovery
 preferences/UI and live A-to-B qualification remain separate required gates.
