@@ -139,6 +139,7 @@ internal sealed class UpdateTransaction
             _hooks?.Checkpoint?.Invoke(TransactionCheckpoint.CommittedSaved);
             // The durable journal MUST precede the success receipt. A lost receipt never rolls back a commit.
             await server.AcceptAsync(identity, readinessDeadline.Token).ConfigureAwait(false);
+            await server.ConfirmReceiptAsync(identity, readinessDeadline.Token).ConfigureAwait(false);
             return new(TransactionOutcome.Committed);
 
             void Save(RecoveryStep step)

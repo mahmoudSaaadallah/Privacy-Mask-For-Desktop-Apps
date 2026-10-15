@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 
 namespace PrivacyMask.Updates;
 
-internal enum ReadinessMessage : byte { Challenge = 1, Ready = 2, Accepted = 3 }
+internal enum ReadinessMessage : byte { Challenge = 1, Ready = 2, Accepted = 3, Receipt = 4 }
 internal sealed record ReadinessSession(Guid InstallId, Guid OperationId)
 {
     internal void Validate()
@@ -84,6 +84,14 @@ internal sealed class ReadinessServer : IDisposable
         if (Interlocked.CompareExchange(ref _used, 3, 2) != 2) throw new ReleaseValidationException("No completed readiness exchange.");
         expectedChild.ValidatePipe(_pipe, serverSide: true);
         await _pipe.WriteAsync(ReadinessWire.Encode(ReadinessMessage.Accepted, _session, _challenge), ct).ConfigureAwait(false);
+    }
+
+    internal async Task ConfirmReceiptAsync(PipeProcessIdentity expectedChild, CancellationToken ct)
+    {
+        if (Interlocked.CompareExchange(ref _used, 4, 3) != 3) throw new ReleaseValidationException("No commit receipt to confirm.");
+        expectedChild.ValidatePipe(_pipe, serverSide: true);
+        ReadinessWire.Validate(await ReadinessWire.ReadAsync(_pipe, ct).ConfigureAwait(false), ReadinessMessage.Receipt, _session, _challenge);
+        expectedChild.ValidatePipe(_pipe, serverSide: true);
     }
 
     public void Dispose() { _pipe.Dispose(); CryptographicOperations.ZeroMemory(_challenge); }
