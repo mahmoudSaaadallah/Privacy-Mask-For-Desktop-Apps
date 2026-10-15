@@ -9,9 +9,9 @@ the authenticated path cannot yet be entered by the end user.
 
 ## Exact startup authority
 
-The App recognizes an update attempt before normal singleton activation only
-when the first argument is `--update-start` (case variants are treated as a
-malformed attempt, not normal launch). The seven-field worker contract accepts
+The App recognizes an update attempt before normal singleton activation whenever
+an argument is `--update-start` (case variants or a non-first position are treated
+as a malformed attempt, not normal launch). The seven-field worker contract accepts
 only canonical pipe, install/operation GUID, parent PID/creation ticks and
 `normal`/`minimized` values. Extra, missing, signed, padded or noncanonical values
 fail closed without displaying internal paths or exception details.

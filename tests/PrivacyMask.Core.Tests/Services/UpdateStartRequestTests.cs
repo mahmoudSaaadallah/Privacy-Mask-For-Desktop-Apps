@@ -26,6 +26,7 @@ public sealed class UpdateStartRequestTests
     public void IsRequested_recognizes_case_variants_so_malformed_attempts_fail_closed()
     {
         Assert.True(UpdateStartRequest.IsRequested(["--UPDATE-START"]));
+        Assert.True(UpdateStartRequest.IsRequested(["--minimized", "--update-start"]));
         Assert.False(UpdateStartRequest.IsRequested(["--minimized"]));
         Assert.False(UpdateStartRequest.IsRequested([]));
     }

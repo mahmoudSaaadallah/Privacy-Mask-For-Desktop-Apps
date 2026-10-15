@@ -20,8 +20,12 @@ internal sealed record UpdateStartRequest(
     internal const string PipePrefix = "PrivacyMask.UpdateProbe.";
     private const int ArgumentCount = 7;
 
-    internal static bool IsRequested(IReadOnlyList<string> arguments) =>
-        arguments.Count > 0 && string.Equals(arguments[0], Switch, StringComparison.OrdinalIgnoreCase);
+    internal static bool IsRequested(IReadOnlyList<string> arguments)
+    {
+        for (var index = 0; index < arguments.Count; index++)
+            if (string.Equals(arguments[index], Switch, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
 
     internal static UpdateStartRequest Parse(IReadOnlyList<string> arguments)
     {
