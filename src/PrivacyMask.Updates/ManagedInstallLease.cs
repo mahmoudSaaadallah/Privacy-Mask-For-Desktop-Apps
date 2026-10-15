@@ -81,7 +81,7 @@ internal sealed class ManagedInstallLease : IDisposable
         return bytes;
     }
 
-    internal static FileStream CreatePrivateFile(string path, int bufferSize = 4096)
+    internal static FileStream CreatePrivateFile(string path, int bufferSize = 4096, FileOptions options = FileOptions.WriteThrough)
     {
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException();
         StagingWorkspace.AssertSafe(path);
@@ -93,7 +93,7 @@ internal sealed class ManagedInstallLease : IDisposable
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
         security.AddAccessRule(new FileSystemAccessRule(user, FileSystemRights.FullControl, AccessControlType.Allow));
         return new FileInfo(path).Create(FileMode.CreateNew, FileSystemRights.FullControl, FileShare.None,
-            bufferSize, FileOptions.WriteThrough, security);
+            bufferSize, options, security);
     }
 
     internal static void CreatePrivateDirectory(string path)
