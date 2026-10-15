@@ -8,6 +8,8 @@ internal sealed record UpdateSettingsBaseline(
     RecoveryFile Primary,
     RecoveryFile Backup);
 
+internal sealed record UpdateSettingsState(RecoveryFile Primary, RecoveryFile Backup);
+
 internal sealed record UpdateStartLayout(
     string Root,
     string ApplicationPath,
@@ -100,6 +102,13 @@ internal sealed record UpdateStartLayout(
     {
         if (RecoveryRestorer.Inspect(ApplicationPath, ManifestRules.MaximumFileSize) != Journal.TargetApp)
             throw Invalid();
+    }
+
+    internal void AssertMigratedSettings(UpdateSettingsState expected)
+    {
+        ArgumentNullException.ThrowIfNull(expected);
+        AssertSnapshot(Settings.PrimaryPath, expected.Primary, RecoveryRules.SettingsLimit);
+        AssertSnapshot(Settings.BackupPath, expected.Backup, RecoveryRules.SettingsLimit);
     }
 
     private static RecoveryJournal ReadJournal(string path)

@@ -60,6 +60,8 @@ internal sealed class UpdateReadinessClient : IDisposable
             throw new ReleaseValidationException("Update readiness was already signaled.");
         _parentIdentity.ValidatePipe(_pipe, serverSide: false);
         _layout.AssertApplicationUnchanged();
+        if (_layout.ReadCurrentJournal() != _layout.Journal)
+            throw new ReleaseValidationException("Update transaction changed before readiness.");
         var challenge = ReadinessWire.Validate(
             await ReadinessWire.ReadAsync(_pipe, cancellationToken).ConfigureAwait(false),
             ReadinessMessage.Challenge, _session);

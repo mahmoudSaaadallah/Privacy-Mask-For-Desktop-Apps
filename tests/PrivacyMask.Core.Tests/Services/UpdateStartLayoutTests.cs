@@ -1,4 +1,5 @@
 using System.IO;
+using System.Security.Cryptography;
 using PrivacyMask.Updates;
 
 namespace PrivacyMask.Core.Tests.Services;
@@ -57,6 +58,23 @@ public sealed class UpdateStartLayoutTests
 
         Assert.Equal(RecoveryStep.AwaitingReadiness, layout.ReadCurrentJournal().Step);
         layout.AssertApplicationUnchanged();
+    }
+
+    [Fact]
+    public void AssertMigratedSettings_pins_the_post_migration_files()
+    {
+        using var fixture = AwaitingFixture();
+        var layout = UpdateStartLayout.Open(Request(fixture), fixture.App, fixture.Root);
+        var primary = File.ReadAllBytes(fixture.Primary);
+        var backup = File.ReadAllBytes(fixture.Secondary);
+        var expected = new UpdateSettingsState(
+            new(true, primary.Length, Convert.ToHexStringLower(SHA256.HashData(primary))),
+            new(true, backup.Length, Convert.ToHexStringLower(SHA256.HashData(backup))));
+
+        layout.AssertMigratedSettings(expected);
+        File.AppendAllText(fixture.Primary, "changed");
+
+        Assert.Throws<ReleaseValidationException>(() => layout.AssertMigratedSettings(expected));
     }
 
     private static RecoveryFixture PreparedFixture()
