@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PrivacyMask.Core\PrivacyMask.Core.csproj" />
+    <ProjectReference Include="..\PrivacyMask.Updates\PrivacyMask.Updates.csproj" />
     <ProjectReference Include="..\PrivacyMask.Windows\PrivacyMask.Windows.csproj" />
   </ItemGroup>
 
