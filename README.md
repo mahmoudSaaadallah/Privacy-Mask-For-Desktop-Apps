@@ -330,6 +330,10 @@ Press `Esc` or close the window to discard the preview and return to the tray.
   Phase 3 adds a [read-only discovery library](docs/update-discovery.md) with
   offline HTTP tests, alongside signed-package tooling and a verified draft publisher;
   there is no in-app update button yet. Keep using the installation procedure above.
+- Internal phase-5 work now includes the recovery kernel, measured bootstrap
+  prototype and [authenticated preparation](docs/update-preparation.md). These
+  are developer/test-only paths, not an installed-app updater; launcher/apply,
+  migration, retention and runtime UI/safety gates remain pending.
 - Review [update signing operations](docs/update-signing-operations.md) before
   publishing: production policy/environment are intentionally unconfigured,
   so signed release publication fails closed until explicitly approved setup.

@@ -1,7 +1,9 @@
 # In-app updates: delivery plan and architecture
 
-Status: phase 1 specifications, phase 2 signing/packaging tooling and phase 3
-[read-only discovery library](update-discovery.md) are implemented.
+Status: phase 1 specifications, phase 2 signing/packaging tooling, phase 3
+[read-only discovery](update-discovery.md), phase 4 [verified staging](update-download.md),
+and internal phase-5a/b/c.1 recovery/prototype/[preparation](update-preparation.md)
+slices are implemented. Phase 5 as a whole is not complete.
 Production signing/environment/OS qualification remain unset;
 see [signing operations](update-signing-operations.md). No update button,
 live network activation, production key, launcher, automatic installation, tag,
@@ -96,19 +98,20 @@ simply to replace one executable.
 
 ## Managed layout and first-time migration
 
-Proposed managed layout (not created by phase 1):
+Managed layout (existing installer is NOT migrated; the internal library/fixtures
+use these names, while the production launcher remains pending):
 
 ```text
 %LocalAppData%\PrivacyMask.Desktop\
   settings.v1.json                 existing data location, unchanged
   settings.v1.json.bak             existing settings recovery copy
-  install-info.json                install identity and supported protocol
+  managed-install.json             install identity and supported protocol
+  .update.lock                     exclusive updater/installer lease
+  update-journal.json              authoritative active recovery operation
   PrivacyMask.Launcher.exe         stable start/recovery entry, outside app swap
   app\PrivacyMask.App.exe          replaceable signed application payload
-  updates\operations\<operation-id>\
-    journal.json
-    staging\
-    backup\
+  update-staging\operation-<id>\    verified ZIP/EXE/signed metadata
+  update-operations\operation-<id>\ retained app/settings snapshots and target
 ```
 
 The marker alone is not an authorization token. Validate the executable's
@@ -213,6 +216,10 @@ implements internal journal/lease/rollback primitives only; the launcher,
 readiness, migration and real crash/power-loss qualification gates remain open.
 The [phase-5b bootstrap/readiness prototype](update-bootstrap-prototype.md) adds
 isolated real-process tests and packaging measurements, not runtime activation.
+The [phase-5c.1 authenticated preparation](update-preparation.md) now connects
+staged signed bytes to exact baseline copies and Prepared journaling, fresh
+release selection/space checks and explicit terminal archival. Forward apply,
+real app readiness, installer migration and safe bounded pruning remain open.
 
 ## Related specifications and sources
 

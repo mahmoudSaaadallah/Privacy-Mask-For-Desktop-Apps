@@ -147,8 +147,11 @@ stall/deadline, unexpected PID (a client capable of answering if disclosed), wro
 parent creation time and early exit. Unsupported/default CLI paths are also checked.
 Every negative case must be non-Ready; no journals/app payloads may be created.
 
-Remaining before phase 5 can complete: signed preparation/freshness, original
-snapshot provenance, reserve space and terminal-record lifecycle; the production
+The separate [phase-5c.1 preparation library](update-preparation.md) now implements
+signed preparation/freshness, baseline snapshots, reserve space and terminal
+archival, but is not wired to this probe or a production apply command.
+
+Remaining before phase 5 can complete: bounded retention/pruning; the production
 launcher's forward apply/recovery/start paths; exact old-process graceful exit;
 restricted real-App readiness and durable commit acknowledgement; installer,
 shortcut/startup and uninstaller migration/repair; crash/power-loss and Windows
