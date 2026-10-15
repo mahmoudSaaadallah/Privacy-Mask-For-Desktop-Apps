@@ -70,3 +70,21 @@ jobs:
       - name: Test real signed update package with memory-only test keys
         shell: pwsh
         run: .\scripts\test-signed-update-package.ps1
+
+  bootstrap-prototype:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        publish-mode: [SingleFile, NativeAot]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish and test isolated bootstrap/readiness prototype
+        shell: pwsh
+        run: .\scripts\test-bootstrap-prototype.ps1 -PublishMode ${{ matrix.publish-mode }}
+      - name: Show measured prototype resource report
+        shell: pwsh
+        run: Get-Content 'artifacts/bootstrap-prototype/${{ matrix.publish-mode }}/measurements.json'

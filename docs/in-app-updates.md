@@ -211,6 +211,8 @@ that these guarantees have already been implemented or tested.
 Phase 5 is delivered in reviewed slices. The first [recovery kernel](update-recovery-kernel.md)
 implements internal journal/lease/rollback primitives only; the launcher,
 readiness, migration and real crash/power-loss qualification gates remain open.
+The [phase-5b bootstrap/readiness prototype](update-bootstrap-prototype.md) adds
+isolated real-process tests and packaging measurements, not runtime activation.
 
 ## Related specifications and sources
 

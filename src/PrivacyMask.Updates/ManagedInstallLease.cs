@@ -65,7 +65,7 @@ internal sealed class ManagedInstallLease : IDisposable
     {
         var path = Path.Combine(Root, "managed-install.json");
         AssertPrivate(path);
-        var marker = ContractJson.Read<ManagedInstallMarker>(ReadBounded(path, 4096), 4096);
+        var marker = RecoveryJson.Read(ReadBounded(path, 4096), 4096, RecoveryJson.Context.ManagedInstallMarker);
         RecoveryRules.Validate(marker);
         if (marker.InstallId != InstallId) throw new ReleaseValidationException("Managed install marker changed.");
     }

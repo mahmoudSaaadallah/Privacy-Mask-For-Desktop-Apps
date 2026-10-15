@@ -15,7 +15,8 @@ internal sealed class RecoveryJournalStore(ManagedInstallLease lease, Action<Jou
         try { _ = File.GetAttributes(ActivePath); }
         catch (FileNotFoundException) { return null; }
         ManagedInstallLease.AssertPrivate(ActivePath);
-        var record = ContractJson.Read<RecoveryJournal>(ManagedInstallLease.ReadBounded(ActivePath, RecoveryRules.JournalLimit), RecoveryRules.JournalLimit);
+        var record = RecoveryJson.Read(ManagedInstallLease.ReadBounded(ActivePath, RecoveryRules.JournalLimit), RecoveryRules.JournalLimit,
+            RecoveryJson.Context.RecoveryJournal);
         RecoveryRules.Validate(record);
         if (record.InstallId != lease.InstallId) throw new ReleaseValidationException("Recovery record belongs to a different installation.");
         return record;
@@ -36,7 +37,7 @@ internal sealed class RecoveryJournalStore(ManagedInstallLease lease, Action<Jou
         else if (record.Revision != previous.Revision + 1 || !RecoveryRules.CanTransition(previous.Step, record.Step) ||
             record with { Revision = previous.Revision, Step = previous.Step } != previous)
             throw new ReleaseValidationException("Invalid recovery transition or changed operation identity.");
-        var bytes = ContractJson.Write(record);
+        var bytes = RecoveryJson.Write(record, RecoveryJson.Context.RecoveryJournal);
         if (bytes.Length > RecoveryRules.JournalLimit) throw new ReleaseValidationException("Recovery journal exceeds its bound.");
         var temporary = Path.Combine(lease.Root, ".update-journal-" + Guid.NewGuid().ToString("N") + ".tmp");
         using (var file = ManagedInstallLease.CreatePrivateFile(temporary))
