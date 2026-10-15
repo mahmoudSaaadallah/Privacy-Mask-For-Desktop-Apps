@@ -41,6 +41,7 @@ try
             throw new InvalidOperationException("Prototype mutated application state.");
         using var available = new ManagedInstallLease(root, installId); // Helper/peer fully exited; lease released.
     }
+    await VerifyHandoffAsync();
     var bundleCache = Path.Combine(root, "probe-bundle-cache");
     var report = new
     {
@@ -83,6 +84,54 @@ try
         var properties = result.EnumerateObject().ToDictionary(item => item.Name, item => item.Value.Clone());
         properties["processWallMs"] = JsonSerializer.SerializeToElement(wall.Elapsed.TotalMilliseconds);
         return JsonSerializer.SerializeToElement(properties);
+    }
+
+    async Task VerifyHandoffAsync()
+    {
+        var operationId = Guid.NewGuid().ToString("N");
+        var session = new HandoffSession(Guid.ParseExact(installId, "N"), Guid.ParseExact(operationId, "N"));
+        using var server = new UpdateHandoffServer(session);
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        using var parent = Process.GetCurrentProcess();
+        var parentIdentity = PipeProcessIdentity.Capture(parent, Environment.ProcessPath!);
+        var start = new ProcessStartInfo(Path.Combine(root, "PrivacyMask.Bootstrap.Prototype.exe"))
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardError = true,
+            WorkingDirectory = root
+        };
+        foreach (var argument in new[]
+        {
+            "--handoff-probe-client", server.PipeName, installId, operationId,
+            parentIdentity.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            parentIdentity.CreationUtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        }) start.ArgumentList.Add(argument);
+        using var worker = Process.Start(start) ?? throw new IOException("Handoff probe did not start.");
+        var error = worker.StandardError.ReadToEndAsync(deadline.Token);
+        var workerIdentity = PipeProcessIdentity.Capture(worker, start.FileName);
+        var receive = server.ReceiveExitRequestAsync(workerIdentity, deadline.Token);
+        var exited = worker.WaitForExitAsync(deadline.Token);
+        if (await Task.WhenAny(receive, exited) != receive)
+            throw new InvalidOperationException("Handoff worker exited before authentication.");
+        await receive;
+        var observation = Task.Delay(100, deadline.Token);
+        if (await Task.WhenAny(exited, observation) == exited)
+            throw new InvalidOperationException("Handoff worker did not wait for App acceptance.");
+        await observation;
+        if (worker.HasExited)
+            throw new InvalidOperationException("Handoff worker rejected the App: " + await error);
+        try { await server.AcceptAsync(deadline.Token); }
+        catch (Exception exception) when (worker.HasExited)
+        {
+            throw new InvalidOperationException($"Handoff worker exited before acceptance ({worker.ExitCode}): " + await error, exception);
+        }
+        await exited;
+        var errorText = await error;
+        if (errorText.Length > 4096) throw new InvalidOperationException("Unbounded handoff diagnostics.");
+        if (worker.ExitCode != 0)
+            throw new InvalidOperationException("Handoff worker rejected the authenticated App: " + errorText);
+        Console.WriteLine("Authenticated real-process update handoff passed.");
     }
 }
 finally

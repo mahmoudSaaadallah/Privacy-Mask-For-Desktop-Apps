@@ -5,6 +5,9 @@ using System.Security.Cryptography;
 using PrivacyMask.Updates;
 
 // Developer-only probe host. No --apply/recover/update/default-launch entrypoint exists.
+if (args.Length > 0 && args[0] == "--handoff-probe-client")
+    return await RunHandoffProbeClientAsync(args);
+
 var timer = Stopwatch.StartNew();
 var outcome = "InvalidFixture";
 var stage = "invocation";
@@ -136,4 +139,41 @@ static async Task SpoofAsync(NamedPipeClientStream pipe, ReadinessSession sessio
     var nonce = ReadinessWire.Validate(await ReadinessWire.ReadAsync(pipe, ct), ReadinessMessage.Challenge, session);
     await pipe.WriteAsync(ReadinessWire.Encode(ReadinessMessage.Ready, session, nonce), ct);
     ReadinessWire.Validate(await ReadinessWire.ReadAsync(pipe, ct), ReadinessMessage.Accepted, session, nonce);
+}
+
+static async Task<int> RunHandoffProbeClientAsync(string[] arguments)
+{
+    var stage = 0;
+    try
+    {
+        if (arguments.Length != 6) throw new ReleaseValidationException("handoff-argument-count");
+        if (!arguments[1].StartsWith(UpdateHandoffServer.PipePrefix, StringComparison.Ordinal) ||
+            !RecoveryRules.IsId(arguments[1][UpdateHandoffServer.PipePrefix.Length..]))
+            throw new ReleaseValidationException("handoff-pipe");
+        if (!RecoveryRules.IsId(arguments[2]) || !RecoveryRules.IsId(arguments[3]))
+            throw new ReleaseValidationException("handoff-session");
+        if (!int.TryParse(arguments[4], NumberStyles.None, CultureInfo.InvariantCulture, out var parentId) ||
+            parentId <= 0 || parentId.ToString(CultureInfo.InvariantCulture) != arguments[4])
+            throw new ReleaseValidationException("handoff-parent-id");
+        if (!long.TryParse(arguments[5], NumberStyles.None, CultureInfo.InvariantCulture, out var parentTime) ||
+            parentTime <= 0 || parentTime.ToString(CultureInfo.InvariantCulture) != arguments[5])
+            throw new ReleaseValidationException("handoff-parent-time");
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        using var parent = Process.GetProcessById(parentId);
+        _ = parent.SafeHandle;
+        var path = parent.MainModule?.FileName ?? throw new ReleaseValidationException("Missing probe parent image.");
+        var identity = new PipeProcessIdentity(parentId, parentTime, path);
+        var session = new HandoffSession(Guid.ParseExact(arguments[2], "N"), Guid.ParseExact(arguments[3], "N"));
+        stage = 1;
+        using var client = await UpdateHandoffClient.ConnectAsync(arguments[1], session, identity, timeout.Token);
+        stage = 2;
+        await client.RequestExitAsync(timeout.Token);
+        stage = 3;
+        return 0;
+    }
+    catch (Exception exception)
+    {
+        Console.Error.WriteLine($"{exception.GetType().Name}: {exception.Message}");
+        return 21 + stage;
+    }
 }
