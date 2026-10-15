@@ -46,7 +46,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly Dictionary<nint, List<ScreenRect>> _occludingBoundsByWindow = [];
     private readonly HashSet<nint> _activeOcclusionHandles = [];
     private readonly List<nint> _staleOcclusionHandles = [];
-    private readonly SemaphoreSlim _blurStrengthUpdateGate = new(1, 1);
+    private readonly ShellOperationQueue _operations = new();
     private readonly SemaphoreSlim _panicOperationGate = new(1, 1);
     private readonly SemaphoreSlim _profileProtectionOperationGate = new(1, 1);
 
@@ -131,6 +131,12 @@ public sealed class ShellCoordinator : IAsyncDisposable
     }
 
     public async Task StartAsync()
+    {
+        if (!await _operations.TryRunAsync(StartCoreAsync, requireIdle: true))
+            throw new InvalidOperationException("PrivacyMask startup is no longer available.");
+    }
+
+    private async Task StartCoreAsync()
     {
         _settings = await _settingsStore.LoadAsync();
         RebuildWindowProcessFilter();
@@ -362,6 +368,16 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task SaveSettingsAsync(AppSettings updatedSettings)
     {
+        // The editor captured this model before dispatch. Never queue a stale
+        // whole-file snapshot behind a shortcut/startup/PIN mutation.
+        if (!await _operations.TryRunAsync(() => SaveSettingsCoreAsync(updatedSettings), requireIdle: true))
+            throw new InvalidOperationException(_operations.IsStopping
+                ? "PrivacyMask is closing. These changes were not saved."
+                : "Another PrivacyMask action is still finishing. Review your changes and try Save again.");
+    }
+
+    private async Task SaveSettingsCoreAsync(AppSettings updatedSettings)
+    {
         updatedSettings.CurrentMode = RuntimeMode.Standard;
         updatedSettings.OnboardingCompleted = true;
         var nextSettings = _defaultSettingsFactory.MergeWithDefaults(updatedSettings);
@@ -460,6 +476,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task AdjustForegroundBlurStrengthAsync(bool increase)
     {
+        if (_operations.IsStopping) return;
         var trackedWindow = TryResolveForegroundProfile();
         if (trackedWindow is null)
         {
@@ -469,10 +486,16 @@ public sealed class ShellCoordinator : IAsyncDisposable
             return;
         }
 
+        // Capture focus before queuing: changing focus must not redirect a
+        // previously accepted shortcut to a different application.
         var profileId = trackedWindow.Profile.ProfileId;
-        await _blurStrengthUpdateGate.WaitAsync();
-        try
-        {
+        if (!await _operations.TryRunAsync(() => AdjustBlurStrengthCoreAsync(profileId, increase))
+            && !_operations.IsStopping)
+            ShowBlurStrengthTip("Several actions are still finishing. Try the shortcut again shortly.", ToolTipIcon.Info);
+    }
+
+    private async Task AdjustBlurStrengthCoreAsync(string profileId, bool increase)
+    {
             var nextSettings = AppSettingsCloner.Clone(_savedSettings);
             var nextProfile = nextSettings.AppProfiles.FirstOrDefault(profile =>
                 string.Equals(profile.ProfileId, profileId, StringComparison.OrdinalIgnoreCase)
@@ -515,11 +538,6 @@ public sealed class ShellCoordinator : IAsyncDisposable
                     $"The blur changed temporarily but could not be saved. {exception.Message}",
                     ToolTipIcon.Error);
             }
-        }
-        finally
-        {
-            _blurStrengthUpdateGate.Release();
-        }
     }
 
     private void ApplyBlurStrength(string profileId, double strength)
@@ -877,6 +895,17 @@ public sealed class ShellCoordinator : IAsyncDisposable
     }
 
     private async Task ToggleLaunchAtLoginAsync()
+    {
+        if (!await _operations.TryRunAsync(ToggleLaunchAtLoginCoreAsync, requireIdle: true)
+            && !_operations.IsStopping)
+        {
+            // CheckOnClick already changed the menu check; restore saved state.
+            UpdateTrayState();
+            ShowProtectionTip("Another action is still finishing. Try changing startup again shortly.", ToolTipIcon.Info);
+        }
+    }
+
+    private async Task ToggleLaunchAtLoginCoreAsync()
     {
         var nextSettings = AppSettingsCloner.Clone(_savedSettings);
         nextSettings.LaunchAtLogin = !_savedSettings.LaunchAtLogin;
