@@ -131,16 +131,20 @@ public sealed class RecoveryRestorerTests
         }
     }
 
-    [Fact]
-    public void LockedFileLeavesBackupAndRollingBackIntentForRetry()
+    [Theory]
+    [InlineData("app")]
+    [InlineData("primary")]
+    [InlineData("secondary")]
+    public void LockedFileLeavesBackupAndRollingBackIntentForRetry(string label)
     {
         using var f = new RecoveryFixture();
         f.ReplaceFiles();
         // A handle permitting reads but denying delete simulates a locked move without a running app.
-        using (var locked = new FileStream(f.App, FileMode.Open, FileAccess.Read, FileShare.Read))
+        var lockedPath = label switch { "primary" => f.Primary, "secondary" => f.Secondary, _ => f.App };
+        using (var locked = new FileStream(lockedPath, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             Assert.Equal(RecoveryOutcome.RepairRequired, new RecoveryRestorer(f.Lease).Recover().Outcome);
-            Assert.Equal(f.NewApp, File.ReadAllBytes(f.App));
+            Assert.Equal(label == "app" ? f.NewApp : f.OldApp, File.ReadAllBytes(f.App));
             Assert.Equal(RecoveryStep.RollingBack, new RecoveryJournalStore(f.Lease).Read()!.Step);
             Assert.Equal(f.OldApp, File.ReadAllBytes(Path.Combine(f.Operation, "original-app.exe")));
         }
