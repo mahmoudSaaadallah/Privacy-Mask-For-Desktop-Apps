@@ -235,6 +235,12 @@ environment, initial measurements, performance budgets, and required scenarios.
 8. Use the tray icon to pause every profile, apply an opaque panic mask, reopen
    settings, or exit the app.
 
+Normal tray Exit waits for already accepted settings actions before removing
+protection and closing. While a Save is pending, closing/discarding the editor
+cannot interrupt it. If another action is still finishing, Save asks you to
+review your changes and retry rather than overwrite a newer saved value. This
+does not make forced termination, sign-out or installer-forced exit graceful.
+
 Each profile card reports whether its application is protected now, waiting for
 focus, paused, disabled, not running, or no longer detected at its saved path.
 The information button provides contextual help on hover. Focusing it alone
@@ -336,6 +342,10 @@ Press `Esc` or close the window to discard the preview and return to the tray.
   migration, retention and runtime UI/safety gates remain pending. The internal
   [transaction worker](docs/update-transaction.md) is tested with signed disposable
   processes only; it is not connected to the actual privacy runtime or installer.
+- The [awaited shell lifecycle foundation](docs/update-shell-lifecycle.md) now
+  serializes settings actions and drains normal exit in the shipped beta.3 App.
+  Authenticated update shutdown/startup, strict migration, launcher/recovery and
+  updater UI remain pending; normal Exit is not update consent or authorization.
 - Review [update signing operations](docs/update-signing-operations.md) before
   publishing: production policy/environment are intentionally unconfigured,
   so signed release publication fails closed until explicitly approved setup.

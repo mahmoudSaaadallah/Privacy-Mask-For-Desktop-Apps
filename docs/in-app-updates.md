@@ -4,12 +4,13 @@ Status: phase 1 specifications, phase 2 signing/packaging tooling, phase 3
 [read-only discovery](update-discovery.md), phase 4 [verified staging](update-download.md),
 and internal phase-5a/b/c.1/c.2 recovery/prototype/[preparation](update-preparation.md)/
 [transaction](update-transaction.md)
-slices are implemented. Phase 5 as a whole is not complete.
+slices and the [phase-5d.1 awaited shell lifecycle](update-shell-lifecycle.md)
+foundation are implemented. Phase 5 as a whole is not complete.
 Production signing/environment/OS qualification remain unset;
 see [signing operations](update-signing-operations.md). No update button,
 live network activation, production key, launcher, automatic installation, tag,
 or new release is supplied. App has no discovery-library reference or UI yet
-and remains `2.0.0-beta.2`.
+and now targets `2.0.0-beta.3` for the shipped lifecycle changes.
 
 ## Current implementation and gaps
 
@@ -31,8 +32,9 @@ verified draft; it deliberately cannot publish until its production policy and
 environment are configured. This does not add an updater client to the app.
 `App.xaml.cs` acquires a session-local singleton before starting the shell;
 the update worker must not accidentally reactivate that old instance. Shell
-shutdown must finish its awaited disposal before a replacement is attempted;
-an `async void` exit callback is not a sufficient shutdown acknowledgement.
+normal shutdown now drains accepted mutations and window event continuations
+before disposal/singleton release. An `OnExit` callback is not a shutdown
+acknowledgement; authenticated update shutdown/consent still must be implemented.
 
 Panic and pause states are transient. Restart starts ordinary protection, not
 the previous opaque panic mask. Update must never be offered as an unlock path.
@@ -226,6 +228,11 @@ process exit, authenticated forward replacement, test-child startup/commit/recei
 and failure recovery with signed real test processes. It is not wired to the real
 App or a production launcher, and does not complete old-version restart or the
 runtime consent/Panic/settings integration gates.
+
+The [phase-5d.1 shell lifecycle](update-shell-lifecycle.md) serializes complete
+settings mutations and awaits normal shell/window disposal in the actual App,
+advancing source to beta.3. It does not authorize an update, implement strict
+prepared-baseline migration, exchange shutdown/readiness IPC or activate Updates.
 
 ## Related specifications and sources
 

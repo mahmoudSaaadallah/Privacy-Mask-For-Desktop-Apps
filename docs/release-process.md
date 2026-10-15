@@ -139,7 +139,8 @@ setup, immutable-release settings, tags and publication require separate
 explicit authorization. Do not publish synthetic test metadata or treat a
 missing update manifest as an unsigned fallback. The app has no update client yet.
 
-This docs/developer-check delivery keeps `2.0.0-beta.2`, numeric identities and
-settings schema 12 unchanged. Apply the existing version policy when a later
-PR actually changes the shipped application, and qualify a first manual
+The earlier signing/tooling deliveries kept beta.2 unchanged. The
+[awaited shell lifecycle delivery](update-shell-lifecycle.md) changes the shipped
+application and therefore advances to beta.3 / FileVersion 2.0.0.3, without
+changing settings schema 12 or enabling an updater. Qualify a first manual
 bootstrap installation before advertising subsequent in-app updates.

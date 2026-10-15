@@ -2,9 +2,9 @@
 
 Status: library and offline tests implemented; not connected to the WPF App.
 No update button, scheduler, application replacement, launcher, production key
-or release is introduced. App payload/version/settings remain
-`2.0.0-beta.2` / schema 12. The first shipped runtime integration must follow the
-beta/FileVersion policy. See [delivery phases](in-app-updates.md).
+or release is introduced by this phase. It was delivered at beta.2 / schema 12;
+the subsequent [shell lifecycle](update-shell-lifecycle.md) advances the App to
+beta.3 without activating downloads. See [delivery phases](in-app-updates.md).
 
 ## Host/API contract
 

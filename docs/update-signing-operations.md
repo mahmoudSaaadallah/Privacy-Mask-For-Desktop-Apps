@@ -51,9 +51,10 @@ An owner must approve the following before an authorized release:
    settings change, after verifying the complete draft publication flow. Do not
    assume the workflow itself toggles that setting.
 
-The shipping source is still `2.0.0-beta.2`: this is tooling, not an application
-feature/version delivery. Never reuse an already published version/tag for new
-contents. Setup and tooling are not an instruction to publish beta.2 again.
+The signing-tooling delivery kept beta.2; the subsequent
+[shell lifecycle](update-shell-lifecycle.md) advances source to beta.3 without
+configuring production signing. Never reuse a published version/tag for new
+contents. Setup/tooling do not authorize publishing beta.2 again or beta.3 now.
 Prepare the next app delivery/version and qualified bootstrap at the appropriate
 later phase before promising end-user in-app updates.
 

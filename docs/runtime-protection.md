@@ -4,6 +4,13 @@ PrivacyMask keeps protection state separate from persisted user preferences.
 Closing the app while protection is paused or while the panic mask is active
 does not make the next launch start unprotected.
 
+Normal tray Exit now waits for accepted settings operations and their window
+event continuations before disposing masks/tray and releasing the singleton.
+It still ends protection and does not auto-save pending editor changes. Forced
+termination/sign-out are not graceful-exit guarantees. This is not an update
+unlock path: future update apply must separately defer while any panic is active,
+resolve edits and obtain restart-gap consent. See [shell lifecycle](update-shell-lifecycle.md).
+
 ## States
 
 | State | Overlay behavior | Hover or hold reveal |
