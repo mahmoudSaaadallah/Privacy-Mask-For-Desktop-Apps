@@ -333,7 +333,9 @@ Press `Esc` or close the window to discard the preview and return to the tray.
 - Internal phase-5 work now includes the recovery kernel, measured bootstrap
   prototype and [authenticated preparation](docs/update-preparation.md). These
   are developer/test-only paths, not an installed-app updater; launcher/apply,
-  migration, retention and runtime UI/safety gates remain pending.
+  migration, retention and runtime UI/safety gates remain pending. The internal
+  [transaction worker](docs/update-transaction.md) is tested with signed disposable
+  processes only; it is not connected to the actual privacy runtime or installer.
 - Review [update signing operations](docs/update-signing-operations.md) before
   publishing: production policy/environment are intentionally unconfigured,
   so signed release publication fails closed until explicitly approved setup.

@@ -2,7 +2,8 @@
 
 Status: phase 1 specifications, phase 2 signing/packaging tooling, phase 3
 [read-only discovery](update-discovery.md), phase 4 [verified staging](update-download.md),
-and internal phase-5a/b/c.1 recovery/prototype/[preparation](update-preparation.md)
+and internal phase-5a/b/c.1/c.2 recovery/prototype/[preparation](update-preparation.md)/
+[transaction](update-transaction.md)
 slices are implemented. Phase 5 as a whole is not complete.
 Production signing/environment/OS qualification remain unset;
 see [signing operations](update-signing-operations.md). No update button,
@@ -220,6 +221,11 @@ The [phase-5c.1 authenticated preparation](update-preparation.md) now connects
 staged signed bytes to exact baseline copies and Prepared journaling, fresh
 release selection/space checks and explicit terminal archival. Forward apply,
 real app readiness, installer migration and safe bounded pruning remain open.
+The [phase-5c.2 transaction worker](update-transaction.md) now exercises exact old
+process exit, authenticated forward replacement, test-child startup/commit/receipt
+and failure recovery with signed real test processes. It is not wired to the real
+App or a production launcher, and does not complete old-version restart or the
+runtime consent/Panic/settings integration gates.
 
 ## Related specifications and sources
 

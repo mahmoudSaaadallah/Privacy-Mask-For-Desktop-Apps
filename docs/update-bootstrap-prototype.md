@@ -150,6 +150,9 @@ Every negative case must be non-Ready; no journals/app payloads may be created.
 The separate [phase-5c.1 preparation library](update-preparation.md) now implements
 signed preparation/freshness, baseline snapshots, reserve space and terminal
 archival, but is not wired to this probe or a production apply command.
+The [phase-5c.2 transaction worker](update-transaction.md) adds signed real TEST
+process replacement/readiness/commit/receipt; this prototype still cannot apply
+it and does not measure the final fully linked worker or actual App readiness.
 
 Remaining before phase 5 can complete: bounded retention/pruning; the production
 launcher's forward apply/recovery/start paths; exact old-process graceful exit;

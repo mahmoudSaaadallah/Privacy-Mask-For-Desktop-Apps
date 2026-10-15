@@ -181,7 +181,7 @@ internal sealed class RecoveryPreparer
             throw new ReleaseValidationException("Unexpected managed directory content.");
     }
 
-    private static void InspectExecutable(string path, string version, string? commit)
+    internal static void InspectExecutable(string path, string version, string? commit)
     {
         if (commit is not null) { UpdatePayload.InspectExecutable(path, version, commit); return; }
         var product = FileVersionInfo.GetVersionInfo(path).ProductVersion ?? "";
