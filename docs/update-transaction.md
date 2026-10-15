@@ -125,8 +125,13 @@ Run separately (PowerShell 7 and .NET 10 SDK for developers only):
 pwsh -File scripts/test-update-transaction.ps1
 ```
 
-It publishes a purpose-built console TEST peer twice (`0.0.0`, `0.0.1`) with
-app-compatible version resources, not the privacy runtime. Only fixture versions
+It publishes a framework-dependent single-file console TEST peer twice
+(`0.0.0`, `0.0.1`) with app-compatible version resources, not the privacy runtime.
+These developer-only peers reuse the already-required .NET 10 runtime rather
+than copying a full runtime through every fault case. This is not an end-user
+packaging/footprint measurement: the real App release remains self-contained,
+and its existing full signed real-App staging/preparation suite is unchanged.
+Only fixture versions
 are overridden; repository/app versions are unchanged. An in-memory ephemeral
 ECDSA key signs a streamed test ZIP; public trust, fake HTTP discovery, real
 stager and normal preparer/worker constructors validate the files. Only startup
@@ -153,7 +158,8 @@ without changing ACLs/attributes or skipping persistent failures. This test-only
 retry is not a production rollback/cleanup policy. Bundle extraction is scoped to that run's private cache
 and removed afterwards. Archives/copies are streamed, not app-sized byte arrays.
 Published fixture output is ignored under `artifacts/update-transaction` and is
-never part of the normal release ZIP. Do not run simultaneous publishes to the
+never part of the normal release ZIP. Test build outputs use an isolated
+artifacts path instead of rewriting a running standard-bin host. Do not run simultaneous publishes to the
 same fixture output directories.
 
 The source unit suite adds 28 revalidation/identity cases (568 total) and extends
@@ -174,4 +180,5 @@ network disclosures and version bump, followed by authorized release qualificati
 
 References: [File.Replace constraints](https://learn.microsoft.com/en-us/dotnet/api/system.io.file.replace?view=net-10.0),
 [awaited process exit](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.waitforexitasync?view=net-10.0),
+[single-file deployment models](https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview),
 [preparation](update-preparation.md), [recovery model](update-recovery.md).
