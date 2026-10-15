@@ -5,3 +5,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("PrivacyMask.Bootstrap.Prototype")]
 [assembly: InternalsVisibleTo("PrivacyMask.Readiness.Probe")]
 [assembly: InternalsVisibleTo("PrivacyMask.Bootstrap.SmokeChecks")]
+[assembly: InternalsVisibleTo("PrivacyMask.Transaction.Peer")]
+[assembly: InternalsVisibleTo("PrivacyMask.Transaction.SmokeChecks")]

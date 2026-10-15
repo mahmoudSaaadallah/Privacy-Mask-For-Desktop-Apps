@@ -6,6 +6,8 @@
     <Project Path="src/PrivacyMask.Updates/PrivacyMask.Updates.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/PrivacyMask.Transaction.Peer/PrivacyMask.Transaction.Peer.csproj" />
+    <Project Path="tests/PrivacyMask.Transaction.SmokeChecks/PrivacyMask.Transaction.SmokeChecks.csproj" />
     <Project Path="tests/PrivacyMask.Bootstrap.SmokeChecks/PrivacyMask.Bootstrap.SmokeChecks.csproj" />
     <Project Path="tests/PrivacyMask.Readiness.Probe/PrivacyMask.Readiness.Probe.csproj" />
     <Project Path="tests/PrivacyMask.Updates.SmokeChecks/PrivacyMask.Updates.SmokeChecks.csproj" />
