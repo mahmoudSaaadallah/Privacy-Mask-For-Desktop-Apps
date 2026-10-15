@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 
 namespace PrivacyMask.Updates;
 
-internal enum HandoffMessage : byte { Challenge = 1, ExitRequest = 2, Accepted = 3 }
+internal enum HandoffMessage : byte { Challenge = 1, ExitRequest = 2, Accepted = 3, Receipt = 4, Complete = 5 }
 
 internal sealed record HandoffSession(Guid InstallId, Guid OperationId)
 {
@@ -104,6 +104,11 @@ internal sealed class UpdateHandoffServer : IDisposable
             throw new ReleaseValidationException("No authenticated update handoff request.");
         _worker.ValidatePipe(_pipe, serverSide: true);
         await _pipe.WriteAsync(HandoffWire.Encode(HandoffMessage.Accepted, _session, _challenge),
+            cancellationToken).ConfigureAwait(false);
+        HandoffWire.Validate(await HandoffWire.ReadAsync(_pipe, cancellationToken).ConfigureAwait(false),
+            HandoffMessage.Receipt, _session, _challenge);
+        _worker.ValidatePipe(_pipe, serverSide: true);
+        await _pipe.WriteAsync(HandoffWire.Encode(HandoffMessage.Complete, _session, _challenge),
             cancellationToken).ConfigureAwait(false);
         _worker.ValidatePipe(_pipe, serverSide: true);
     }

@@ -67,9 +67,13 @@ internal sealed class UpdateHandoffClient : IDisposable
         _challenge = challenge;
         await _pipe.WriteAsync(HandoffWire.Encode(HandoffMessage.ExitRequest, _session, challenge),
             cancellationToken).ConfigureAwait(false);
-        _applicationIdentity.ValidatePipe(_pipe, serverSide: false);
         HandoffWire.Validate(await HandoffWire.ReadAsync(_pipe, cancellationToken).ConfigureAwait(false),
             HandoffMessage.Accepted, _session, challenge);
+        _applicationIdentity.ValidatePipe(_pipe, serverSide: false);
+        await _pipe.WriteAsync(HandoffWire.Encode(HandoffMessage.Receipt, _session, challenge),
+            cancellationToken).ConfigureAwait(false);
+        HandoffWire.Validate(await HandoffWire.ReadAsync(_pipe, cancellationToken).ConfigureAwait(false),
+            HandoffMessage.Complete, _session, challenge);
         _applicationIdentity.ValidatePipe(_pipe, serverSide: false);
         Volatile.Write(ref _used, 2);
     }
