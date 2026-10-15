@@ -208,6 +208,10 @@ Before any updater-capable release, approve key custody and revocation/rotation
 procedures and complete the recovery matrix. No phase-1 document is evidence
 that these guarantees have already been implemented or tested.
 
+Phase 5 is delivered in reviewed slices. The first [recovery kernel](update-recovery-kernel.md)
+implements internal journal/lease/rollback primitives only; the launcher,
+readiness, migration and real crash/power-loss qualification gates remain open.
+
 ## Related specifications and sources
 
 - [Signed manifest contract](update-manifest.md)
