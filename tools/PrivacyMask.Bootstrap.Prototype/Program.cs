@@ -96,8 +96,8 @@ catch (ReleaseValidationException exception)
     outcome = deadline is null ? "InvalidFixture" : "Rejected";
     rejection = exception.Message switch
     {
-        "Unexpected readiness pipe peer." => "pipe-peer",
-        "Readiness process identity changed." => "process-identity",
+        "Unexpected update pipe peer." => "pipe-peer",
+        "Update process identity changed." => "process-identity",
         "Invalid readiness response." => "response",
         _ => "validation"
     };
