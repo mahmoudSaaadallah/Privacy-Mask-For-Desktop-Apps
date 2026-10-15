@@ -56,6 +56,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly HashSet<nint> _activeOcclusionHandles = [];
     private readonly List<nint> _staleOcclusionHandles = [];
     private readonly ShellOperationQueue _operations = new();
+    private readonly UpdateRestartCoordinator _updateRestart;
     private readonly SemaphoreSlim _panicOperationGate = new(1, 1);
     private readonly SemaphoreSlim _profileProtectionOperationGate = new(1, 1);
     private readonly ShellStartupContext? _startupContext;
@@ -66,6 +67,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private IReadOnlySet<HotkeyAction> _unavailableHotkeyActions = new HashSet<HotkeyAction>();
     private MainWindow? _mainWindow;
     private bool _isShuttingDown;
+    private bool _isUpdateSuspended;
     private bool _isDisposed;
     private bool _interactiveStartupCompleted;
     private Task? _disposeTask;
@@ -85,6 +87,15 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _defaultSettingsFactory = new DefaultSettingsFactory();
         _protectionStateMachine = new ProtectionStateMachine();
         _profileProtectionState = new ProfileProtectionState();
+        _updateRestart = new(_operations, new(
+            () => _protectionStateMachine.CurrentMode == RuntimeMode.Panic || _profileProtectionState.HasAnyPanic,
+            () => _mainWindow?.HasUpdateBlockingEdits == true,
+            () => _isShuttingDown,
+            () => _mainWindow?.ResolveUpdateEditsAsync() ?? Task.FromResult(true),
+            ConfirmUpdateRestart,
+            SuspendForUpdateAsync,
+            ResumeAfterUpdate,
+            _requestShutdown));
         _temporaryRevealGesture = new ExclusiveHoldGesture(TimeSpan.FromMilliseconds(500d));
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
         _windowInspector = new DesktopWindowInspector();
@@ -149,7 +160,10 @@ public sealed class ShellCoordinator : IAsyncDisposable
             new ToolStripMenuItem("Open settings", null, (_, _) => ShowSettingsWindow()),
             _launchAtLoginItem,
             new ToolStripSeparator(),
-            new ToolStripMenuItem("Exit", null, async (_, _) => await ObserveShellActionAsync(_requestShutdown())),
+            new ToolStripMenuItem("Exit", null, async (_, _) =>
+            {
+                if (!_updateRestart.IsBusy) await ObserveShellActionAsync(_requestShutdown());
+            }),
         ]);
     }
 
@@ -212,6 +226,53 @@ public sealed class ShellCoordinator : IAsyncDisposable
     public void HandleExternalActivation()
     {
         ShowSettingsWindow();
+    }
+
+    // The later Settings/tray update UI will call this only after verified staging.
+    // No command line, activation message, timer or normal Exit routes here.
+    internal async Task<UpdateRestartResult> ApplyStagedUpdateAsync(string operationId, UpdateChannel channel,
+        CancellationToken cancellationToken = default)
+    {
+        _dispatcher.VerifyAccess();
+        var verifier = UpdateRuntimePolicy.CreateVerifier();
+        if (!verifier.IsConfigured) throw new InvalidOperationException("Signed in-app updates are not configured.");
+        using var discovery = new GitHubReleaseClient(verifier);
+        try
+        {
+            return await _updateRestart.RunAsync((assertReady, token) => AuthenticatedUpdateHandoff.RunAsync(
+                operationId, channel, _savedSettings.StartMinimized, _settingsStore.SettingsPath,
+                assertReady, verifier, discovery, token), cancellationToken);
+        }
+        catch (UnsafeUpdateResumeException)
+        {
+            // Keep protection alive and settings frozen. Ordinary Exit remains available for repair.
+            if (_notifyIcon.ContextMenuStrip is { } menu)
+            {
+                menu.Enabled = true;
+                foreach (ToolStripItem item in menu.Items) item.Enabled = item.Text == "Exit";
+            }
+            ShowProtectionTip("The update stopped and settings remain paused. Close sensitive windows, exit PrivacyMask, then start it again to recover.", ToolTipIcon.Error);
+            throw;
+        }
+    }
+
+    private bool ConfirmUpdateRestart() => System.Windows.MessageBox.Show(
+        "PrivacyMask will restart to install this update. Masks disappear during restart. Close or minimize sensitive application windows before continuing.",
+        "Restart to update PrivacyMask", MessageBoxButton.OKCancel, MessageBoxImage.Warning,
+        MessageBoxResult.Cancel) == MessageBoxResult.OK;
+
+    private Task SuspendForUpdateAsync()
+    {
+        _isUpdateSuspended = true;
+        if (_notifyIcon.ContextMenuStrip is { } menu) menu.Enabled = false;
+        return _mainWindow?.SuspendForUpdateAsync() ?? Task.CompletedTask;
+    }
+
+    private void ResumeAfterUpdate()
+    {
+        _isUpdateSuspended = false;
+        if (!_isShuttingDown && _notifyIcon.ContextMenuStrip is { } menu) menu.Enabled = true;
+        _mainWindow?.ResumeAfterUpdate();
     }
 
     public ValueTask DisposeAsync()
@@ -373,7 +434,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void ShowSettingsWindow()
     {
-        if (_isShuttingDown) return;
+        if (_isShuttingDown || _isUpdateSuspended) return;
         if (_mainWindow is null)
         {
             var viewModel = CreateSettingsViewModel();
@@ -470,7 +531,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void PreviewSettings(AppSettings previewSettings)
     {
-        if (_isShuttingDown) return;
+        if (_isShuttingDown || _isUpdateSuspended) return;
         previewSettings.CurrentMode = RuntimeMode.Standard;
         previewSettings.OnboardingCompleted = true;
         _settings = _defaultSettingsFactory.MergeWithDefaults(previewSettings);
@@ -480,7 +541,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void DiscardPreview()
     {
-        if (_isShuttingDown) return;
+        if (_isShuttingDown || _isUpdateSuspended) return;
         _settings = AppSettingsCloner.Clone(_savedSettings);
         _mainWindow?.ReplaceViewModel(CreateSettingsViewModel());
         RebuildWindowProcessFilter();
@@ -523,7 +584,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void HandleHotkeyPressed(HotkeyAction action)
     {
-        if (_isShuttingDown) return;
+        if (_isShuttingDown || _isUpdateSuspended) return;
         switch (action)
         {
             case HotkeyAction.ToggleProtection:
@@ -638,7 +699,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void ToggleProtection()
     {
-        if (_isShuttingDown) return;
+        if (_isShuttingDown || _isUpdateSuspended) return;
         _protectionStateMachine.ToggleProtection();
         UpdateTrayState();
         RefreshOverlays();
