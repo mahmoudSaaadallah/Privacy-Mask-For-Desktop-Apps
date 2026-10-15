@@ -2,12 +2,12 @@
 
 This is the first implementation slice of [phase 5](in-app-updates.md), not a
 completed launcher or working end-user update feature. It adds **internal**
-Windows rollback primitives and disposable-fixture tests to Updates. App, Core
-and Windows still do not reference Updates. There is no process launch/kill,
+Windows rollback primitives and disposable-fixture tests to Updates. At this
+historical slice boundary App, Core and Windows did not reference Updates. There is no process launch/kill,
 installer migration, production install mutation, new trust key, release, update
 button or scheduled check in this slice, delivered at beta.2 / schema 12. The
-subsequent [shell lifecycle](update-shell-lifecycle.md) advances source to beta.3
-without activating the recovery kernel in the App.
+subsequent lifecycle/readiness work advances current source to beta.4 without
+activating the recovery kernel for end users.
 
 The internal boundary is intentional: these primitives must not become a public
 apply API before the helper validates signed content, obtains explicit consent,

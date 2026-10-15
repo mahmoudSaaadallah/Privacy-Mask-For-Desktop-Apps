@@ -51,10 +51,10 @@ An owner must approve the following before an authorized release:
    settings change, after verifying the complete draft publication flow. Do not
    assume the workflow itself toggles that setting.
 
-The signing-tooling delivery kept beta.2; the subsequent
-[shell lifecycle](update-shell-lifecycle.md) advances source to beta.3 without
-configuring production signing. Never reuse a published version/tag for new
-contents. Setup/tooling do not authorize publishing beta.2 again or beta.3 now.
+The signing-tooling delivery kept beta.2; subsequent shell lifecycle and
+[App readiness](update-app-readiness.md) deliveries advance source to beta.4
+without configuring production signing. Never reuse a published version/tag for
+new contents. Setup/tooling does not authorize publishing any version.
 Prepare the next app delivery/version and qualified bootstrap at the appropriate
 later phase before promising end-user in-app updates.
 

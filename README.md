@@ -2,7 +2,7 @@
 
 PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
-The current source targets `2.0.0-beta.3`, a testing build, not a declaration
+The current source targets `2.0.0-beta.4`, a testing build, not a declaration
 that a stable 2.0.0 release has been published. Check the releases page for
 available downloads. About and Settings show the product version; hover the
 About version for full build/source metadata and the numeric Windows file version.
@@ -45,7 +45,7 @@ Minimum requirements:
 You do not need the source code or the .NET SDK to install a published release.
 
 1. Open [GitHub releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). Releases marked **Pre-release** are testing builds; the `latest` link is for stable releases.
-2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.3-win-x64.zip` for beta.3, and extract the whole archive.
+2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.4-win-x64.zip` for beta.4, and extract the whole archive.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
 5. Complete onboarding. Use **Add application** to select a running program or browse to its `.exe` file.
@@ -67,10 +67,10 @@ installation in `%LocalAppData%\PrivacyMask.Desktop`.
 The matching `.sha256` release asset can be used to verify the downloaded ZIP:
 
 ```powershell
-(Get-FileHash .\PrivacyMask-2.0.0-beta.3-win-x64.zip -Algorithm SHA256).Hash
+(Get-FileHash .\PrivacyMask-2.0.0-beta.4-win-x64.zip -Algorithm SHA256).Hash
 ```
 
-Compare the output with the hash in `PrivacyMask-2.0.0-beta.3-win-x64.zip.sha256`.
+Compare the output with the hash in `PrivacyMask-2.0.0-beta.4-win-x64.zip.sha256`.
 Use the actual versioned filenames if you downloaded another release.
 
 ## One-click install from source
@@ -157,15 +157,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-win-x64-release.ps1
 
 Release package output:
 
-- `artifacts/release/PrivacyMask-2.0.0-beta.3-win-x64.zip`
-- `artifacts/release/PrivacyMask-2.0.0-beta.3-win-x64.zip.sha256`
+- `artifacts/release/PrivacyMask-2.0.0-beta.4-win-x64.zip`
+- `artifacts/release/PrivacyMask-2.0.0-beta.4-win-x64.zip.sha256`
 
 ## Repository layout
 
 - `src/PrivacyMask.Core`: core models, settings, presets, and profile resolution
 - `src/PrivacyMask.Windows`: Windows interop, startup registration, and window discovery
 - `src/PrivacyMask.App`: WPF app shell, settings UI, onboarding, overlay rendering, and hotkeys
-- `src/PrivacyMask.Updates`: shared public update trust/read-only discovery; not yet referenced by the shipped app
+- `src/PrivacyMask.Updates`: update trust, discovery, recovery transaction and authenticated app-start contracts; discovery remains inactive in the UI
 - `tests/PrivacyMask.Core.Tests`: unit tests
 - `docs`: architecture and release notes
 - `scripts`: verification, publish, and local install scripts
@@ -342,10 +342,11 @@ Press `Esc` or close the window to discard the preview and return to the tray.
   migration, retention and runtime UI/safety gates remain pending. The internal
   [transaction worker](docs/update-transaction.md) is tested with signed disposable
   processes only; it is not connected to the actual privacy runtime or installer.
-- The [awaited shell lifecycle foundation](docs/update-shell-lifecycle.md) now
-  serializes settings actions and drains normal exit in the shipped beta.3 App.
-  Authenticated update shutdown/startup, strict migration, launcher/recovery and
-  updater UI remain pending; normal Exit is not update consent or authorization.
+- The [authenticated App readiness foundation](docs/update-app-readiness.md) now
+  validates update-start identity, migrates the exact saved settings baseline and
+  receipts a durable commit after shell initialization in beta.4. A stable launcher,
+  authenticated old-process shutdown, installer migration and updater UI remain
+  pending; normal Exit is not update consent or authorization.
 - Review [update signing operations](docs/update-signing-operations.md) before
   publishing: production policy/environment are intentionally unconfigured,
   so signed release publication fails closed until explicitly approved setup.

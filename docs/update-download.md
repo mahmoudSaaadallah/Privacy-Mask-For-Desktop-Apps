@@ -3,8 +3,8 @@
 Status: library and offline tests implemented; not connected to the WPF App.
 No update button, scheduler, application replacement, launcher, production key
 or release is introduced by this phase. It was delivered at beta.2 / schema 12;
-the subsequent [shell lifecycle](update-shell-lifecycle.md) advances the App to
-beta.3 without activating downloads. See [delivery phases](in-app-updates.md).
+subsequent App lifecycle/readiness slices advance current source to beta.4
+without activating downloads. See [delivery phases](in-app-updates.md).
 
 ## Host/API contract
 
