@@ -31,16 +31,20 @@ Assert-SafeManagedDirectory -Path $InstallPath -ParameterName 'InstallPath'
 Assert-SafeManagedDirectory -Path $StartMenuFolder -ParameterName 'StartMenuFolder'
 
 $resolvedInstallPath = [System.IO.Path]::GetFullPath($InstallPath)
-$exePath = Join-Path $resolvedInstallPath 'PrivacyMask.App.exe'
+$legacyExePath = Join-Path $resolvedInstallPath 'PrivacyMask.App.exe'
+$exePath = Join-Path $resolvedInstallPath 'app\PrivacyMask.App.exe'
+$launcherPath = Join-Path $resolvedInstallPath 'PrivacyMask.Launcher.exe'
 
 $runningProcesses = @(
   Get-CimInstance Win32_Process -Filter "Name = 'PrivacyMask.App.exe'" -ErrorAction SilentlyContinue |
     Where-Object {
-      -not [string]::IsNullOrWhiteSpace($_.ExecutablePath) -and
-      [string]::Equals(
-        [System.IO.Path]::GetFullPath($_.ExecutablePath),
-        $exePath,
-        [StringComparison]::OrdinalIgnoreCase)
+      if ([string]::IsNullOrWhiteSpace($_.ExecutablePath)) {
+        return $false
+      }
+
+      $actualPath = [System.IO.Path]::GetFullPath($_.ExecutablePath)
+      return [string]::Equals($actualPath, $exePath, [StringComparison]::OrdinalIgnoreCase) -or
+        [string]::Equals($actualPath, $legacyExePath, [StringComparison]::OrdinalIgnoreCase)
     }
 )
 
@@ -68,7 +72,9 @@ if (Test-Path -LiteralPath $runKeyPath) {
   $startupProperty = $runKey.PSObject.Properties['PrivacyMask.Desktop']
   if ($null -ne $startupProperty -and
       $startupProperty.Value -is [string] -and
-      $startupProperty.Value.IndexOf($exePath, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+      ($startupProperty.Value.IndexOf($exePath, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+       $startupProperty.Value.IndexOf($legacyExePath, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+       $startupProperty.Value.IndexOf($launcherPath, [StringComparison]::OrdinalIgnoreCase) -ge 0)) {
     Remove-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -ErrorAction SilentlyContinue
   }
 }
