@@ -9,6 +9,28 @@ using PrivacyMask.Updates;
 try
 {
     using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+    if (args.Length == 5 && args[0] == "--fixture-handoff-old")
+    {
+        // This peer is test-only: the harness identity is explicit; no production App accepts these switches.
+        using var host = Process.GetProcessById(int.Parse(args[3], CultureInfo.InvariantCulture));
+        var handoffHostIdentity = new PipeProcessIdentity(host.Id, long.Parse(args[4], CultureInfo.InvariantCulture), host.MainModule!.FileName!);
+        using var server = new UpdateHandoffServer(new(Guid.ParseExact(args[1], "N"), Guid.ParseExact(args[2], "N")));
+        Console.WriteLine(server.PipeName);
+        var receive = server.ReceiveExitRequestAsync(handoffHostIdentity, deadline.Token);
+        // Console's synchronized reader can block before returning its async task. Keep this
+        // test-only cancellation channel off the thread driving authenticated acceptance.
+        var cancel = Task.Factory.StartNew(Console.In.ReadLine, CancellationToken.None,
+            TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        if (await Task.WhenAny(receive, cancel) != receive)
+        {
+            deadline.Cancel();
+            try { await receive; } catch (OperationCanceledException) { }
+            return 0;
+        }
+        await receive;
+        await server.AcceptAsync(deadline.Token);
+        return 0;
+    }
     if (args.Length == 1 && args[0] == "--fixture-old")
     {
         Console.WriteLine("fixture-ready");
