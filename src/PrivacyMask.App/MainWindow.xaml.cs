@@ -253,7 +253,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        var settings = ViewModel.ToModel();
+        var editedSession = ViewModel;
+        var settings = editedSession.ToModel();
         var validationErrors = AppSettingsValidator.Validate(settings);
         if (validationErrors.Count > 0)
         {
@@ -268,7 +269,10 @@ public partial class MainWindow : Window
         try
         {
             await SaveRequested.Invoke(settings);
-            ViewModel.SetSavedBaseline(ViewModel.ToModel());
+            // The coordinator may have replaced the session with normalized
+            // saved settings and already applied a newer hotkey baseline. Do
+            // not overwrite that authority, or mark later edits as persisted.
+            if (ReferenceEquals(editedSession, ViewModel)) ViewModel.SetSavedBaseline(settings);
         }
         catch (Exception exception)
         {

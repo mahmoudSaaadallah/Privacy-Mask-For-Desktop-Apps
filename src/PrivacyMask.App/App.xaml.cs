@@ -64,7 +64,7 @@ public partial class App : System.Windows.Application
             if (_shutdownFailureReported) return;
             _shutdownFailureReported = true;
             System.Windows.MessageBox.Show(
-                "PrivacyMask could not finish closing safely. Close sensitive application windows before ending its process or signing out. No update was installed.",
+                "PrivacyMask could not finish closing safely. Close sensitive application windows before ending its process or signing out.",
                 "PrivacyMask could not close", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

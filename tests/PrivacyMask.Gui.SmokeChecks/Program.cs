@@ -222,6 +222,7 @@ internal static class Program
             saving.ViewModel.StartMinimized = !saving.ViewModel.StartMinimized;
             Invoke(saving, "Save_Click");
             Check(saving.ViewModel.IsSaving && !saving.IsEnabled, "Pending save did not freeze the editor.");
+            saving.ViewModel.AppProfiles[0].MaskIntensityPercent = 42;
             Invoke(saving, "CloseToTray_Click");
             saving.Close();
             Check(discards == 0, "Close discarded/replaced a saving view model.");
@@ -231,10 +232,24 @@ internal static class Program
             Check(saves == 1, "Shutdown admitted another editor save.");
             ioFinished.SetResult();
             PumpUntil(saveDrain);
-            Check(!saving.ViewModel.IsSaving && !saving.ViewModel.HasPendingChanges && !saving.IsEnabled,
-                "Save cleanup re-enabled a closing window or failed to finish.");
+            Check(!saving.ViewModel.IsSaving && saving.ViewModel.HasPendingChanges && !saving.IsEnabled,
+                "Save cleanup re-enabled a closing window or marked a later change as saved.");
             saving.AllowClose();
             saving.Close();
+
+            var replacing = CreateWindow();
+            replacing.SaveRequested += updated =>
+            {
+                replacing.ReplaceViewModel(SettingsViewModel.FromModel(updated, RuntimeMode.Standard, "Synthetic",
+                    new HashSet<HotkeyAction>()));
+                replacing.ViewModel.AppProfiles[0].MaskIntensityPercent = 37;
+                return Task.CompletedTask;
+            };
+            replacing.ViewModel.StartMinimized = !replacing.ViewModel.StartMinimized;
+            Invoke(replacing, "Save_Click");
+            Check(replacing.ViewModel.HasPendingChanges, "Save overwrote the replacement session's authoritative baseline.");
+            replacing.AllowClose();
+            replacing.Close();
 
             var panic = CreateWindow();
             var panicFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
