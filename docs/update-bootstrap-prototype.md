@@ -2,7 +2,9 @@
 
 Status: **developer-only executable/IPC prototype**, not the production launcher.
 App/Core/Windows still do not reference Updates. The installer, shortcuts, startup
-entry, product version `2.0.0-beta.2` and settings schema 12 are unchanged. No
+entry and settings schema 12 are unchanged. This slice was delivered at beta.2;
+the subsequent [shell lifecycle](update-shell-lifecycle.md) advances source to
+beta.3 without activating the prototype. No
 Update button, apply/recover/default-launch command or production key is enabled.
 See [recovery kernel](update-recovery-kernel.md) and [delivery gates](in-app-updates.md).
 

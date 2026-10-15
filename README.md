@@ -2,7 +2,7 @@
 
 PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
-The current source targets `2.0.0-beta.2`, a testing build, not a declaration
+The current source targets `2.0.0-beta.3`, a testing build, not a declaration
 that a stable 2.0.0 release has been published. Check the releases page for
 available downloads. About and Settings show the product version; hover the
 About version for full build/source metadata and the numeric Windows file version.
@@ -45,7 +45,7 @@ Minimum requirements:
 You do not need the source code or the .NET SDK to install a published release.
 
 1. Open [GitHub releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). Releases marked **Pre-release** are testing builds; the `latest` link is for stable releases.
-2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.2-win-x64.zip` for beta.2, and extract the whole archive.
+2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.3-win-x64.zip` for beta.3, and extract the whole archive.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
 5. Complete onboarding. Use **Add application** to select a running program or browse to its `.exe` file.
@@ -67,10 +67,10 @@ installation in `%LocalAppData%\PrivacyMask.Desktop`.
 The matching `.sha256` release asset can be used to verify the downloaded ZIP:
 
 ```powershell
-(Get-FileHash .\PrivacyMask-2.0.0-beta.2-win-x64.zip -Algorithm SHA256).Hash
+(Get-FileHash .\PrivacyMask-2.0.0-beta.3-win-x64.zip -Algorithm SHA256).Hash
 ```
 
-Compare the output with the hash in `PrivacyMask-2.0.0-beta.2-win-x64.zip.sha256`.
+Compare the output with the hash in `PrivacyMask-2.0.0-beta.3-win-x64.zip.sha256`.
 Use the actual versioned filenames if you downloaded another release.
 
 ## One-click install from source
@@ -157,8 +157,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-win-x64-release.ps1
 
 Release package output:
 
-- `artifacts/release/PrivacyMask-2.0.0-beta.2-win-x64.zip`
-- `artifacts/release/PrivacyMask-2.0.0-beta.2-win-x64.zip.sha256`
+- `artifacts/release/PrivacyMask-2.0.0-beta.3-win-x64.zip`
+- `artifacts/release/PrivacyMask-2.0.0-beta.3-win-x64.zip.sha256`
 
 ## Repository layout
 
@@ -234,6 +234,12 @@ environment, initial measurements, performance budgets, and required scenarios.
    default, using a 600×70 pixel reveal window.
 8. Use the tray icon to pause every profile, apply an opaque panic mask, reopen
    settings, or exit the app.
+
+Normal tray Exit waits for already accepted settings actions before removing
+protection and closing. While a Save is pending, closing/discarding the editor
+cannot interrupt it. If another action is still finishing, Save asks you to
+review your changes and retry rather than overwrite a newer saved value. This
+does not make forced termination, sign-out or installer-forced exit graceful.
 
 Each profile card reports whether its application is protected now, waiting for
 focus, paused, disabled, not running, or no longer detected at its saved path.
@@ -336,6 +342,10 @@ Press `Esc` or close the window to discard the preview and return to the tray.
   migration, retention and runtime UI/safety gates remain pending. The internal
   [transaction worker](docs/update-transaction.md) is tested with signed disposable
   processes only; it is not connected to the actual privacy runtime or installer.
+- The [awaited shell lifecycle foundation](docs/update-shell-lifecycle.md) now
+  serializes settings actions and drains normal exit in the shipped beta.3 App.
+  Authenticated update shutdown/startup, strict migration, launcher/recovery and
+  updater UI remain pending; normal Exit is not update consent or authorization.
 - Review [update signing operations](docs/update-signing-operations.md) before
   publishing: production policy/environment are intentionally unconfigured,
   so signed release publication fails closed until explicitly approved setup.

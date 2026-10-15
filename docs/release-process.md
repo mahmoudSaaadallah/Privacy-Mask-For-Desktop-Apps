@@ -5,7 +5,7 @@ not committed to the source repository.
 
 ## Version policy
 
-The source currently prepares `2.0.0-beta.2`. This is a testing delivery, not a
+The source currently prepares `2.0.0-beta.3`. This is a testing delivery, not a
 stable release announcement. Publishing/tagging remains a separate authorized
 action after merge and qualification. A commit or PR is not itself a release.
 Earlier source builds displayed 2.0.0 while still unreleased; the beta suffix
@@ -35,10 +35,10 @@ on merge or by a Git hook.
 
 | Identity | Current value | Purpose |
 | --- | --- | --- |
-| Version | `2.0.0-beta.2` | UI label, archive filename and exact `v2.0.0-beta.2` tag |
+| Version | `2.0.0-beta.3` | UI label, archive filename and exact `v2.0.0-beta.3` tag |
 | InformationalVersion | `$(Version)` plus SDK Git metadata when available | Full build provenance; About shows the product before `+` and exposes the full value in its tooltip/help |
 | AssemblyVersion | `2.0.0.0` | Numeric assembly identity, stable throughout this prerelease cycle |
-| FileVersion | `2.0.0.2` | Numeric Windows file/build revision |
+| FileVersion | `2.0.0.3` | Numeric Windows file/build revision |
 
 Windows numeric fields cannot contain `beta` or `rc`. Increase FileVersion's
 fourth component for the next delivered beta/candidate/stable build of the same
@@ -83,7 +83,7 @@ baseline, so the new publisher currently fails closed. This is not an automatic
 environment/secret setup or permission to publish an existing version again.
 
 1. Merge the fully verified release changes into `main`.
-2. Create an annotated version tag matching the source, such as `v2.0.0-beta.2`, on the release commit.
+2. Create an annotated version tag matching the source, such as `v2.0.0-beta.3`, on the release commit.
 3. Push the tag to GitHub.
 4. The `release` workflow requires the named protected environment and a clean
    merged exact version tag, builds/tests the project and normal Windows ZIP,
@@ -99,8 +99,8 @@ environment/secret setup or permission to publish an existing version again.
 Example tag commands:
 
 ```powershell
-git tag -a v2.0.0-beta.2 -m "PrivacyMask v2.0.0-beta.2"
-git push origin v2.0.0-beta.2
+git tag -a v2.0.0-beta.3 -m "PrivacyMask v2.0.0-beta.3"
+git push origin v2.0.0-beta.3
 ```
 
 These commands are a release procedure, not commands run by the current PR.
@@ -139,7 +139,8 @@ setup, immutable-release settings, tags and publication require separate
 explicit authorization. Do not publish synthetic test metadata or treat a
 missing update manifest as an unsigned fallback. The app has no update client yet.
 
-This docs/developer-check delivery keeps `2.0.0-beta.2`, numeric identities and
-settings schema 12 unchanged. Apply the existing version policy when a later
-PR actually changes the shipped application, and qualify a first manual
+The earlier signing/tooling deliveries kept beta.2 unchanged. The
+[awaited shell lifecycle delivery](update-shell-lifecycle.md) changes the shipped
+application and therefore advances to beta.3 / FileVersion 2.0.0.3, without
+changing settings schema 12 or enabling an updater. Qualify a first manual
 bootstrap installation before advertising subsequent in-app updates.

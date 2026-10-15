@@ -4,8 +4,10 @@ Status: **internal worker exercised with signed disposable TEST processes**.
 This is not the production launcher or an end-user update feature. The actual
 App still has no Updates reference or `--update-start` implementation. The
 bootstrap prototype still only accepts `--probe`; the existing installer,
-shortcuts/startup, settings schema 12 and product `2.0.0-beta.2`/FileVersion
-`2.0.0.2` are unchanged. No production key, release/tag or user install is used.
+shortcuts/startup and settings schema 12 are unchanged. This slice was delivered
+at beta.2 / FileVersion 2.0.0.2; the subsequent
+[shell lifecycle](update-shell-lifecycle.md) advances source to beta.3 without
+activating the worker. No production key, release/tag or user install is used.
 
 ## Process authority before replacement
 

@@ -23,6 +23,9 @@ public partial class MainWindow : Window
     private bool _allowClose;
     private bool _isSaving;
     private bool _previewQueued;
+    private bool _isShuttingDown;
+    private TaskCompletionSource? _saveFinished;
+    private TaskCompletionSource? _runtimeActionFinished;
     private readonly DesktopApplicationCatalog _applicationCatalog;
 
     public MainWindow(SettingsViewModel viewModel, DesktopApplicationCatalog applicationCatalog)
@@ -48,7 +51,9 @@ public partial class MainWindow : Window
 
     private async void GlobalPanic_Click(object sender, RoutedEventArgs e)
     {
-        if (!ViewModel.CanToggleGlobalPanic || GlobalPanicRequested is null) return;
+        if (_isShuttingDown || !ViewModel.CanToggleGlobalPanic || GlobalPanicRequested is null
+            || _runtimeActionFinished?.Task.IsCompleted == false) return;
+        _runtimeActionFinished = new(TaskCreationOptions.RunContinuationsAsynchronously);
         ViewModel.IsRuntimeActionBusy = true;
         try
         {
@@ -62,6 +67,7 @@ public partial class MainWindow : Window
         finally
         {
             ViewModel.IsRuntimeActionBusy = false;
+            _runtimeActionFinished.SetResult();
         }
     }
 
@@ -94,13 +100,13 @@ public partial class MainWindow : Window
 
     private void QueuePreview()
     {
-        if (!IsLoaded || _isSaving || _previewQueued || _allowClose) return;
+        if (!IsLoaded || _isSaving || _previewQueued || _allowClose || _isShuttingDown) return;
         _previewQueued = true;
         var editedSession = ViewModel;
         Dispatcher.BeginInvoke(() =>
         {
             _previewQueued = false;
-            if (!ReferenceEquals(editedSession, DataContext) || !IsVisible || _isSaving) return;
+            if (!ReferenceEquals(editedSession, DataContext) || !IsVisible || _isSaving || _isShuttingDown) return;
             var preview = editedSession.ToModel();
             if (!HasBindingErrors(this) && AppSettingsValidator.Validate(preview).Count == 0)
             {
@@ -119,6 +125,16 @@ public partial class MainWindow : Window
     public void AllowClose()
     {
         _allowClose = true;
+    }
+
+    internal Task BeginShutdownAsync()
+    {
+        _isShuttingDown = true;
+        IsEnabled = false;
+        // The shell's mutation callback can finish before the event handler's
+        // final UI continuation. Do not dispose its view model in that gap.
+        return Task.WhenAll(_saveFinished?.Task ?? Task.CompletedTask,
+            _runtimeActionFinished?.Task ?? Task.CompletedTask);
     }
 
     private void Navigate_Click(object sender, RoutedEventArgs e)
@@ -221,7 +237,7 @@ public partial class MainWindow : Window
 
     private async void Save_Click(object sender, RoutedEventArgs e)
     {
-        if (SaveRequested is null || _isSaving)
+        if (SaveRequested is null || _isSaving || _isShuttingDown)
         {
             return;
         }
@@ -237,7 +253,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        var settings = ViewModel.ToModel();
+        var editedSession = ViewModel;
+        var settings = editedSession.ToModel();
         var validationErrors = AppSettingsValidator.Validate(settings);
         if (validationErrors.Count > 0)
         {
@@ -246,12 +263,16 @@ public partial class MainWindow : Window
         }
 
         _isSaving = true;
+        _saveFinished = new(TaskCreationOptions.RunContinuationsAsynchronously);
         ViewModel.IsSaving = true;
         IsEnabled = false;
         try
         {
             await SaveRequested.Invoke(settings);
-            ViewModel.SetSavedBaseline(ViewModel.ToModel());
+            // The coordinator may have replaced the session with normalized
+            // saved settings and already applied a newer hotkey baseline. Do
+            // not overwrite that authority, or mark later edits as persisted.
+            if (ReferenceEquals(editedSession, ViewModel)) ViewModel.SetSavedBaseline(settings);
         }
         catch (Exception exception)
         {
@@ -265,14 +286,16 @@ public partial class MainWindow : Window
         }
         finally
         {
-            IsEnabled = true;
+            IsEnabled = !_isShuttingDown;
             _isSaving = false;
             ViewModel.IsSaving = false;
+            _saveFinished.SetResult();
         }
     }
 
     private void CloseToTray_Click(object sender, RoutedEventArgs e)
     {
+        if (_isSaving || _isShuttingDown) return;
         DiscardRequested?.Invoke();
     }
 
@@ -501,7 +524,7 @@ public partial class MainWindow : Window
         if (!_allowClose)
         {
             e.Cancel = true;
-            DiscardAndHide();
+            if (!_isSaving && !_isShuttingDown) DiscardAndHide();
         }
 
         base.OnClosing(e);
@@ -509,6 +532,7 @@ public partial class MainWindow : Window
 
     protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
     {
+        if (_isSaving || _isShuttingDown) { e.Handled = true; return; }
         if (e.Key == Key.Escape && Keyboard.Modifiers == ModifierKeys.None)
         {
             if (InformationHelp.CloseIfOpen(Keyboard.FocusedElement))
@@ -530,6 +554,7 @@ public partial class MainWindow : Window
 
     private void DiscardAndHide()
     {
+        if (_isSaving || _isShuttingDown) return;
         DiscardRequested?.Invoke();
         Hide();
     }

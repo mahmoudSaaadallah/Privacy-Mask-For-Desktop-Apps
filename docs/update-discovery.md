@@ -4,8 +4,9 @@ Status: library and offline HTTP-fixture tests implemented. The App does not
 reference/instantiate this library yet. No button, scheduler, live update check,
 installer, production key or release is added by phase 3. The separate
 [phase 4 library](update-download.md) now implements offline-tested ZIP staging,
-still without App integration. Product/settings
-versions remain `2.0.0-beta.2` / 12. See [delivery phases](in-app-updates.md).
+still without App integration. This phase was delivered at beta.2 / schema 12;
+the subsequent [shell lifecycle](update-shell-lifecycle.md) advances the App to
+beta.3 without activating discovery. See [delivery phases](in-app-updates.md).
 
 ## Shared trust and host contract
 

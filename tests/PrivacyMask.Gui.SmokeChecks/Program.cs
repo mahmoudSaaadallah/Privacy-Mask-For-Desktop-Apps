@@ -146,6 +146,7 @@ internal static class Program
                 setup.Close();
                 Check(((PinEntry)setup.FindName("NewPinBox")).Password.Length == 0, "Closed PIN input retained.");
                 CheckReferenceDialogs(screenshots);
+                CheckAwaitedWindowShutdown();
                 Console.WriteLine("Search, selected-profile Save/Discard and invalid-PIN/closed-input checks passed.");
             }
             window.AllowClose();
@@ -201,6 +202,102 @@ internal static class Program
         Check(System.Text.Json.JsonSerializer.Serialize(session.ToModel()) == before && !session.HasPendingChanges,
             "Help/sidebar navigation changed settings.");
         Console.WriteLine("Help/sidebar passed: focus never opens help, privacy pages are hover-only, native hover/accessible text remain and shield identity is constant.");
+    }
+
+    private static void CheckAwaitedWindowShutdown()
+    {
+        var previousContext = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+        try
+        {
+            MainWindow CreateWindow() => new(SettingsViewModel.FromModel(new DefaultSettingsFactory().Create(),
+                RuntimeMode.Standard, "Synthetic settings path", new HashSet<HotkeyAction>()),
+                new DesktopApplicationCatalog(new DesktopWindowInspector()));
+            var saving = CreateWindow();
+            var ioFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var saves = 0;
+            var discards = 0;
+            saving.SaveRequested += async _ => { saves++; await ioFinished.Task; Check(saving.Dispatcher.CheckAccess(), "Save left the dispatcher."); };
+            saving.DiscardRequested += () => discards++;
+            saving.ViewModel.StartMinimized = !saving.ViewModel.StartMinimized;
+            Invoke(saving, "Save_Click");
+            Check(saving.ViewModel.IsSaving && !saving.IsEnabled, "Pending save did not freeze the editor.");
+            saving.ViewModel.AppProfiles[0].MaskIntensityPercent = 42;
+            Invoke(saving, "CloseToTray_Click");
+            saving.Close();
+            Check(discards == 0, "Close discarded/replaced a saving view model.");
+            var saveDrain = saving.BeginShutdownAsync();
+            Check(!saveDrain.IsCompleted, "Shutdown ignored the event handler's save continuation.");
+            Invoke(saving, "Save_Click");
+            Check(saves == 1, "Shutdown admitted another editor save.");
+            ioFinished.SetResult();
+            PumpUntil(saveDrain);
+            Check(!saving.ViewModel.IsSaving && saving.ViewModel.HasPendingChanges && !saving.IsEnabled,
+                "Save cleanup re-enabled a closing window or marked a later change as saved.");
+            saving.AllowClose();
+            saving.Close();
+
+            var replacing = CreateWindow();
+            replacing.SaveRequested += updated =>
+            {
+                replacing.ReplaceViewModel(SettingsViewModel.FromModel(updated, RuntimeMode.Standard, "Synthetic",
+                    new HashSet<HotkeyAction>()));
+                replacing.ViewModel.AppProfiles[0].MaskIntensityPercent = 37;
+                return Task.CompletedTask;
+            };
+            replacing.ViewModel.StartMinimized = !replacing.ViewModel.StartMinimized;
+            Invoke(replacing, "Save_Click");
+            Check(replacing.ViewModel.HasPendingChanges, "Save overwrote the replacement session's authoritative baseline.");
+            replacing.AllowClose();
+            replacing.Close();
+
+            var panic = CreateWindow();
+            var panicFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            panic.GlobalPanicRequested += () => panicFinished.Task;
+            Invoke(panic, "GlobalPanic_Click");
+            Check(panic.ViewModel.IsRuntimeActionBusy, "Panic event is not tracked.");
+            var panicDrain = panic.BeginShutdownAsync();
+            Check(!panicDrain.IsCompleted, "Shutdown ignored a pending runtime event.");
+            panicFinished.SetResult();
+            PumpUntil(panicDrain);
+            Check(!panic.ViewModel.IsRuntimeActionBusy && !panic.IsEnabled, "Panic cleanup crossed window disposal.");
+            panic.AllowClose();
+            panic.Close();
+
+            var queue = new ShellOperationQueue();
+            var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var events = new List<int>();
+            var first = queue.TryRunAsync(async () =>
+            {
+                await gate.Task;
+                Check(Dispatcher.CurrentDispatcher == Application.Current.Dispatcher, "Mutation lost UI affinity.");
+                events.Add(1);
+            });
+            var second = queue.TryRunAsync(async () =>
+            {
+                Check(Application.Current.Dispatcher.CheckAccess(), "Queued mutation lost UI affinity.");
+                await Task.Yield();
+                Check(Application.Current.Dispatcher.CheckAccess(), "Post-write state update lost UI affinity.");
+                events.Add(2);
+            });
+            var shutdown = new ApplicationShutdown(async () => { await queue.StopAsync(); events.Add(3); },
+                () => events.Add(4), _ => events.Add(5));
+            var exit = shutdown.RunAsync();
+            Check(!exit.IsCompleted && events.Count == 0, "Exit raced a pending UI mutation.");
+            gate.SetResult();
+            PumpUntil(Task.WhenAll(first, second, exit));
+            Check(events.SequenceEqual(new[] { 1, 2, 3, 4, 5 }), "Dispatcher shutdown order is invalid.");
+            Console.WriteLine("Awaited shutdown passed: saving close guards, event continuations, panic event drain and FIFO dispatcher/singleton/exit ordering.");
+        }
+        finally { SynchronizationContext.SetSynchronizationContext(previousContext); }
+    }
+
+    private static void PumpUntil(Task task)
+    {
+        var deadline = System.Diagnostics.Stopwatch.StartNew();
+        while (!task.IsCompleted && deadline.Elapsed < TimeSpan.FromSeconds(5)) Drain();
+        Check(task.IsCompleted, "Dispatcher operation failed to finish before its test deadline.");
+        task.GetAwaiter().GetResult();
     }
 
     private static void CheckAboutReference(MainWindow window, FrameworkElement root, SettingsViewModel session, string? screenshots)
