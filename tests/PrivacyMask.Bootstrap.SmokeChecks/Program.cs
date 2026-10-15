@@ -44,13 +44,14 @@ try
     var report = new
     {
         schemaVersion = 1, os = Environment.OSVersion.VersionString, framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
+        helperBuild = FileVersionInfo.GetVersionInfo(helper).ProductVersion, peerBuild = FileVersionInfo.GetVersionInfo(peer).ProductVersion,
         helperBytes = new FileInfo(helper).Length, peerBytes = new FileInfo(peer).Length,
         limitations = "Developer probe only; OS-reported peak working sets and point-in-time private bytes. No production app startup or Windows 10 qualification.",
         results
     };
     File.WriteAllBytes(Path.GetFullPath(args[2]), JsonSerializer.SerializeToUtf8Bytes(report, new JsonSerializerOptions { WriteIndented = true }));
     var ready = results.Single(r => r.GetProperty("outcome").GetString() == "Ready");
-    Console.WriteLine($"Helper={new FileInfo(helper).Length} bytes; peer={new FileInfo(peer).Length} bytes; ready={ready.GetProperty("elapsedMs")} ms; helper peak WS={ready.GetProperty("helperPeakWorkingSetBytes")} bytes; peer peak WS={ready.GetProperty("peerPeakWorkingSetBytes")} bytes.");
+    Console.WriteLine($"Helper={new FileInfo(helper).Length} bytes; peer={new FileInfo(peer).Length} bytes; protocol={ready.GetProperty("elapsedMs")} ms; wall={ready.GetProperty("processWallMs")} ms; helper peak WS={ready.GetProperty("helperPeakWorkingSetBytes")} bytes; peer peak WS={ready.GetProperty("peerPeakWorkingSetBytes")} bytes.");
 
     async Task<JsonElement> Invoke(string[] arguments, bool expectReady)
     {
@@ -60,6 +61,7 @@ try
             WorkingDirectory = root
         };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
+        var wall = Stopwatch.StartNew();
         using var child = Process.Start(start)!;
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var output = child.StandardOutput.ReadToEndAsync(deadline.Token);
@@ -67,13 +69,16 @@ try
         try { await child.WaitForExitAsync(deadline.Token); }
         catch { if (!child.HasExited) child.Kill(); throw; }
         var text = await output;
+        wall.Stop();
         if (text.Length > 4096 || (await error).Length > 4096) throw new InvalidOperationException("Unbounded probe diagnostics.");
         using var parsed = JsonDocument.Parse(text);
         var result = parsed.RootElement.Clone();
         if ((result.GetProperty("outcome").GetString() == "Ready") != expectReady || (child.ExitCode == 0) != expectReady)
             throw new InvalidOperationException("Unexpected probe outcome: " + text);
         if (result.GetProperty("outcome").GetString() == "CleanupFailed") throw new InvalidOperationException("Probe process cleanup failed.");
-        return result;
+        var properties = result.EnumerateObject().ToDictionary(item => item.Name, item => item.Value.Clone());
+        properties["processWallMs"] = JsonSerializer.SerializeToElement(wall.Elapsed.TotalMilliseconds);
+        return JsonSerializer.SerializeToElement(properties);
     }
 }
 finally

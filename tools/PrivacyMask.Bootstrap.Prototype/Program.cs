@@ -12,6 +12,7 @@ var rejection = "none";
 long peerPeak = 0, peerPrivate = 0;
 Process? child = null;
 Task? exchange = null;
+Task? unexpectedExchange = null;
 NamedPipeClientStream? unexpected = null;
 ReadinessServer? server = null;
 CancellationTokenSource? deadline = null;
@@ -64,6 +65,7 @@ try
         // An unexpected same-user PID connects instead of the retained child. It gets no challenge.
         unexpected = new(".", server.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         await unexpected.ConnectAsync(deadline.Token);
+        unexpectedExchange = SpoofAsync(unexpected, session, deadline.Token);
     }
     var exited = child.WaitForExitAsync();
     if (await Task.WhenAny(exchange, exited) != exchange) outcome = "PeerExited";
@@ -108,6 +110,7 @@ finally
     unexpected?.Dispose();
     server?.Dispose();
     if (exchange is not null) { try { await exchange; } catch (Exception) { /* Observed probe exchange failure. */ } }
+    if (unexpectedExchange is not null) { try { await unexpectedExchange; } catch (Exception) { /* Observed rejected test client. */ } }
     if (child is not null)
     {
         try
@@ -126,3 +129,11 @@ finally
 using var current = Process.GetCurrentProcess();
 Console.WriteLine(FormattableString.Invariant($"{{\"outcome\":\"{outcome}\",\"stage\":\"{stage}\",\"rejection\":\"{rejection}\",\"elapsedMs\":{timer.Elapsed.TotalMilliseconds:F2},\"helperPeakWorkingSetBytes\":{current.PeakWorkingSet64},\"helperPrivateBytesAtEnd\":{current.PrivateMemorySize64},\"peerPeakWorkingSetBytes\":{peerPeak},\"peerPrivateBytesAtAck\":{peerPrivate}}}"));
 return outcome == "Ready" ? 0 : 20;
+
+static async Task SpoofAsync(NamedPipeClientStream pipe, ReadinessSession session, CancellationToken ct)
+{
+    // If the server ever discloses its challenge to the wrong PID, this test client can answer it.
+    var nonce = ReadinessWire.Validate(await ReadinessWire.ReadAsync(pipe, ct), ReadinessMessage.Challenge, session);
+    await pipe.WriteAsync(ReadinessWire.Encode(ReadinessMessage.Ready, session, nonce), ct);
+    ReadinessWire.Validate(await ReadinessWire.ReadAsync(pipe, ct), ReadinessMessage.Accepted, session, nonce);
+}
