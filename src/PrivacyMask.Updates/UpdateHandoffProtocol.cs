@@ -113,7 +113,6 @@ internal sealed class UpdateHandoffServer : IDisposable
         // Do not let the App exit while the client still needs to validate its live identity.
         HandoffWire.Validate(await HandoffWire.ReadAsync(_pipe, cancellationToken).ConfigureAwait(false),
             HandoffMessage.ReadyToExit, _session, _challenge);
-        _worker.ValidatePipe(_pipe, serverSide: true);
     }
 
     public void Dispose()
