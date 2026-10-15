@@ -68,6 +68,7 @@ public sealed class ReadinessProtocolTests
         using var server = new ReadinessServer(session);
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await Assert.ThrowsAsync<ReleaseValidationException>(() => server.AcceptAsync(identity, deadline.Token));
+        await Assert.ThrowsAsync<ReleaseValidationException>(() => server.ConfirmReceiptAsync(identity, deadline.Token));
         var receive = server.ReceiveReadyAsync(identity, deadline.Token);
         using var client = new NamedPipeClientStream(".", server.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         await client.ConnectAsync(deadline.Token);
@@ -77,6 +78,9 @@ public sealed class ReadinessProtocolTests
         await receive;
         await server.AcceptAsync(identity, deadline.Token);
         ReadinessWire.Validate(await ReadinessWire.ReadAsync(client, deadline.Token), ReadinessMessage.Accepted, session, nonce);
+        await client.WriteAsync(ReadinessWire.Encode(ReadinessMessage.Receipt, session, nonce), deadline.Token);
+        await server.ConfirmReceiptAsync(identity, deadline.Token);
+        await Assert.ThrowsAsync<ReleaseValidationException>(() => server.ConfirmReceiptAsync(identity, deadline.Token));
         await Assert.ThrowsAsync<ReleaseValidationException>(() => server.ReceiveReadyAsync(identity, deadline.Token));
         await Assert.ThrowsAsync<ReleaseValidationException>(() => server.AcceptAsync(identity, deadline.Token));
     }

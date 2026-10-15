@@ -23,7 +23,17 @@ try
         "ChangedSettings", "Collision", "CancelBefore", "CancelAfterArmed", "LockedApp", "LockedRecovery", "Exit", "WrongNonce",
         "WrongOperation", "Disconnect", "Stall", "ExitAfterReady", "MigrateThenFail", "ReceiptLost", "IoAfterReplace",
         "CrashHandoff", "CrashReplacing", "CrashReplaced", "CrashAwaiting", "CrashReady", "CrashCommitTemp", "CrashCommitPromoted" };
-    foreach (var scenario in cases) await RunCase(scenario, args[0], assets, fixture);
+    foreach (var scenario in cases)
+    {
+        var caseRoot = Path.Combine(fixture, "case-" + Guid.NewGuid().ToString("N"));
+        try { await RunCase(scenario, args[0], assets, caseRoot); }
+        finally
+        {
+            // Every case releases its exact test processes/handles before this path-scoped cleanup.
+            StagingWorkspace.AssertSafe(caseRoot);
+            if (Directory.Exists(caseRoot)) Directory.Delete(caseRoot, recursive: true);
+        }
+    }
     Console.WriteLine($"Passed {cases.Length} signed real-process transaction cases; test peers only, no user installation or real App execution.");
 }
 finally
@@ -36,9 +46,8 @@ finally
     Directory.Delete(fixture, recursive: true);
 }
 
-static async Task RunCase(string scenario, string oldExecutable, FixtureAssets assets, string fixture)
+static async Task RunCase(string scenario, string oldExecutable, FixtureAssets assets, string parent)
 {
-    var parent = Path.Combine(fixture, "case-" + Guid.NewGuid().ToString("N"));
     ManagedInstallLease.CreatePrivateDirectory(parent);
     var root = Path.Combine(parent, ManifestRules.AppId);
     ManagedInstallLease.CreatePrivateDirectory(root);
@@ -95,7 +104,7 @@ static async Task RunCase(string scenario, string oldExecutable, FixtureAssets a
         }, (step, point) => {
             if ((scenario == "CrashCommitTemp" && step == RecoveryStep.Committed && point == JournalCheckpoint.TempFlushed) ||
                 (scenario == "CrashCommitPromoted" && step == RecoveryStep.Committed && point == JournalCheckpoint.Promoted)) throw new FixtureCrash();
-        }, ReadyTimeout: TimeSpan.FromSeconds(3));
+        }, ReadyTimeout: TimeSpan.FromSeconds(5));
         var worker = new UpdateTransaction(lease, assets.Verifier, discovery, TimeProvider.System,
             availableSpace: scenario == "NoSpace" ? _ => 0 : null, hooks: hooks);
         if (scenario == "StillRunning")
