@@ -2,6 +2,7 @@ using System.Windows;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("PrivacyMask.Gui.SmokeChecks")]
+[assembly: InternalsVisibleTo("PrivacyMask.Core.Tests")]
 
 [assembly:ThemeInfo(
     ResourceDictionaryLocation.None,            //where theme specific resource dictionaries are located
