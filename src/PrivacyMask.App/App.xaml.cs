@@ -9,6 +9,7 @@ public partial class App : System.Windows.Application
     private ShellCoordinator? _coordinator;
     private SingleInstanceManager? _singleInstanceManager;
     private readonly ApplicationShutdown _shutdown;
+    private bool _shutdownFailureReported;
 
     public App()
     {
@@ -28,11 +29,11 @@ public partial class App : System.Windows.Application
             if (!_singleInstanceManager.IsPrimaryInstance)
             {
                 _singleInstanceManager.SignalExistingInstance();
-                await _shutdown.RunAsync();
+                await RequestShutdownAsync();
                 return;
             }
 
-            _coordinator = new ShellCoordinator(Current.Dispatcher, e.Args, () => _shutdown.RunAsync());
+            _coordinator = new ShellCoordinator(Current.Dispatcher, e.Args, () => RequestShutdownAsync());
             _singleInstanceManager.Listen(() =>
             {
                 Current.Dispatcher.BeginInvoke(() => _coordinator?.HandleExternalActivation());
@@ -43,7 +44,7 @@ public partial class App : System.Windows.Application
         {
             if (_shutdown.IsRequested)
             {
-                await _shutdown.RunAsync();
+                await RequestShutdownAsync();
                 return;
             }
             System.Windows.MessageBox.Show(
@@ -51,7 +52,20 @@ public partial class App : System.Windows.Application
                 "PrivacyMask startup error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
-            await _shutdown.RunAsync(-1);
+            await RequestShutdownAsync(-1);
+        }
+    }
+
+    private async System.Threading.Tasks.Task RequestShutdownAsync(int exitCode = 0)
+    {
+        try { await _shutdown.RunAsync(exitCode); }
+        catch (Exception)
+        {
+            if (_shutdownFailureReported) return;
+            _shutdownFailureReported = true;
+            System.Windows.MessageBox.Show(
+                "PrivacyMask could not finish closing safely. Close sensitive application windows before ending its process or signing out. No update was installed.",
+                "PrivacyMask could not close", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

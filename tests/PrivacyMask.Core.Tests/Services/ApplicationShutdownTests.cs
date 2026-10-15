@@ -16,6 +16,7 @@ public sealed class ApplicationShutdownTests
             events.Add("disposed");
         }, () => events.Add("singleton"), code => events.Add($"exit:{code}"));
         var shutdown = sequence.RunAsync(-1);
+        Assert.True(sequence.IsRequested);
         Assert.Same(shutdown, sequence.RunAsync());
         Assert.Equal(new[] { "draining" }, events);
         Assert.False(shutdown.IsCompleted);
@@ -71,5 +72,22 @@ public sealed class ApplicationShutdownTests
         release.SetResult();
         await shutdown.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.True(await active);
+    }
+
+    [Fact]
+    public async Task CanceledDrain_IsFailureNotPermissionToExit()
+    {
+        var sequence = new ApplicationShutdown(() => Task.FromCanceled(new CancellationToken(true)),
+            () => throw new Exception("Do not release."), _ => throw new Exception("Do not exit."));
+        Assert.False(sequence.IsRequested);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sequence.RunAsync());
+    }
+
+    [Fact]
+    public async Task FailedInstanceRelease_DoesNotCallExit()
+    {
+        var sequence = new ApplicationShutdown(() => Task.CompletedTask,
+            () => throw new InvalidOperationException("Synthetic release failure."), _ => throw new Exception("Do not exit."));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sequence.RunAsync());
     }
 }
