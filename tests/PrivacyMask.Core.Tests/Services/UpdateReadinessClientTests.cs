@@ -61,7 +61,7 @@ public sealed class UpdateReadinessClientTests
             launcher.WriteByte(1);
         fixture.Advance(RecoveryStep.AwaitingReadiness);
         File.WriteAllBytes(fixture.App, fixture.NewApp);
-        File.WriteAllBytes(Path.Combine(fixture.Operation, "displaced-original-app.exe"), fixture.OldApp);
+        fixture.AddDisplacedOriginal();
         return fixture;
     }
 }

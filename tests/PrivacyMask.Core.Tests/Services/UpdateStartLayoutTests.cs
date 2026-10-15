@@ -89,7 +89,7 @@ public sealed class UpdateStartLayoutTests
         var fixture = PreparedFixture();
         fixture.Advance(RecoveryStep.AwaitingReadiness);
         File.WriteAllBytes(fixture.App, fixture.NewApp);
-        File.WriteAllBytes(Path.Combine(fixture.Operation, "displaced-original-app.exe"), fixture.OldApp);
+        fixture.AddDisplacedOriginal();
         return fixture;
     }
 
