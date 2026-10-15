@@ -349,9 +349,11 @@ Press `Esc` or close the window to discard the preview and return to the tray.
   validates update-start identity, migrates the exact saved settings baseline and
   receipts a durable commit after shell initialization. The
   [stable launcher and managed installer](docs/update-stable-launcher.md) make
-  startup/recovery reachable in beta.5. Authenticated old-process shutdown,
-  updater coordination/UI and runtime consent gates remain pending; normal Exit
-  is not update consent or authorization.
+  startup/recovery reachable in beta.5. The internal
+  [authenticated handoff contract](docs/update-handoff.md) now binds the App and
+  launcher to one exact update operation, but updater coordination/UI and runtime
+  consent/panic/edit integration remain pending; normal Exit is not update
+  consent or authorization.
 - Review [update signing operations](docs/update-signing-operations.md) before
   publishing: production policy/environment are intentionally unconfigured,
   so signed release publication fails closed until explicitly approved setup.

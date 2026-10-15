@@ -151,3 +151,8 @@ without changing settings schema 12 or activating update discovery/UI. The
 beta.5 / FileVersion 2.0.0.5, without changing settings schema 12 or activating
 update discovery/UI. Qualify this manual migration before advertising subsequent
 in-app updates.
+
+The later [authenticated handoff contract](update-handoff.md) is an internal,
+unreachable App/launcher protocol and therefore keeps beta.5/FileVersion 2.0.0.5
+unchanged. A subsequent delivery that activates it in the shipped runtime must
+advance the prerelease/file revision under the policy above.
