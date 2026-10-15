@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="PrivacyMask.App" />
+    <InternalsVisibleTo Include="PrivacyMask.Core.Tests" />
+  </ItemGroup>
+
 </Project>
