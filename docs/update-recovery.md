@@ -5,6 +5,11 @@ rollback or power-loss guarantee. The installed app and current installer are
 unchanged. See [delivery phases](in-app-updates.md) and the
 [signed payload contract](update-manifest.md).
 
+The internal [phase-5a recovery kernel](update-recovery-kernel.md) now implements
+private layout/lease validation, atomic journal writes and fixture-tested
+rollback primitives. It is not connected to a launcher/app/installer, does not
+execute processes and does not complete the runtime guarantees below.
+
 ## Invariants
 
 1. No application mutation before signed download, verified extraction,
