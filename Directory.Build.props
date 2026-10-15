@@ -4,9 +4,9 @@
     <Company>PrivacyMask</Company>
     <Product>PrivacyMask for Desktop Apps</Product>
     <RepositoryUrl>https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps</RepositoryUrl>
-    <Version>2.0.0-beta.4</Version>
+    <Version>2.0.0-beta.5</Version>
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.4</FileVersion>
+    <FileVersion>2.0.0.5</FileVersion>
     <InformationalVersion>$(Version)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
     <Deterministic>true</Deterministic>
