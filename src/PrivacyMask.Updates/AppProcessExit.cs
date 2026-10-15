@@ -15,7 +15,8 @@ internal sealed class AppProcessExit : IDisposable
     private AppProcessExit(Process process, string root, RecoveryJournal record)
     { _process = process; _root = root; _record = record; }
 
-    internal static AppProcessExit Capture(ManagedInstallLease lease, string operationId, int processId)
+    internal static AppProcessExit Capture(ManagedInstallLease lease, string operationId, int processId,
+        long? expectedCreationUtcTicks = null)
     {
         lease.AssertHeld();
         var record = new RecoveryJournalStore(lease).Read();
@@ -27,7 +28,9 @@ internal sealed class AppProcessExit : IDisposable
         {
             // Capture verifies PID + creation time + canonical image path before exit; keep this handle,
             // not a subsequent process lookup that could refer to a recycled PID.
-            _ = PipeProcessIdentity.Capture(process, path);
+            var identity = PipeProcessIdentity.Capture(process, path);
+            if (expectedCreationUtcTicks is { } expected && identity.CreationUtcTicks != expected)
+                throw new ReleaseValidationException("Handoff process creation time changed.");
             if (RecoveryRestorer.Inspect(path, ManifestRules.MaximumFileSize) != record.OriginalApp)
                 throw new ReleaseValidationException("Handoff payload changed.");
             return new(process, lease.Root, record);
