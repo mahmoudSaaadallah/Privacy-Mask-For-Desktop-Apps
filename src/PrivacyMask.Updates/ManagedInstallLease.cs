@@ -25,7 +25,14 @@ internal sealed class ManagedInstallLease : IDisposable
         ValidateMarker();
         var lockPath = Path.Combine(Root, ".update.lock");
         StagingWorkspace.AssertSafe(lockPath);
-        var handle = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 1, FileOptions.WriteThrough);
+        FileStream handle;
+        try { handle = CreatePrivateFile(lockPath, 1); }
+        catch (IOException) when (File.Exists(lockPath))
+        {
+            // Existing files must pass validation; never silently take ownership or weaken their ACL.
+            AssertPrivate(lockPath);
+            handle = new FileStream(lockPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None, 1, FileOptions.WriteThrough);
+        }
         try
         {
             AssertPrivate(lockPath);
@@ -72,6 +79,21 @@ internal sealed class ManagedInstallLease : IDisposable
         file.ReadExactly(bytes);
         if (file.ReadByte() != -1) throw new ReleaseValidationException("Recovery metadata changed during reading.");
         return bytes;
+    }
+
+    internal static FileStream CreatePrivateFile(string path, int bufferSize = 4096)
+    {
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException();
+        StagingWorkspace.AssertSafe(path);
+        AssertPrivate(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        using var identity = WindowsIdentity.GetCurrent();
+        var user = identity.User ?? throw new ReleaseValidationException("Current user SID unavailable.");
+        var security = new FileSecurity();
+        security.SetOwner(user);
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        security.AddAccessRule(new FileSystemAccessRule(user, FileSystemRights.FullControl, AccessControlType.Allow));
+        return new FileInfo(path).Create(FileMode.CreateNew, FileSystemRights.FullControl, FileShare.None,
+            bufferSize, FileOptions.WriteThrough, security);
     }
 
     internal static void AssertPrivate(string path)

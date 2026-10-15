@@ -9,6 +9,21 @@ namespace PrivacyMask.Core.Tests.Services;
 public sealed class ManagedInstallLeaseTests
 {
     [Fact]
+    public void NewlyCreatedRecoveryFilesHaveExplicitUserOwnershipAndCannotOverwrite()
+    {
+        using var f = new RecoveryFixture();
+        var path = Path.Combine(f.Operation, "private-fixture.tmp");
+        using (var file = ManagedInstallLease.CreatePrivateFile(path)) file.WriteByte(42);
+        using var identity = WindowsIdentity.GetCurrent();
+        var security = new FileInfo(path).GetAccessControl();
+        Assert.Equal(identity.User, security.GetOwner(typeof(SecurityIdentifier)));
+        Assert.True(security.AreAccessRulesProtected);
+        ManagedInstallLease.AssertPrivate(path);
+        Assert.Throws<IOException>(() => ManagedInstallLease.CreatePrivateFile(path));
+        Assert.Equal(new byte[] { 42 }, File.ReadAllBytes(path));
+    }
+
+    [Fact]
     public void LeaseExcludesAnotherWindowsProcessAndCanBeReacquiredAfterExit()
     {
         using var f = new RecoveryFixture();

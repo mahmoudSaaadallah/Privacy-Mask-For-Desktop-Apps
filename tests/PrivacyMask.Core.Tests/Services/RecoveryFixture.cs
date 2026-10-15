@@ -34,17 +34,18 @@ internal sealed class RecoveryFixture : IDisposable
         security.AddAccessRule(new FileSystemAccessRule(identity.User!, FileSystemRights.FullControl,
             InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
         new DirectoryInfo(Root).Create(security);
-        Directory.CreateDirectory(Path.GetDirectoryName(App)!);
-        Directory.CreateDirectory(Operation);
-        File.WriteAllBytes(Path.Combine(Root, "managed-install.json"), ContractJson.Write(new ManagedInstallMarker(1, ManifestRules.AppId, InstallId, 1)));
-        File.WriteAllBytes(App, OldApp);
+        new DirectoryInfo(Path.GetDirectoryName(App)!).Create(security);
+        new DirectoryInfo(Path.GetDirectoryName(Operation)!).Create(security);
+        new DirectoryInfo(Operation).Create(security);
+        WriteFile(Path.Combine(Root, "managed-install.json"), ContractJson.Write(new ManagedInstallMarker(1, ManifestRules.AppId, InstallId, 1)));
+        WriteFile(App, OldApp);
         OldPrimary = primary ? (emptySettings ? [] : Encoding.UTF8.GetBytes("{\"testVerifier\":\"never-put-this-marker-in-the-journal\"}")) : null;
         OldSecondary = secondary ? (emptySettings ? [] : Encoding.UTF8.GetBytes("older saved backup")) : null;
-        if (OldPrimary is not null) File.WriteAllBytes(Primary, OldPrimary);
-        if (OldSecondary is not null) File.WriteAllBytes(Secondary, OldSecondary);
-        File.WriteAllBytes(Path.Combine(Operation, "original-app.exe"), OldApp);
-        if (OldPrimary is not null) File.WriteAllBytes(Path.Combine(Operation, "original-settings.json"), OldPrimary);
-        if (OldSecondary is not null) File.WriteAllBytes(Path.Combine(Operation, "original-settings.bak"), OldSecondary);
+        if (OldPrimary is not null) WriteFile(Primary, OldPrimary);
+        if (OldSecondary is not null) WriteFile(Secondary, OldSecondary);
+        WriteFile(Path.Combine(Operation, "original-app.exe"), OldApp);
+        if (OldPrimary is not null) WriteFile(Path.Combine(Operation, "original-settings.json"), OldPrimary);
+        if (OldSecondary is not null) WriteFile(Path.Combine(Operation, "original-settings.bak"), OldSecondary);
         Record = new(1, InstallId, OperationId, 1, RecoveryStep.Prepared, "2.0.0-beta.2", "2.0.0-beta.3", Snapshot(OldApp), Snapshot(NewApp),
             Snapshot(OldPrimary), Snapshot(OldSecondary), new string('a', 64), new string('b', 64));
         Lease = new(Root, InstallId);
@@ -62,9 +63,15 @@ internal sealed class RecoveryFixture : IDisposable
     }
     internal void ReplaceFiles()
     {
-        File.WriteAllBytes(App, NewApp);
-        File.WriteAllText(Primary, "new schema primary");
-        File.WriteAllText(Secondary, "new schema backup");
+        WriteFile(App, NewApp);
+        WriteFile(Primary, Encoding.UTF8.GetBytes("new schema primary"));
+        WriteFile(Secondary, Encoding.UTF8.GetBytes("new schema backup"));
+    }
+    private static void WriteFile(string path, byte[] bytes)
+    {
+        if (File.Exists(path)) { File.WriteAllBytes(path, bytes); return; }
+        using var file = ManagedInstallLease.CreatePrivateFile(path);
+        file.Write(bytes);
     }
     internal void Reopen() { Lease.Dispose(); Lease = new(Root, InstallId); }
     internal void AssertOriginal()

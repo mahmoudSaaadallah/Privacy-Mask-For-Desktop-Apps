@@ -39,7 +39,7 @@ internal sealed class RecoveryJournalStore(ManagedInstallLease lease, Action<Jou
         var bytes = ContractJson.Write(record);
         if (bytes.Length > RecoveryRules.JournalLimit) throw new ReleaseValidationException("Recovery journal exceeds its bound.");
         var temporary = Path.Combine(lease.Root, ".update-journal-" + Guid.NewGuid().ToString("N") + ".tmp");
-        using (var file = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+        using (var file = ManagedInstallLease.CreatePrivateFile(temporary))
         {
             checkpoint?.Invoke(JournalCheckpoint.TempCreated);
             file.Write(bytes);

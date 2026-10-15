@@ -51,6 +51,12 @@ this deliberately strict prototype contract; future migration must explicitly
 provision and qualify the private layout. A hostile same-user process, admin/OS
 or malicious concurrent ACL/path substitution is not an isolation boundary.
 
+New lock/journal/restore files specify the user SID as owner and a protected
+user-only DACL at CreateNew time, rather than inheriting an elevated account's
+default object owner. Existing files are still validated, never silently taken
+over. Fixtures explicitly provision this same ownership on baseline directories
+and files, so standard/elevated Windows defaults do not determine test results.
+
 The lease opens `.update.lock` with `FileShare.None`, holds that exact handle
 until disposal, and rechecks marker/ACL identity under the lease. No persistent
 service or named mutex with session/thread-affinity assumptions. Cooperating

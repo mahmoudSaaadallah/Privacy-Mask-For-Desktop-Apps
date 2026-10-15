@@ -85,7 +85,7 @@ internal sealed class RecoveryRestorer(ManagedInstallLease lease, Action<Restore
                     scratch = Path.Combine(operation, "restore-" + label + "-" + Guid.NewGuid().ToString("N") + ".tmp");
                     // Copy from a verified retained baseline; never consume the last good backup.
                     using var input = new FileStream(backup, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    using (var output = new FileStream(scratch, FileMode.CreateNew, FileAccess.Write, FileShare.None, 64 * 1024, FileOptions.WriteThrough))
+                    using (var output = ManagedInstallLease.CreatePrivateFile(scratch, 64 * 1024))
                     {
                         if (baseline.Size == 0)
                         {
