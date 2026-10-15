@@ -111,6 +111,21 @@ public sealed class ReadinessProtocolTests
     }
 
     [Fact]
+    public void SignedReleaseContractsRemainByteCompatibleWithTheReflectionBaseline()
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        fixture.Release();
+        var manifest = fixture.Verifier.Verify(fixture.Handler.Assets[101], fixture.Handler.Assets[102]);
+        Compare(manifest);
+        Compare(new SignatureEnvelope(ManifestRules.Algorithm, "test-key", Convert.ToBase64String(new byte[64])));
+        Compare(new ReleasePolicy(1, 19041, 1, new(1, 12, 12),
+            [new("test-key", Convert.ToBase64String(fixture.Key.ExportSubjectPublicKeyInfo()))]));
+
+        static void Compare<T>(T value) => Assert.Equal(
+            System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(value, ContractJson.Options), ContractJson.Write(value));
+    }
+
+    [Fact]
     public void SourceGeneratedRecoveryJsonPreservesStrictWireFormat()
     {
         using var f = new RecoveryFixture();
