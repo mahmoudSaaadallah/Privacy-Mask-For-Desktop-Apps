@@ -140,7 +140,7 @@ function Set-PrivateInstallTree {
         [Security.AccessControl.PropagationFlags]::None,
         [Security.AccessControl.AccessControlType]::Allow)
       $security.AddAccessRule($rule)
-      [System.IO.FileSystemAclExtensions]::SetAccessControl($item, $security)
+      Set-Acl -LiteralPath $item.FullName -AclObject $security
     }
     else {
       $security = New-Object Security.AccessControl.FileSecurity
@@ -151,7 +151,7 @@ function Set-PrivateInstallTree {
         [Security.AccessControl.FileSystemRights]::FullControl,
         [Security.AccessControl.AccessControlType]::Allow)
       $security.AddAccessRule($rule)
-      [System.IO.FileSystemAclExtensions]::SetAccessControl($item, $security)
+      Set-Acl -LiteralPath $item.FullName -AclObject $security
     }
   }
 }

@@ -59,8 +59,7 @@ function Assert-ShortcutIcons {
 
 function Assert-PrivatePath {
   param([string]$Path)
-  $item = Get-Item -LiteralPath $Path
-  $security = [System.IO.FileSystemAclExtensions]::GetAccessControl($item)
+  $security = Get-Acl -LiteralPath $Path
   $user = [Security.Principal.WindowsIdentity]::GetCurrent().User
   if (-not $security.AreAccessRulesProtected -or
       -not $security.GetOwner([Security.Principal.SecurityIdentifier]).Equals($user)) {
