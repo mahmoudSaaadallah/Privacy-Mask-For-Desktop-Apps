@@ -38,8 +38,10 @@ PrivacyMask.Desktop/
     restore-<label>-<guid>.tmp  # only new copies of retained baseline
 ```
 
-Neither the library nor the production installer creates this layout yet;
-fixture setup is test-only. `app` is a stable directory and v1 recovery swaps
+The production installer does not provision this layout; fixtures provision the
+root/marker/app. [Authenticated preparation](update-preparation.md) now creates
+new operation directories/copies under a validated existing root, not a legacy
+migration. `app` is a stable directory and v1 recovery swaps
 the single file, not a settings-containing directory. A missing app **file** can
 be restored; a missing/untrusted app directory currently requires repair.
 
@@ -86,8 +88,10 @@ Prepared -> Handoff -> Replacing -> AwaitingReadiness -> Committed
 
 First record must be Prepared/revision 1. Subsequent writes cannot change the
 operation, versions or any snapshot/hash, skip revisions/states, downgrade a
-terminal state or replace another operation. Terminal record archival and a new
-operation lifecycle API are still pending, not an excuse to overwrite a record.
+terminal state or replace another operation. The separate explicit
+`ArchiveTerminal(expectedOperationId)` now preserves a consistent terminal record
+and all its baselines before a new operation can start. See the
+[archival constraints](update-preparation.md); safe bounded pruning remains pending.
 
 Write a fresh CreateNew GUID-named temporary, flush the file with WriteThrough
 and Flush(true), then atomically promote on the same volume (File.Replace for
@@ -138,7 +142,7 @@ both executable identities and obtain the original snapshots before Prepared.
 Locked file, denied access and IO failure return a bounded RepairRequired reason
 and leave journal/backups/evidence for a safe retry. A partially restored state
 must **not** be launched as though recovery finished. There is no cleanup of
-snapshots/scratch/terminal journals yet; evidence retention is deliberate, and
+snapshots/scratch/terminal journals yet (terminal archival retains all files); evidence retention is deliberate, and
 safe bounded pruning remains part of the full helper lifecycle. Copying needs
 disk headroom; failure preserves baseline, but full apply/rollback reserve-space
 preflight and physical disk-full tests are still pending.
@@ -165,12 +169,13 @@ The separate [phase-5b developer prototype](update-bootstrap-prototype.md) now
 exercises process-bound readiness and packaging/resource measurements, but does
 not activate a production launcher or satisfy the remaining runtime gates.
 
-Remaining steps, in order:
+Remaining steps, in order (prototype/preparation portions below are already
+implemented in reviewed internal slices, not production activation):
 
-- Prototype the stable launcher/helper and measure published size, RAM/startup
-  overhead and Windows baseline compatibility; choose packaging from evidence.
-- Connect authenticated preparation/freshness and saved-settings snapshots,
-  install identity, same-volume/space checks and terminal-operation lifecycle.
+- Re-measure/qualify the final stable launcher/helper with its real workload;
+  Native AOT is only the provisional prototype packaging choice.
+- Complete preparation's production callers and independent handoff revalidation,
+  and safe bounded terminal/orphan retention beyond the implemented archival API.
 - Add restricted process-bound readiness IPC, exact-process graceful handoff,
   forward replacement, launch, commit acknowledgement and boot recovery.
 - Migrate the existing installer/shortcuts/sign-in/uninstaller coherently under
@@ -179,6 +184,11 @@ Remaining steps, in order:
   Save/Discard/Panic/restart-consent gates; bump the shipped app version there.
 - Qualify real signed release A-to-B and crash/power-loss matrices on Windows
   10/11 standard-user machines before calling phase 5/overall updater complete.
+
+The [phase-5c.1 preparation slice](update-preparation.md) implements fresh signed
+selection, exact pinned snapshots, conservative space checks, Prepared journaling
+and terminal archival. Retention/pruning, real process gates, forward apply,
+production entrypoints and migration are still not implemented or enabled.
 
 Sources: [File.Replace atomic replacement constraints](https://learn.microsoft.com/en-us/dotnet/api/system.io.file.replace?view=net-10.0),
 [Windows file-sharing flags](https://learn.microsoft.com/en-us/dotnet/api/system.io.fileshare?view=net-10.0).

@@ -81,7 +81,7 @@ internal sealed class ManagedInstallLease : IDisposable
         return bytes;
     }
 
-    internal static FileStream CreatePrivateFile(string path, int bufferSize = 4096)
+    internal static FileStream CreatePrivateFile(string path, int bufferSize = 4096, FileOptions options = FileOptions.WriteThrough)
     {
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException();
         StagingWorkspace.AssertSafe(path);
@@ -93,7 +93,25 @@ internal sealed class ManagedInstallLease : IDisposable
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
         security.AddAccessRule(new FileSystemAccessRule(user, FileSystemRights.FullControl, AccessControlType.Allow));
         return new FileInfo(path).Create(FileMode.CreateNew, FileSystemRights.FullControl, FileShare.None,
-            bufferSize, FileOptions.WriteThrough, security);
+            bufferSize, options, security);
+    }
+
+    internal static void CreatePrivateDirectory(string path)
+    {
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException();
+        StagingWorkspace.AssertSafe(path);
+        AssertPrivate(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        // Only provision new operation directories, never take over existing evidence.
+        if (Path.Exists(path)) throw new ReleaseValidationException("Managed directory already exists.");
+        using var identity = WindowsIdentity.GetCurrent();
+        var user = identity.User ?? throw new ReleaseValidationException("Current user SID unavailable.");
+        var security = new DirectorySecurity();
+        security.SetOwner(user);
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        security.AddAccessRule(new FileSystemAccessRule(user, FileSystemRights.FullControl,
+            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+        new DirectoryInfo(path).Create(security);
+        AssertPrivate(path);
     }
 
     internal static void AssertPrivate(string path)

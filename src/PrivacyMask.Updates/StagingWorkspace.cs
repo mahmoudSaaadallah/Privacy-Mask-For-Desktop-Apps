@@ -43,8 +43,8 @@ internal sealed class StagingWorkspace
         AssertSafe(Root);
         var path = Path.Combine(Root, name);
         if (Path.GetFileName(name) != name) throw new ReleaseValidationException("Invalid staging name.");
-        var stream = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, 64 * 1024,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        var stream = ManagedInstallLease.CreatePrivateFile(path, 64 * 1024,
+            FileOptions.Asynchronous | FileOptions.SequentialScan | FileOptions.WriteThrough);
         _owned.Add(path);
         return stream;
     }
