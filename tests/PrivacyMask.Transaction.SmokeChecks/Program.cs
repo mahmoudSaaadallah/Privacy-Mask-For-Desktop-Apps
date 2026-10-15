@@ -9,7 +9,8 @@ using System.Text.Json.Nodes;
 using PrivacyMask.Updates;
 
 // Executes ONLY the two purpose-built test peers, never PrivacyMask.App or a real installation.
-if (args.Length != 2 || !OperatingSystem.IsWindows()) throw new ArgumentException("Expected two published transaction fixture peers on Windows.");
+if (args.Length is < 2 or > 3 || (args.Length == 3 && args[2] != "--launcher-only") || !OperatingSystem.IsWindows())
+    throw new ArgumentException("Expected two published transaction fixture peers and optional --launcher-only on Windows.");
 var fixture = Path.Combine(Path.GetTempPath(), "PrivacyMask-transaction-test-" + Guid.NewGuid().ToString("N"));
 CreateFixtureRoot(fixture);
 var priorCache = Environment.GetEnvironmentVariable("DOTNET_BUNDLE_EXTRACT_BASE_DIR");
@@ -22,8 +23,10 @@ try
     var cases = new[] { "ReadyNormal", "ReadyMinimized", "StillRunning", "ExitTimeout", "OldCrashed", "DeletedRelease", "NoSpace", "CorruptTarget",
         "ChangedSettings", "Collision", "CancelBefore", "CancelAfterArmed", "LockedApp", "LockedRecovery", "Exit", "WrongNonce",
         "WrongOperation", "Disconnect", "Stall", "ExitAfterReady", "MigrateThenFail", "ReceiptLost", "WrongReceipt", "NoReceipt", "IoAfterReplace",
-        "CrashHandoff", "CrashReplacing", "CrashReplaced", "CrashAwaiting", "CrashReady", "CrashCommitTemp", "CrashCommitPromoted" };
-    foreach (var scenario in cases)
+        "CrashHandoff", "CrashReplacing", "CrashReplaced", "CrashAwaiting", "CrashReady", "CrashCommitTemp", "CrashCommitPromoted",
+        "LauncherReadyNormal", "LauncherReadyMinimized", "LauncherDeleted", "LauncherWrongCreation", "LauncherRecovery", "LauncherLiveBoot" };
+    var selectedCases = args.Length == 3 ? cases.Where(name => name.StartsWith("Launcher", StringComparison.Ordinal)).ToArray() : cases;
+    foreach (var scenario in selectedCases)
     {
         var caseRoot = Path.Combine(fixture, "case-" + Guid.NewGuid().ToString("N"));
         try { await RunCase(scenario, args[0], assets, caseRoot); }
@@ -33,7 +36,7 @@ try
             await DeleteOwnedFixture(caseRoot, fixture);
         }
     }
-    Console.WriteLine($"Passed {cases.Length} signed real-process transaction cases; test peers only, no user installation or real App execution.");
+    Console.WriteLine($"Passed {selectedCases.Length} signed real-process transaction cases; test peers only, no user installation or real App execution.");
 }
 finally
 {
@@ -64,7 +67,7 @@ static async Task RunCase(string scenario, string oldExecutable, FixtureAssets a
     if (!absent) { Write(primary, originalSettings); Write(secondary, []); }
     var mode = scenario switch {
         "Exit" or "WrongNonce" or "WrongOperation" or "Disconnect" or "Stall" or "ExitAfterReady" or "MigrateThenFail" or "WrongReceipt" or "NoReceipt" => scenario,
-        "LockedRecovery" => "Exit", _ => "Ready" };
+        "LockedRecovery" or "LauncherRecovery" => "Exit", _ => "Ready" };
     Write(Path.Combine(root, "fixture-mode.txt"), Encoding.UTF8.GetBytes(mode));
     using var lease = new ManagedInstallLease(root, installId);
     using var handler = new FixtureHandler(assets);
@@ -76,14 +79,84 @@ static async Task RunCase(string scenario, string oldExecutable, FixtureAssets a
     var prepared = await new RecoveryPreparer(lease, assets.Verifier, discovery).PrepareAsync(operationId, context);
     var operation = lease.OperationDirectory(operationId);
     // A separate exit proof holds the exact OS handle even after old process exits.
-    using var old = Process.Start(new ProcessStartInfo(app, "--fixture-old") {
+    using var current = Process.GetCurrentProcess();
+    var hostIdentity = PipeProcessIdentity.Capture(current, Environment.ProcessPath!);
+    var launcherCase = scenario.StartsWith("Launcher", StringComparison.Ordinal);
+    var oldArgs = launcherCase
+        ? $"--fixture-handoff-old {installId} {operationId} {hostIdentity.ProcessId} {hostIdentity.CreationUtcTicks}"
+        : "--fixture-old";
+    using var old = Process.Start(new ProcessStartInfo(app, oldArgs) {
         UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true, WorkingDirectory = root })!;
     Process? replacement = null;
     FileStream? locked = null;
     using var cancellation = new CancellationTokenSource();
     try
     {
-        Check(await old.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(10)) == "fixture-ready", scenario + ": old fixture startup");
+        var startup = await old.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        if (launcherCase)
+        {
+            Check(startup?.StartsWith(UpdateHandoffServer.PipePrefix, StringComparison.Ordinal) == true, "App-owned handoff endpoint");
+            var launcherPath = Path.Combine(root, LauncherBoot.LauncherFileName);
+            Write(launcherPath, [1]); // Path/ACL fixture; worker runs in this host, not via a test CLI in the shipped launcher.
+            var appIdentity = PipeProcessIdentity.Capture(old, app);
+            var request = new UpdateApplyRequest(startup!, installId, operationId, old.Id,
+                appIdentity.CreationUtcTicks + (scenario == "LauncherWrongCreation" ? 1 : 0),
+                scenario == "LauncherReadyMinimized" ? UpdateStartMode.Minimized : UpdateStartMode.Normal);
+            lease.Dispose(); // Exercise actual lease transfer, never recursive lease acquisition.
+            if (scenario == "LauncherLiveBoot")
+            {
+                try
+                {
+                    using var unwanted = LauncherBoot.Launch(launcherPath, [],
+                        _ => throw new InvalidOperationException("A second App must not start during an uncommitted operation."));
+                    throw new InvalidOperationException("Boot recovery accepted a live App.");
+                }
+                catch (ReleaseValidationException) { }
+                Check(!old.HasExited, "boot leaves exact managed App alive");
+                using var inspectLease = ManagedInstallLease.Open(root);
+                Check(new RecoveryJournalStore(inspectLease).Read() == prepared, "boot never restores settings during an active handoff");
+                Console.WriteLine("Transaction " + scenario + ": passed");
+                return;
+            }
+            if (scenario == "LauncherDeleted") handler.Deleted = true;
+            var restartCount = 0;
+            using var launcherDeadline = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            Task<LauncherApplyOutcome> Apply() => LauncherApply.RunAsync(launcherPath, request.ToArguments(), assets.Verifier,
+                discovery, launcherDeadline.Token, expectedRoot: root,
+                restart: start => {
+                    Check(start.FileName == app && RecoveryRestorer.Inspect(app, ManifestRules.MaximumFileSize) == prepared.OriginalApp,
+                        "restart only the restored exact previous app");
+                    restartCount++;
+                    return Process.GetCurrentProcess();
+                }, hooks: new(ChildStarted: child => {
+                    replacement = Process.GetProcessById(child.Id);
+                    _ = PipeProcessIdentity.Capture(replacement, app);
+                }, ReadyTimeout: TimeSpan.FromSeconds(3)));
+            if (scenario is "LauncherDeleted" or "LauncherWrongCreation")
+            {
+                try { await Apply(); throw new InvalidOperationException("Expected pre-exit rejection."); }
+                catch (ReleaseValidationException) { }
+                Check(!old.HasExited && File.ReadAllBytes(app).SequenceEqual(File.ReadAllBytes(oldExecutable)), "failed preflight leaves old app running");
+                using var inspectLease = ManagedInstallLease.Open(root);
+                Check(new RecoveryJournalStore(inspectLease).Read() == prepared, "failed launcher preflight never advances the operation");
+            }
+            else
+            {
+                var outcome = await Apply();
+                Check(old.HasExited && old.ExitCode == 0, "App exits cleanly after authenticated acceptance");
+                Check(outcome == (scenario == "LauncherRecovery" ? LauncherApplyOutcome.PreviousVersionRestarted : LauncherApplyOutcome.Committed), "accurate launcher outcome");
+                Check(restartCount == (scenario == "LauncherRecovery" ? 1 : 0), "only recovered apps restart normally");
+                using var inspectLease = ManagedInstallLease.Open(root);
+                var finalRecord = new RecoveryJournalStore(inspectLease).Read();
+                Check(scenario == "LauncherRecovery" ? finalRecord is null : finalRecord?.Step == RecoveryStep.Committed, "durable terminal launcher state");
+                if (scenario != "LauncherRecovery")
+                    Check(File.ReadAllText(Path.Combine(root, "fixture-receipt.txt")) == "committed:" +
+                        (scenario == "LauncherReadyMinimized" ? "minimized" : "normal"), "launcher retains requested restart mode");
+            }
+            Console.WriteLine("Transaction " + scenario + ": passed");
+            return;
+        }
+        Check(startup == "fixture-ready", scenario + ": old fixture startup");
         using var exit = AppProcessExit.Capture(lease, operationId, old.Id);
         var hooks = new TransactionTestHooks(point => {
             if (scenario == "CancelAfterArmed" && point == TransactionCheckpoint.HandoffSaved) cancellation.Cancel();

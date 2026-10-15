@@ -22,6 +22,29 @@ internal sealed class RecoveryJournalStore(ManagedInstallLease lease, Action<Jou
         return record;
     }
 
+    /// <summary>Only before authenticated exit: retire an unchanged Prepared baseline without restoring files.
+    /// Caller holds frozen writers and has confirmed its exact worker has stopped.</summary>
+    internal void AbandonPrepared(string operationId)
+    {
+        var record = Read();
+        if (record is null || record.OperationId != operationId || record.Step != RecoveryStep.Prepared)
+            throw new ReleaseValidationException("Only the exact unapplied operation can be abandoned.");
+        var operation = lease.OperationDirectory(operationId);
+        foreach (var (installed, retained, expected, maximum) in new[] {
+            (Path.Combine(lease.Root, "app", LauncherBoot.ApplicationFileName), "original-app.exe", record.OriginalApp, ManifestRules.MaximumFileSize),
+            (Path.Combine(lease.Root, "settings.v1.json"), "original-settings.json", record.SettingsPrimary, RecoveryRules.SettingsLimit),
+            (Path.Combine(lease.Root, "settings.v1.json.bak"), "original-settings.bak", record.SettingsBackup, RecoveryRules.SettingsLimit) })
+            if (RecoveryRestorer.Inspect(installed, maximum) != expected ||
+                RecoveryRestorer.Inspect(Path.Combine(operation, retained), maximum) != expected)
+                throw new ReleaseValidationException("Unapplied operation baseline changed.");
+        // Promotion must finish before any writer is resumed. A crash between these records
+        // leaves boot recovery authoritative while no new in-process writes have been admitted.
+        record = record with { Step = RecoveryStep.RollingBack, Revision = record.Revision + 1 };
+        Write(record);
+        Write(record with { Step = RecoveryStep.Recovered, Revision = record.Revision + 1 });
+        ArchiveTerminal(operationId);
+    }
+
     internal void Write(RecoveryJournal record)
     {
         lease.AssertHeld();

@@ -264,6 +264,30 @@ internal static class Program
             panic.AllowClose();
             panic.Close();
 
+            var updating = CreateWindow();
+            var updateSave = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var updateDiscards = 0;
+            updating.SaveRequested += _ => updateSave.Task;
+            updating.DiscardRequested += () => updateDiscards++;
+            updating.ViewModel.StartMinimized = !updating.ViewModel.StartMinimized;
+            Invoke(updating, "Save_Click");
+            var updateDrain = updating.SuspendForUpdateAsync();
+            Check(!updateDrain.IsCompleted && !updating.IsEnabled, "Update did not wait for the full Save handler.");
+            Invoke(updating, "CloseToTray_Click");
+            updating.Close();
+            Check(updateDiscards == 0, "Update suspension discarded the pending session.");
+            updateSave.SetResult();
+            PumpUntil(updateDrain);
+            Check(!updating.IsEnabled, "Save finally re-enabled a suspended update editor.");
+            updating.ResumeAfterUpdate();
+            Check(updating.IsEnabled, "Canceled update did not restore the editor.");
+            _ = updating.SuspendForUpdateAsync();
+            PumpUntil(updating.BeginShutdownAsync());
+            updating.ResumeAfterUpdate();
+            Check(!updating.IsEnabled, "Update cancellation reopened a closing editor.");
+            updating.AllowClose();
+            updating.Close();
+
             var queue = new ShellOperationQueue();
             var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var events = new List<int>();

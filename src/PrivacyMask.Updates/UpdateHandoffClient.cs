@@ -75,6 +75,8 @@ internal sealed class UpdateHandoffClient : IDisposable
         HandoffWire.Validate(await HandoffWire.ReadAsync(_pipe, cancellationToken).ConfigureAwait(false),
             HandoffMessage.Complete, _session, challenge);
         _applicationIdentity.ValidatePipe(_pipe, serverSide: false);
+        await _pipe.WriteAsync(HandoffWire.Encode(HandoffMessage.ReadyToExit, _session, challenge),
+            cancellationToken).ConfigureAwait(false);
         Volatile.Write(ref _used, 2);
     }
 

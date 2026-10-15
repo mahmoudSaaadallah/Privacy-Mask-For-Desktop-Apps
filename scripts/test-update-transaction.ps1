@@ -1,4 +1,5 @@
 #requires -Version 7.0
+param([switch]$LauncherOnly)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -28,7 +29,9 @@ try {
   dotnet publish tests/PrivacyMask.Transaction.SmokeChecks -c Release -r win-x64 --self-contained false `
     '-p:DebugType=None' '-p:DebugSymbols=false' '-p:TreatWarningsAsErrors=true' --artifacts-path $buildRoot -o $hostOutput --nologo
   if ($LASTEXITCODE -ne 0) { throw 'Transaction smoke host publish failed.' }
-  dotnet (Join-Path $hostOutput 'PrivacyMask.Transaction.SmokeChecks.dll') $old $target
+  $smokeArguments = @((Join-Path $hostOutput 'PrivacyMask.Transaction.SmokeChecks.dll'), $old, $target)
+  if ($LauncherOnly) { $smokeArguments += '--launcher-only' }
+  dotnet @smokeArguments
   if ($LASTEXITCODE -ne 0) { throw 'Isolated update transaction matrix failed.' }
 }
 finally { Pop-Location }

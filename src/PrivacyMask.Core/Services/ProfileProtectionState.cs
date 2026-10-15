@@ -6,6 +6,7 @@ public sealed class ProfileProtectionState
 {
     private readonly HashSet<string> _pausedProfileIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _panicProfileIds = new(StringComparer.OrdinalIgnoreCase);
+    public bool HasAnyPanic => _panicProfileIds.Count != 0;
 
     public bool IsPaused(string profileId)
     {

@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private bool _isSaving;
     private bool _previewQueued;
     private bool _isShuttingDown;
+    private bool _isUpdateSuspended;
     private TaskCompletionSource? _saveFinished;
     private TaskCompletionSource? _runtimeActionFinished;
     private readonly DesktopApplicationCatalog _applicationCatalog;
@@ -51,7 +52,7 @@ public partial class MainWindow : Window
 
     private async void GlobalPanic_Click(object sender, RoutedEventArgs e)
     {
-        if (_isShuttingDown || !ViewModel.CanToggleGlobalPanic || GlobalPanicRequested is null
+        if (_isShuttingDown || _isUpdateSuspended || !ViewModel.CanToggleGlobalPanic || GlobalPanicRequested is null
             || _runtimeActionFinished?.Task.IsCompleted == false) return;
         _runtimeActionFinished = new(TaskCreationOptions.RunContinuationsAsynchronously);
         ViewModel.IsRuntimeActionBusy = true;
@@ -100,13 +101,13 @@ public partial class MainWindow : Window
 
     private void QueuePreview()
     {
-        if (!IsLoaded || _isSaving || _previewQueued || _allowClose || _isShuttingDown) return;
+        if (!IsLoaded || _isSaving || _previewQueued || _allowClose || _isShuttingDown || _isUpdateSuspended) return;
         _previewQueued = true;
         var editedSession = ViewModel;
         Dispatcher.BeginInvoke(() =>
         {
             _previewQueued = false;
-            if (!ReferenceEquals(editedSession, DataContext) || !IsVisible || _isSaving || _isShuttingDown) return;
+            if (!ReferenceEquals(editedSession, DataContext) || !IsVisible || _isSaving || _isShuttingDown || _isUpdateSuspended) return;
             var preview = editedSession.ToModel();
             if (!HasBindingErrors(this) && AppSettingsValidator.Validate(preview).Count == 0)
             {
@@ -135,6 +136,43 @@ public partial class MainWindow : Window
         // final UI continuation. Do not dispose its view model in that gap.
         return Task.WhenAll(_saveFinished?.Task ?? Task.CompletedTask,
             _runtimeActionFinished?.Task ?? Task.CompletedTask);
+    }
+
+    internal bool HasUpdateBlockingEdits => ViewModel.HasPendingChanges || HasBindingErrors(this);
+
+    internal Task SuspendForUpdateAsync()
+    {
+        _isUpdateSuspended = true;
+        IsEnabled = false;
+        return Task.WhenAll(_saveFinished?.Task ?? Task.CompletedTask,
+            _runtimeActionFinished?.Task ?? Task.CompletedTask);
+    }
+
+    internal void ResumeAfterUpdate()
+    {
+        _isUpdateSuspended = false;
+        IsEnabled = !_isShuttingDown && !_isSaving;
+    }
+
+    internal async Task<bool> ResolveUpdateEditsAsync()
+    {
+        await Task.WhenAll(_saveFinished?.Task ?? Task.CompletedTask,
+            _runtimeActionFinished?.Task ?? Task.CompletedTask);
+        if (_isShuttingDown || _isUpdateSuspended || OwnedWindows.Cast<Window>().Any(window => window.IsVisible)) return false;
+        if (!CommitFocusedEditor() || !CommitGridEditors(this) || HasBindingErrors(this))
+        {
+            System.Windows.MessageBox.Show(this, "Correct the highlighted settings before updating. Your edits are retained.",
+                "Check settings", MessageBoxButton.OK, MessageBoxImage.Information);
+            return false;
+        }
+        if (!ViewModel.HasPendingChanges) return true;
+        var choice = System.Windows.MessageBox.Show(this,
+            "Save your changes before updating?\n\nYes: save changes.\nNo: discard changes.\nCancel: keep editing and update later.",
+            "Unsaved changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Cancel);
+        if (choice == MessageBoxResult.Cancel) return false;
+        if (choice == MessageBoxResult.No) DiscardRequested?.Invoke();
+        else if (!await TrySaveAsync()) return false;
+        return !HasUpdateBlockingEdits;
     }
 
     private void Navigate_Click(object sender, RoutedEventArgs e)
@@ -237,9 +275,14 @@ public partial class MainWindow : Window
 
     private async void Save_Click(object sender, RoutedEventArgs e)
     {
-        if (SaveRequested is null || _isSaving || _isShuttingDown)
+        await TrySaveAsync();
+    }
+
+    private async Task<bool> TrySaveAsync()
+    {
+        if (SaveRequested is null || _isSaving || _isShuttingDown || _isUpdateSuspended)
         {
-            return;
+            return false;
         }
 
         if (!CommitFocusedEditor() || !CommitGridEditors(this) || HasBindingErrors(this))
@@ -250,7 +293,7 @@ public partial class MainWindow : Window
                 "Check these settings",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
-            return;
+            return false;
         }
 
         var editedSession = ViewModel;
@@ -259,7 +302,7 @@ public partial class MainWindow : Window
         if (validationErrors.Count > 0)
         {
             ShowValidationErrors(validationErrors);
-            return;
+            return false;
         }
 
         _isSaving = true;
@@ -273,6 +316,7 @@ public partial class MainWindow : Window
             // saved settings and already applied a newer hotkey baseline. Do
             // not overwrite that authority, or mark later edits as persisted.
             if (ReferenceEquals(editedSession, ViewModel)) ViewModel.SetSavedBaseline(settings);
+            return true;
         }
         catch (Exception exception)
         {
@@ -283,10 +327,11 @@ public partial class MainWindow : Window
                 "Settings were not saved",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
+            return false;
         }
         finally
         {
-            IsEnabled = !_isShuttingDown;
+            IsEnabled = !_isShuttingDown && !_isUpdateSuspended;
             _isSaving = false;
             ViewModel.IsSaving = false;
             _saveFinished.SetResult();
@@ -295,7 +340,7 @@ public partial class MainWindow : Window
 
     private void CloseToTray_Click(object sender, RoutedEventArgs e)
     {
-        if (_isSaving || _isShuttingDown) return;
+        if (_isSaving || _isShuttingDown || _isUpdateSuspended) return;
         DiscardRequested?.Invoke();
     }
 
@@ -524,7 +569,7 @@ public partial class MainWindow : Window
         if (!_allowClose)
         {
             e.Cancel = true;
-            if (!_isSaving && !_isShuttingDown) DiscardAndHide();
+            if (!_isSaving && !_isShuttingDown && !_isUpdateSuspended) DiscardAndHide();
         }
 
         base.OnClosing(e);
@@ -532,7 +577,7 @@ public partial class MainWindow : Window
 
     protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
     {
-        if (_isSaving || _isShuttingDown) { e.Handled = true; return; }
+        if (_isSaving || _isShuttingDown || _isUpdateSuspended) { e.Handled = true; return; }
         if (e.Key == Key.Escape && Keyboard.Modifiers == ModifierKeys.None)
         {
             if (InformationHelp.CloseIfOpen(Keyboard.FocusedElement))
@@ -554,7 +599,7 @@ public partial class MainWindow : Window
 
     private void DiscardAndHide()
     {
-        if (_isSaving || _isShuttingDown) return;
+        if (_isSaving || _isShuttingDown || _isUpdateSuspended) return;
         DiscardRequested?.Invoke();
         Hide();
     }

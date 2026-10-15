@@ -6,6 +6,19 @@ namespace PrivacyMask.Core.Tests.Services;
 
 public sealed class LauncherBootTests
 {
+    [Fact]
+    public void Boot_never_recovers_an_uncommitted_operation_while_the_managed_app_is_alive()
+    {
+        using var fixture = LauncherFixture();
+        fixture.Lease.Dispose();
+        Assert.Throws<ReleaseValidationException>(() => LauncherBoot.Launch(LauncherPath(fixture), [],
+            _ => throw new Exception("Must not launch."), _ => { },
+            path => { Assert.Equal(fixture.App, path); return true; }));
+        fixture.Reopen();
+        Assert.Equal(fixture.Record, new RecoveryJournalStore(fixture.Lease).Read());
+        fixture.AssertOriginal();
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

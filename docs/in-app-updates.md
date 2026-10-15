@@ -8,13 +8,14 @@ slices and the [phase-5d.1 awaited shell lifecycle](update-shell-lifecycle.md)
 foundation plus [phase-5d.2 authenticated App readiness](update-app-readiness.md)
 and [phase-5d.3 stable launcher/migration](update-stable-launcher.md) are
 implemented, along with the internal
-[phase-5d.4 authenticated handoff contract](update-handoff.md). Phase 5 as a
+[phase-5d.4 authenticated handoff contract](update-handoff.md) and
+[phase-5d.5 runtime handoff](update-runtime-handoff.md). Phase 5 as a
 whole is not complete.
 Production signing/environment/OS qualification remain unset;
 see [signing operations](update-signing-operations.md). No update button,
 live network activation, production key, automatic in-app installation, tag, or
 new release is supplied. App discovery/network activation and UI remain absent;
-the managed launcher/migration testing delivery now targets `2.0.0-beta.5`.
+the runtime handoff testing delivery now targets `2.0.0-beta.6`.
 
 ## Current implementation and gaps
 
@@ -38,7 +39,7 @@ environment are configured. This does not add an updater client to the app.
 the update worker must not accidentally reactivate that old instance. Shell
 normal shutdown now drains accepted mutations and window event continuations
 before disposal/singleton release. An `OnExit` callback is not a shutdown
-acknowledgement; authenticated update shutdown/consent still must be implemented.
+acknowledgement; the runtime adapter now owns authenticated shutdown and consent.
 
 Panic and pause states are transient. Restart starts ordinary protection, not
 the previous opaque panic mask. Update must never be offered as an unlock path.
@@ -247,8 +248,11 @@ routes shortcuts/startup through the launcher and qualifies legacy migration.
 It does not authorize an update, activate discovery/network UI or implement
 authenticated old-process exit. The [phase-5d.4 handoff contract](update-handoff.md)
 adds strict apply arguments and a mutually authenticated, single-use App/launcher
-shutdown exchange. It remains disconnected from normal App and launcher paths
-until the runtime consent, panic, edit and settings-writer gates are integrated.
+shutdown exchange. The [phase-5d.5 runtime handoff](update-runtime-handoff.md)
+connects it to App consent/Panic/edit and writer-suspension gates and the installed
+launcher's apply route. Production trust is still unconfigured; no update UI or
+background network path invokes the adapter. Bounded retention and real-App
+qualification remain required before end-user activation.
 
 ## Related specifications and sources
 

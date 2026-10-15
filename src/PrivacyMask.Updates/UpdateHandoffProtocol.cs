@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 
 namespace PrivacyMask.Updates;
 
-internal enum HandoffMessage : byte { Challenge = 1, ExitRequest = 2, Accepted = 3, Receipt = 4, Complete = 5 }
+internal enum HandoffMessage : byte { Challenge = 1, ExitRequest = 2, Accepted = 3, Receipt = 4, Complete = 5, ReadyToExit = 6 }
 
 internal sealed record HandoffSession(Guid InstallId, Guid OperationId)
 {
@@ -110,7 +110,9 @@ internal sealed class UpdateHandoffServer : IDisposable
         _worker.ValidatePipe(_pipe, serverSide: true);
         await _pipe.WriteAsync(HandoffWire.Encode(HandoffMessage.Complete, _session, _challenge),
             cancellationToken).ConfigureAwait(false);
-        _worker.ValidatePipe(_pipe, serverSide: true);
+        // Do not let the App exit while the client still needs to validate its live identity.
+        HandoffWire.Validate(await HandoffWire.ReadAsync(_pipe, cancellationToken).ConfigureAwait(false),
+            HandoffMessage.ReadyToExit, _session, _challenge);
     }
 
     public void Dispose()
