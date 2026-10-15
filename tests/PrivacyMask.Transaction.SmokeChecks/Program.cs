@@ -30,8 +30,7 @@ try
         finally
         {
             // Every case releases its exact test processes/handles before this path-scoped cleanup.
-            StagingWorkspace.AssertSafe(caseRoot);
-            if (Directory.Exists(caseRoot)) Directory.Delete(caseRoot, recursive: true);
+            await DeleteOwnedFixture(caseRoot, fixture);
         }
     }
     Console.WriteLine($"Passed {cases.Length} signed real-process transaction cases; test peers only, no user installation or real App execution.");
@@ -42,8 +41,7 @@ finally
     var temp = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.GetTempPath())) + Path.DirectorySeparatorChar;
     if (!fixture.StartsWith(temp, StringComparison.OrdinalIgnoreCase) || !Path.GetFileName(fixture).StartsWith("PrivacyMask-transaction-test-"))
         throw new InvalidOperationException("Unsafe transaction fixture cleanup.");
-    StagingWorkspace.AssertSafe(fixture);
-    Directory.Delete(fixture, recursive: true);
+    await DeleteOwnedFixture(fixture, Path.GetTempPath());
 }
 
 static async Task RunCase(string scenario, string oldExecutable, FixtureAssets assets, string parent)
@@ -222,6 +220,25 @@ static void CreateFixtureRoot(string path)
         InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
     new DirectoryInfo(path).Create(security);
     ManagedInstallLease.AssertPrivate(path);
+}
+static async Task DeleteOwnedFixture(string path, string parent)
+{
+    var resolved = Path.GetFullPath(path);
+    var boundary = Path.TrimEndingDirectorySeparator(Path.GetFullPath(parent)) + Path.DirectorySeparatorChar;
+    var leaf = Path.GetFileName(resolved);
+    if (!resolved.StartsWith(boundary, StringComparison.OrdinalIgnoreCase) ||
+        !(leaf.StartsWith("case-", StringComparison.Ordinal) || leaf.StartsWith("PrivacyMask-transaction-test-", StringComparison.Ordinal)))
+        throw new InvalidOperationException("Unsafe owned fixture cleanup.");
+    // Process exit does not require antivirus/image-cache handles to release immediately.
+    // Retry ONLY owned Temp cleanup, never alter ACLs/attributes or hide a persistent lock.
+    var timer = Stopwatch.StartNew();
+    while (true)
+    {
+        StagingWorkspace.AssertSafe(resolved);
+        try { if (Directory.Exists(resolved)) Directory.Delete(resolved, recursive: true); return; }
+        catch (Exception error) when ((error is IOException or UnauthorizedAccessException) && timer.Elapsed < TimeSpan.FromSeconds(10))
+        { await Task.Delay(200); }
+    }
 }
 static void Write(string path, byte[] bytes) { using var file = ManagedInstallLease.CreatePrivateFile(path); file.Write(bytes); file.Flush(true); }
 static void Check(bool condition, string label) { if (!condition) throw new InvalidOperationException("Transaction smoke: " + label); }

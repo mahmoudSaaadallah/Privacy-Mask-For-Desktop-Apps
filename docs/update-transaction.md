@@ -147,7 +147,10 @@ commit before receipt, committed-child survival and safe retry of locked recover
 
 Each case releases its exact fixture processes/handles before deleting only its
 validated owned Temp child, keeping peak fixture disk use to one case rather
-than retaining all 32. Bundle extraction is scoped to that run's private cache
+than retaining all 32. Owned Temp cleanup revalidates its absolute boundary and
+reparse policy and retries transient image/AV locks for at most ten seconds,
+without changing ACLs/attributes or skipping persistent failures. This test-only
+retry is not a production rollback/cleanup policy. Bundle extraction is scoped to that run's private cache
 and removed afterwards. Archives/copies are streamed, not app-sized byte arrays.
 Published fixture output is ignored under `artifacts/update-transaction` and is
 never part of the normal release ZIP. Do not run simultaneous publishes to the
