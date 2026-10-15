@@ -115,9 +115,10 @@ public sealed class ReadinessProtocolTests
     {
         using var f = new RecoveryFixture();
         var generated = RecoveryJson.Write(f.Record, RecoveryJson.Context.RecoveryJournal);
-        Assert.Equal(ContractJson.Write(f.Record), generated);
+        Assert.Equal(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(f.Record, ContractJson.Options), generated);
         Assert.Equal(f.Record, RecoveryJson.Read(generated, RecoveryRules.JournalLimit, RecoveryJson.Context.RecoveryJournal));
         var missing = System.Text.Encoding.UTF8.GetBytes("{\"schemaVersion\":1}");
         Assert.ThrowsAny<Exception>(() => RecoveryJson.Read(missing, 4096, RecoveryJson.Context.RecoveryJournal));
+        Assert.Throws<ReleaseValidationException>(() => ContractJson.Write(new { Unregistered = true }));
     }
 }

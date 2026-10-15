@@ -4,7 +4,7 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace PrivacyMask.Updates;
 
-// Explicit metadata for the bootstrap's reachable types; no reflection fallback in Native AOT.
+// Explicit metadata for all update contracts; no reflection fallback in Native AOT.
 internal static class RecoveryJson
 {
     internal static readonly RecoveryJsonContext Context = new(new JsonSerializerOptions(ContractJson.Options));
@@ -20,6 +20,9 @@ internal static class RecoveryJson
 [JsonSerializable(typeof(ManagedInstallMarker))]
 [JsonSerializable(typeof(RecoveryJournal))]
 [JsonSerializable(typeof(ReadinessProbeRequest))]
+[JsonSerializable(typeof(UpdateManifest))]
+[JsonSerializable(typeof(SignatureEnvelope))]
+[JsonSerializable(typeof(ReleasePolicy))]
 internal partial class RecoveryJsonContext : JsonSerializerContext;
 
 // DEVELOPER FIXTURE ONLY. These options never authorize an update/apply.

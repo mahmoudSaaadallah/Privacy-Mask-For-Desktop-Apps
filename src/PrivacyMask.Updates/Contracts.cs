@@ -28,13 +28,17 @@ public static class ContractJson
         MaxDepth = 16
     };
 
-    public static byte[] Write<T>(T value) => JsonSerializer.SerializeToUtf8Bytes(value, Options);
+    public static byte[] Write<T>(T value) => JsonSerializer.SerializeToUtf8Bytes(value, TypeInfo<T>());
 
     public static T Read<T>(byte[] bytes, int maximumBytes)
     {
         using var document = ReadDocument(bytes, maximumBytes);
-        return JsonSerializer.Deserialize<T>(bytes, Options) ?? throw new ReleaseValidationException("JSON must be an object.");
+        return JsonSerializer.Deserialize(bytes, TypeInfo<T>()) ?? throw new ReleaseValidationException("JSON must be an object.");
     }
+
+    private static System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> TypeInfo<T>() =>
+        RecoveryJson.Context.GetTypeInfo(typeof(T)) as System.Text.Json.Serialization.Metadata.JsonTypeInfo<T>
+        ?? throw new ReleaseValidationException("Unregistered update contract type.");
 
     public static JsonDocument ReadDocument(byte[] bytes, int maximumBytes)
     {
