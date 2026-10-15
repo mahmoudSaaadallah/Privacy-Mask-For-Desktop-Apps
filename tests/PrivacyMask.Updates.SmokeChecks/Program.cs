@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using PrivacyMask.Updates;
 
 // Offline production-path fixture. Reads test-signed assets, never executes the EXE.
-if (args.Length != 4) throw new ArgumentException("Expected asset directory, public test policy, version and commit.");
+if (args.Length is not (4 or 5)) throw new ArgumentException("Expected asset directory, public test policy, version, commit and optional baseline EXE.");
 var assets = Path.GetFullPath(args[0]);
 var policy = ContractJson.Read<ReleasePolicy>(ReadSmall(args[1], 64 * 1024), 64 * 1024);
 var verifier = new UpdateManifestVerifier(policy.TrustedKeys);
@@ -37,6 +37,8 @@ try
         Check(stage.TryDiscard() && stage.TryDiscard(), "owned idempotent discard");
         Check(!Directory.EnumerateFileSystemEntries(root).Any(), "no stage residue");
     }
+    if (args.Length == 5)
+        await PreparationSmoke.RunAsync(fixture, assets, args[4], candidate, context, verifier);
     Console.WriteLine("Passed real-EXE download/staging with declared and unknown length; offline, no execution or installation.");
 }
 finally

@@ -51,7 +51,16 @@ try {
   $common = @('--output', $output, '--version', $identity.Version, '--file-version', $identity.FileVersion, '--commit', $commit, '--policy', $policyPath)
   Invoke-TestTool (@('pack', '--exe', $PublishedExecutable, '--key-id', 'ephemeral-test-key') + $common)
   Invoke-TestTool (@('verify') + $common)
-  dotnet run --project tests/PrivacyMask.Updates.SmokeChecks --configuration Release -- $output $policyPath $identity.Version $commit
+  # Build a deliberately older, disposable baseline of the actual App. Never run it,
+  # install it, publish a tag, or alter repository version policy for this fixture.
+  $baselineOutput = Join-Path $fixtureRoot 'baseline-app'
+  dotnet publish src/PrivacyMask.App/PrivacyMask.App.csproj --configuration Release --runtime win-x64 --self-contained true `
+    '-p:PublishSingleFile=true' '-p:IncludeNativeLibrariesForSelfExtract=true' '-p:EnableCompressionInSingleFile=true' `
+    '-p:Version=0.0.0' '-p:AssemblyVersion=0.0.0.0' '-p:FileVersion=0.0.0.0' '-p:InformationalVersion=0.0.0' `
+    "-p:SourceRevisionId=$commit" '-p:DebugType=None' '-p:DebugSymbols=false' --output $baselineOutput --nologo
+  if ($LASTEXITCODE -ne 0) { throw 'Disposable baseline publish failed.' }
+  $baselineExe = Join-Path $baselineOutput 'PrivacyMask.App.exe'
+  dotnet run --project tests/PrivacyMask.Updates.SmokeChecks --configuration Release -- $output $policyPath $identity.Version $commit $baselineExe
   if ($LASTEXITCODE -ne 0) { throw 'Real executable staging smoke failed.' }
   foreach ($item in @(
     @{ File = 'update-manifest.json'; Schema = 'docs/contracts/update-manifest.schema.json' },
