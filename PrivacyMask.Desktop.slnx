@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/PrivacyMask.App/PrivacyMask.App.csproj" />
     <Project Path="src/PrivacyMask.Core/PrivacyMask.Core.csproj" />
+    <Project Path="src/PrivacyMask.Launcher/PrivacyMask.Launcher.csproj" />
     <Project Path="src/PrivacyMask.Windows/PrivacyMask.Windows.csproj" />
     <Project Path="src/PrivacyMask.Updates/PrivacyMask.Updates.csproj" />
   </Folder>
