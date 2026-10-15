@@ -32,6 +32,14 @@ internal static class LauncherBoot
             new RecoveryJournalStore(lease).ArchiveTerminal(terminal.OperationId);
         }
 
+        return StartVerifiedApplication(lease, arguments.Count == 1, start, inspectApplication);
+    }
+
+    internal static Process StartVerifiedApplication(ManagedInstallLease lease, bool minimized,
+        Func<ProcessStartInfo, Process?>? start = null, Action<string>? inspectApplication = null)
+    {
+        lease.AssertHeld();
+        var root = lease.Root;
         var appDirectory = Path.Combine(root, "app");
         ManagedInstallLease.AssertPrivate(appDirectory);
         var entries = Directory.EnumerateFileSystemEntries(appDirectory).Take(2).ToArray();
@@ -47,7 +55,7 @@ internal static class LauncherBoot
             UseShellExecute = false,
             WorkingDirectory = root
         };
-        if (arguments.Count == 1) processStart.ArgumentList.Add(arguments[0]);
+        if (minimized) processStart.ArgumentList.Add("--minimized");
         var child = (start ?? Process.Start)(processStart)
             ?? throw new IOException("PrivacyMask application did not start.");
         return child;
