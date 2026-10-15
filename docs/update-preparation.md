@@ -165,8 +165,12 @@ while that gate or installer/launcher serialization is missing.
   checks and signed-package CI must continue to pass. This slice does not remeasure
   the final shipped helper: it is still the test probe, not an apply worker.
 
-Next: production helper forward replacement/launch/recovery paths, exact-process
-graceful shutdown and real-App readiness/durable commit; bounded retention;
+The separate [phase-5c.2 transaction worker](update-transaction.md) now implements
+internal forward replacement, exact-process exit proof and test-child readiness/
+commit/recovery. It does not wire this to a production launcher or the real App.
+
+Next: production helper entrypoints/boot recovery/old-version restart, authenticated
+graceful shutdown and real-App readiness/settings integration; bounded retention;
 installer/shortcut/startup/uninstaller migration; then UI/consent/Panic/edit gates,
 network disclosures/preferences and beta bump. Finally qualify authorized signed
 release A-to-B on Windows 10/11 standard-user machines, including actual failure,
