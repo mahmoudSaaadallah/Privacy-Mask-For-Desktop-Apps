@@ -13,10 +13,14 @@ try {
     # Test peers reuse the developer/CI .NET runtime: no need to copy another runtime
     # through every fault case. This does NOT change the self-contained App release.
     dotnet publish tests/PrivacyMask.Transaction.Peer/PrivacyMask.Transaction.Peer.csproj -c Release -r win-x64 --self-contained false `
+      '-p:SelfContained=false' '-p:PublishSelfContained=false' '-p:EnableCompressionInSingleFile=false' `
       "-p:Version=$version" "-p:InformationalVersion=$version" "-p:FileVersion=$version.0" `
       "-p:SourceRevisionId=$commit" '-p:DebugType=None' '-p:DebugSymbols=false' '-p:TreatWarningsAsErrors=true' `
       --artifacts-path $buildRoot -o $output --nologo
     if ($LASTEXITCODE -ne 0) { throw "Transaction fixture publish failed: $version" }
+    $peer = Get-Item -LiteralPath (Join-Path $output 'PrivacyMask.Transaction.Peer.exe')
+    if ($peer.Length -gt 2MB) { throw 'Transaction peer unexpectedly includes a runtime or exceeded its reviewed fixture budget.' }
+    Write-Host "Transaction peer $version`: $($peer.Length) bytes (developer framework-dependent fixture)."
   }
   $old = Join-Path $outputRoot '0.0.0/PrivacyMask.Transaction.Peer.exe'
   $target = Join-Path $outputRoot '0.0.1/PrivacyMask.Transaction.Peer.exe'
