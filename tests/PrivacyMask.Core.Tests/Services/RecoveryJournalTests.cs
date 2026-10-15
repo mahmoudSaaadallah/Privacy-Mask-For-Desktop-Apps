@@ -45,6 +45,7 @@ public sealed class RecoveryJournalTests
         f.Lease.AssertHeld();
         File.WriteAllBytes(Path.Combine(f.Root, "managed-install.json"), ContractJson.Write(new ManagedInstallMarker(1, ManifestRules.AppId, Guid.NewGuid().ToString("N"), 1)));
         Assert.Throws<ReleaseValidationException>(() => f.Lease.AssertHeld());
+        Assert.Equal(RecoveryOutcome.RepairRequired, new RecoveryRestorer(f.Lease).Recover().Outcome);
         f.Lease.Dispose();
         Assert.Throws<ObjectDisposedException>(() => new RecoveryJournalStore(f.Lease).Read());
     }

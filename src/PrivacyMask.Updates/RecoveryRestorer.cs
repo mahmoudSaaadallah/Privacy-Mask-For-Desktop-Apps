@@ -14,9 +14,9 @@ internal sealed class RecoveryRestorer(ManagedInstallLease lease, Action<Restore
 {
     internal RecoveryResult Recover()
     {
-        lease.AssertHeld();
         try
         {
+            lease.AssertHeld();
             var store = new RecoveryJournalStore(lease);
             var journal = store.Read();
             if (journal is null) return new(RecoveryOutcome.NoPendingOperation);
