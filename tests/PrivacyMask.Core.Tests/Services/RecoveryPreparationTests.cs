@@ -324,4 +324,61 @@ public sealed class RecoveryPreparationTests
         Assert.Equal(RecoveryStep.Prepared, (await preparer.PrepareAsync(f.Install.OperationId, f.Context)).Step);
         Assert.Equal("existing-recovery-operation", (await Assert.ThrowsAsync<UpdatePreparationException>(() => preparer.PrepareAsync(Guid.NewGuid().ToString("N"), f.Context))).Reason);
     }
+
+    [Theory]
+    [InlineData("locked-app")]
+    [InlineData("locked-primary")]
+    [InlineData("locked-secondary")]
+    [InlineData("huge-primary")]
+    [InlineData("huge-secondary")]
+    [InlineData("extra-app-file")]
+    [InlineData("old-identity")]
+    [InlineData("copy-io-failure")]
+    public async Task InvalidBaselineOrIoFailureNeverWritesInstalledFilesOrPublishesPrepared(string failure)
+    {
+        using var f = new PreparationFixture();
+        using var client = f.Trust.Client();
+        var path = failure.EndsWith("primary", StringComparison.Ordinal) ? f.Install.Primary
+            : failure.EndsWith("secondary", StringComparison.Ordinal) ? f.Install.Secondary : f.Install.App;
+        if (failure.StartsWith("huge", StringComparison.Ordinal))
+            using (var stream = File.OpenWrite(path)) stream.SetLength(RecoveryRules.SettingsLimit + 1);
+        if (failure == "extra-app-file") PreparationFixture.Write(Path.Combine(Path.GetDirectoryName(f.Install.App)!, "foreign.txt"), [1]);
+        var original = RecoveryRestorer.Inspect(path, ManifestRules.MaximumFileSize);
+        using (var locked = failure.StartsWith("locked", StringComparison.Ordinal) ? new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None) : null)
+        {
+            var error = await Assert.ThrowsAsync<UpdatePreparationException>(() => f.Preparer(client,
+                inspect: (_, _, commit) => { if (failure == "old-identity" && commit is null) throw new ReleaseValidationException("private path"); },
+                checkpoint: (point, _) => { if (failure == "copy-io-failure" && point == PreparationCheckpoint.DirectoryCreated) throw new IOException("private path and token"); })
+                .PrepareAsync(f.Install.OperationId, f.Context));
+            Assert.DoesNotContain("private path", error.ToString());
+        }
+        Assert.Equal(original, RecoveryRestorer.Inspect(path, ManifestRules.MaximumFileSize));
+        Assert.Null(new RecoveryJournalStore(f.Install.Lease).Read());
+        Assert.False(File.Exists(Path.Combine(f.Install.Operation, "original-app.exe")));
+    }
+
+    [Fact]
+    public async Task RechecksFreshnessAfterCopiesAndDoesNotCaptureUiContext()
+    {
+        using var f = new PreparationFixture();
+        using var client = f.Trust.Client();
+        var ui = new SynchronizationContext();
+        var previous = SynchronizationContext.Current;
+        var observed = new List<SynchronizationContext?>();
+        Task<RecoveryJournal> pending;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(ui);
+            pending = f.Preparer(client, checkpoint: (point, _) => {
+                observed.Add(SynchronizationContext.Current);
+                if (point == PreparationCheckpoint.BeforeJournal) f.Trust.Clock.Now += TimeSpan.FromHours(25);
+            }).PrepareAsync(f.Install.OperationId, f.Context);
+        }
+        finally { SynchronizationContext.SetSynchronizationContext(previous); }
+        var error = await Assert.ThrowsAsync<UpdatePreparationException>(() => pending);
+        Assert.Equal("fresh-release-check-required", error.Reason);
+        Assert.NotEmpty(observed);
+        Assert.All(observed, context => Assert.NotSame(ui, context));
+        f.AssertUntouched();
+    }
 }
