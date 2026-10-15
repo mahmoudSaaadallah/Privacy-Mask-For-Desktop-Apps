@@ -6,13 +6,15 @@ application files are intentionally not stored in Git.
 ## Install a GitHub release
 
 1. Open [PrivacyMask releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). **Pre-release** builds are for testing; `latest` selects stable releases.
-2. Download the archive matching your chosen release, for example `PrivacyMask-2.0.0-beta.3-win-x64.zip`.
+2. Download the archive matching your chosen release, for example `PrivacyMask-2.0.0-beta.5-win-x64.zip`.
 3. Extract the whole ZIP; do not run the installer from inside the archive.
 4. Double-click `Install-PrivacyMask.cmd`.
 5. Start PrivacyMask from the Desktop or Start Menu shortcut.
 
-No administrator access is required. The installer copies the executable to
-`%LocalAppData%\PrivacyMask.Desktop` and creates shortcuts for the current user.
+No administrator access is required. The installer creates the managed layout
+under `%LocalAppData%\PrivacyMask.Desktop`, keeps the stable launcher at its root,
+places the replaceable App in `app`, and creates current-user shortcuts that
+target the launcher.
 The source version does not mean a matching release has already been published.
 About shows the product version, including beta/rc, and its version tooltip
 shows full build metadata. Windows file versions remain numeric.
@@ -26,14 +28,17 @@ launch at sign in.
 ## Update or uninstall
 
 - To update, extract the newer release and run `Install-PrivacyMask.cmd` again.
-  The installer preserves settings, removes stale application files, and rolls
-  back to the previous installation if replacement or shortcut creation fails.
+  The installer preserves settings and the installation identity, removes stale
+  application files, and rolls back to the previous installation if replacement,
+  shortcut or startup migration fails. In-app update controls are not active in
+  beta.5 yet.
 - To uninstall, run `Uninstall-PrivacyMask.cmd` from an extracted release package.
 
 ## Build and install from source
 
-With the .NET 10 SDK installed, double-click `Install-PrivacyMask.bat` in the
-repository root. It publishes and installs the application in one operation.
+With the .NET 10 SDK and Visual Studio Windows C++ build workload installed,
+double-click `Install-PrivacyMask.bat` in the repository root. It publishes the
+App plus Native-AOT launcher and installs them in one operation.
 Exit an already running portable/repository copy from its tray before updating.
 After `git pull`, this rebuild is required: generated executables are not tracked.
 The distribution-folder `.cmd` also rebuilds when all source checkout markers
@@ -53,6 +58,7 @@ powershell -ExecutionPolicy Bypass -File .\desktop-app\windows\win-x64\Install-P
 ```
 
 The generated `single-file` and `app` directories are local build output and
-are ignored by Git.
+are ignored by Git. Only the complete `single-file` payload is accepted by the
+managed installer; use `app` directly as portable developer output.
 Calling the `.ps1` directly installs the selected existing build without
 rebuilding; use the root `.bat` or checkout `.cmd` for a normal source update.

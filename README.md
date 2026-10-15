@@ -2,7 +2,7 @@
 
 PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
-The current source targets `2.0.0-beta.4`, a testing build, not a declaration
+The current source targets `2.0.0-beta.5`, a testing build, not a declaration
 that a stable 2.0.0 release has been published. Check the releases page for
 available downloads. About and Settings show the product version; hover the
 About version for full build/source metadata and the numeric Windows file version.
@@ -45,17 +45,19 @@ Minimum requirements:
 You do not need the source code or the .NET SDK to install a published release.
 
 1. Open [GitHub releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). Releases marked **Pre-release** are testing builds; the `latest` link is for stable releases.
-2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.4-win-x64.zip` for beta.4, and extract the whole archive.
+2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.5-win-x64.zip` for beta.5, and extract the whole archive.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
 5. Complete onboarding. Use **Add application** to select a running program or browse to its `.exe` file.
 
-The installer does not require administrator access. It copies the standalone app
-to `%LocalAppData%\PrivacyMask.Desktop` and creates Desktop and Start Menu
-shortcuts. To update, download the newer release and run
+The installer does not require administrator access. It places the stable
+launcher at `%LocalAppData%\PrivacyMask.Desktop\PrivacyMask.Launcher.exe`, the
+replaceable App under `app`, and creates Desktop and Start Menu shortcuts that
+target the launcher. To update, download the newer release and run
 `Install-PrivacyMask.cmd` again. If PrivacyMask is running, the installer closes
 it, preserves the settings, replaces the application transactionally, and
 restarts it minimized. A failed update restores the previous installation.
+The in-app update button is not enabled in beta.5 yet.
 
 To run the release without installing it, open `single-file` in the extracted
 archive and double-click `PrivacyMask.App.exe`.
@@ -67,16 +69,17 @@ installation in `%LocalAppData%\PrivacyMask.Desktop`.
 The matching `.sha256` release asset can be used to verify the downloaded ZIP:
 
 ```powershell
-(Get-FileHash .\PrivacyMask-2.0.0-beta.4-win-x64.zip -Algorithm SHA256).Hash
+(Get-FileHash .\PrivacyMask-2.0.0-beta.5-win-x64.zip -Algorithm SHA256).Hash
 ```
 
-Compare the output with the hash in `PrivacyMask-2.0.0-beta.4-win-x64.zip.sha256`.
+Compare the output with the hash in `PrivacyMask-2.0.0-beta.5-win-x64.zip.sha256`.
 Use the actual versioned filenames if you downloaded another release.
 
 ## One-click install from source
 
-If you cloned the repository and have the .NET 10 SDK installed, double-click
-`Install-PrivacyMask.bat` in the repository root. It will:
+If you cloned the repository and have the .NET 10 SDK plus the Visual Studio
+Windows C++ build workload installed, double-click `Install-PrivacyMask.bat` in
+the repository root. It will:
 
 1. Build the self-contained Windows executable.
 2. Copy it to `%LocalAppData%\PrivacyMask.Desktop`.
@@ -157,14 +160,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-win-x64-release.ps1
 
 Release package output:
 
-- `artifacts/release/PrivacyMask-2.0.0-beta.4-win-x64.zip`
-- `artifacts/release/PrivacyMask-2.0.0-beta.4-win-x64.zip.sha256`
+- `artifacts/release/PrivacyMask-2.0.0-beta.5-win-x64.zip`
+- `artifacts/release/PrivacyMask-2.0.0-beta.5-win-x64.zip.sha256`
 
 ## Repository layout
 
 - `src/PrivacyMask.Core`: core models, settings, presets, and profile resolution
 - `src/PrivacyMask.Windows`: Windows interop, startup registration, and window discovery
 - `src/PrivacyMask.App`: WPF app shell, settings UI, onboarding, overlay rendering, and hotkeys
+- `src/PrivacyMask.Launcher`: stable native managed-install start and crash-recovery entry point
 - `src/PrivacyMask.Updates`: update trust, discovery, recovery transaction and authenticated app-start contracts; discovery remains inactive in the UI
 - `tests/PrivacyMask.Core.Tests`: unit tests
 - `docs`: architecture and release notes
@@ -337,16 +341,17 @@ Press `Esc` or close the window to discard the preview and return to the tray.
   offline HTTP tests, alongside signed-package tooling and a verified draft publisher;
   there is no in-app update button yet. Keep using the installation procedure above.
 - Internal phase-5 work now includes the recovery kernel, measured bootstrap
-  prototype and [authenticated preparation](docs/update-preparation.md). These
-  are developer/test-only paths, not an installed-app updater; launcher/apply,
-  migration, retention and runtime UI/safety gates remain pending. The internal
+  prototype and [authenticated preparation](docs/update-preparation.md). The
+  internal
   [transaction worker](docs/update-transaction.md) is tested with signed disposable
-  processes only; it is not connected to the actual privacy runtime or installer.
+  processes; authenticated apply is not connected to the updater UI yet.
 - The [authenticated App readiness foundation](docs/update-app-readiness.md) now
   validates update-start identity, migrates the exact saved settings baseline and
-  receipts a durable commit after shell initialization in beta.4. A stable launcher,
-  authenticated old-process shutdown, installer migration and updater UI remain
-  pending; normal Exit is not update consent or authorization.
+  receipts a durable commit after shell initialization. The
+  [stable launcher and managed installer](docs/update-stable-launcher.md) make
+  startup/recovery reachable in beta.5. Authenticated old-process shutdown,
+  updater coordination/UI and runtime consent gates remain pending; normal Exit
+  is not update consent or authorization.
 - Review [update signing operations](docs/update-signing-operations.md) before
   publishing: production policy/environment are intentionally unconfigured,
   so signed release publication fails closed until explicitly approved setup.
