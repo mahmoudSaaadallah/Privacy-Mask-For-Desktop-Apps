@@ -38,12 +38,15 @@ internal sealed class UpdateHandoffClient : IDisposable
         {
             application = Process.GetProcessById(expectedApplication.ProcessId);
             _ = application.SafeHandle;
-            expectedApplication.ValidateLive();
+            var retainedIdentity = PipeProcessIdentity.Capture(application,
+                expectedApplication.ExecutablePath);
+            if (retainedIdentity != expectedApplication)
+                throw new ReleaseValidationException("Update application identity changed.");
             pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut,
                 PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
             await pipe.ConnectAsync(cancellationToken).ConfigureAwait(false);
-            expectedApplication.ValidatePipe(pipe, serverSide: false);
-            return new(pipe, application, expectedApplication, session);
+            retainedIdentity.ValidatePipe(pipe, serverSide: false);
+            return new(pipe, application, retainedIdentity, session);
         }
         catch
         {
