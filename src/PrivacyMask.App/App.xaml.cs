@@ -8,6 +8,15 @@ public partial class App : System.Windows.Application
 {
     private ShellCoordinator? _coordinator;
     private SingleInstanceManager? _singleInstanceManager;
+    private readonly ApplicationShutdown _shutdown;
+
+    public App()
+    {
+        _shutdown = new ApplicationShutdown(
+            () => _coordinator?.DisposeAsync().AsTask() ?? System.Threading.Tasks.Task.CompletedTask,
+            () => { _singleInstanceManager?.Dispose(); _singleInstanceManager = null; },
+            code => Shutdown(code));
+    }
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -19,11 +28,11 @@ public partial class App : System.Windows.Application
             if (!_singleInstanceManager.IsPrimaryInstance)
             {
                 _singleInstanceManager.SignalExistingInstance();
-                Shutdown();
+                await _shutdown.RunAsync();
                 return;
             }
 
-            _coordinator = new ShellCoordinator(Current.Dispatcher, e.Args);
+            _coordinator = new ShellCoordinator(Current.Dispatcher, e.Args, () => _shutdown.RunAsync());
             _singleInstanceManager.Listen(() =>
             {
                 Current.Dispatcher.BeginInvoke(() => _coordinator?.HandleExternalActivation());
@@ -32,24 +41,31 @@ public partial class App : System.Windows.Application
         }
         catch (Exception exception)
         {
+            if (_shutdown.IsRequested)
+            {
+                await _shutdown.RunAsync();
+                return;
+            }
             System.Windows.MessageBox.Show(
                 $"PrivacyMask could not start.\n\n{exception.Message}",
                 "PrivacyMask startup error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
-            Shutdown(-1);
+            await _shutdown.RunAsync(-1);
         }
     }
 
-    protected override async void OnExit(ExitEventArgs e)
+    protected override void OnExit(ExitEventArgs e)
     {
-        if (_coordinator is not null)
+        try
         {
-            await _coordinator.DisposeAsync();
+            _coordinator?.DisposeOnExit();
         }
-
-        _singleInstanceManager?.Dispose();
-
-        base.OnExit(e);
+        finally
+        {
+            _singleInstanceManager?.Dispose();
+            _singleInstanceManager = null;
+            base.OnExit(e);
+        }
     }
 }

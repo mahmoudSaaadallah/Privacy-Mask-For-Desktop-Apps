@@ -4,6 +4,7 @@ namespace PrivacyMask.App.Services;
 internal sealed class ApplicationShutdown(Func<Task> drainAndDispose, Action releaseInstance, Action<int> exit)
 {
     private TaskCompletionSource? _completion;
+    internal bool IsRequested => _completion is not null;
 
     internal Task RunAsync(int exitCode = 0)
     {
