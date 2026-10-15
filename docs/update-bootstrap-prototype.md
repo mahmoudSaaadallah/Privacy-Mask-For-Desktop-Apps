@@ -99,6 +99,10 @@ Record meanings:
   working set while the respective process is alive. Includes runtime/page-cache
   effects; not a memory leak test or the steady-state App footprint.
 - private bytes: helper end-of-probe and peer pre-ack snapshots, **not peaks**.
+- `bundleCacheBytesAfterMatrix`: extracted runtime files remaining after this
+  matrix, not peak disk usage. DOTNET_BUNDLE_EXTRACT_BASE_DIR confines extraction
+  to the owned fixture, which is removed after testing; no per-build probe cache
+  is deliberately left in the user's ordinary .net Temp area.
 - OS/framework and embedded helper/peer build versions identify the sample.
 
 SingleFile and NativeAot CI matrix jobs are independent VMs; timings are not a

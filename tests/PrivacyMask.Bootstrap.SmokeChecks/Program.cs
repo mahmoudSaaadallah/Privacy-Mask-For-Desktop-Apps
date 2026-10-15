@@ -41,11 +41,13 @@ try
             throw new InvalidOperationException("Prototype mutated application state.");
         using var available = new ManagedInstallLease(root, installId); // Helper/peer fully exited; lease released.
     }
+    var bundleCache = Path.Combine(root, "probe-bundle-cache");
     var report = new
     {
         schemaVersion = 1, os = Environment.OSVersion.VersionString, framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
         helperBuild = FileVersionInfo.GetVersionInfo(helper).ProductVersion, peerBuild = FileVersionInfo.GetVersionInfo(peer).ProductVersion,
         helperBytes = new FileInfo(helper).Length, peerBytes = new FileInfo(peer).Length,
+        bundleCacheBytesAfterMatrix = Directory.Exists(bundleCache) ? Directory.EnumerateFiles(bundleCache, "*", SearchOption.AllDirectories).Sum(path => new FileInfo(path).Length) : 0,
         limitations = "Developer probe only; OS-reported peak working sets and point-in-time private bytes. No production app startup or Windows 10 qualification.",
         results
     };
@@ -61,6 +63,8 @@ try
             WorkingDirectory = root
         };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
+        // Runtime extraction must not leave per-build caches in the user's ordinary .net Temp area.
+        start.Environment["DOTNET_BUNDLE_EXTRACT_BASE_DIR"] = Path.Combine(root, "probe-bundle-cache");
         var wall = Stopwatch.StartNew();
         using var child = Process.Start(start)!;
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
