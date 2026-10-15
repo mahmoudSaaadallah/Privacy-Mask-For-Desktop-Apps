@@ -7,9 +7,8 @@ set "SOURCE_ROOT=%SCRIPT_DIR%..\..\.."
 rem A checkout must rebuild after pull, even when an older published EXE exists.
 rem Release archives have no source project/publish script and install as-is.
 if exist "%SOURCE_ROOT%\src\PrivacyMask.App\PrivacyMask.App.csproj" if exist "%SOURCE_ROOT%\scripts\publish-win-x64-single-file.ps1" if exist "%SOURCE_INSTALLER%" goto install_from_source
-if exist "%SCRIPT_DIR%single-file\PrivacyMask.App.exe" goto install_published
-if exist "%SCRIPT_DIR%app\PrivacyMask.App.exe" goto install_published
-if exist "%SOURCE_INSTALLER%" goto install_from_source
+if exist "%SCRIPT_DIR%single-file\PrivacyMask.App.exe" if exist "%SCRIPT_DIR%single-file\PrivacyMask.Launcher.exe" goto install_published
+goto missing_payload
 
 :install_published
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%Install-PrivacyMask.ps1"
@@ -20,3 +19,9 @@ endlocal & exit /b %EXIT_CODE%
 :install_from_source
 call "%SOURCE_INSTALLER%"
 exit /b %ERRORLEVEL%
+
+:missing_payload
+echo ERROR: The complete PrivacyMask single-file release payload was not found.
+echo Download and extract the Windows release ZIP, then run this file again.
+pause
+endlocal & exit /b 2
