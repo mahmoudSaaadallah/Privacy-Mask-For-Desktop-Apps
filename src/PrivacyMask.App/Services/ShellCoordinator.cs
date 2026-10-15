@@ -11,6 +11,7 @@ using PrivacyMask.App.ViewModels;
 using PrivacyMask.App.Windows;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
+using PrivacyMask.Updates;
 using PrivacyMask.Windows.Adapters;
 using PrivacyMask.Windows.Interop;
 using PrivacyMask.Windows.Models;
@@ -98,9 +99,10 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _hotkeyManager = new GlobalHotkeyManager();
         _hotkeyManager.HotkeyPressed += HandleHotkeyPressed;
 
+        var applicationPath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "PrivacyMask.App.exe");
         var executablePath = startupContext?.StartupExecutablePath
-            ?? Environment.ProcessPath
-            ?? Path.Combine(AppContext.BaseDirectory, "PrivacyMask.App.exe");
+            ?? ManagedStartupPath.Resolve(applicationPath)
+            ?? applicationPath;
         _startupRegistrationService = new StartupRegistrationService("PrivacyMask.Desktop", executablePath);
 
         _refreshTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)

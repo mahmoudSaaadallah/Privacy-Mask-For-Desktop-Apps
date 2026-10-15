@@ -5,7 +5,7 @@ not committed to the source repository.
 
 ## Version policy
 
-The source currently prepares `2.0.0-beta.4`. This is a testing delivery, not a
+The source currently prepares `2.0.0-beta.5`. This is a testing delivery, not a
 stable release announcement. Publishing/tagging remains a separate authorized
 action after merge and qualification. A commit or PR is not itself a release.
 Earlier source builds displayed 2.0.0 while still unreleased; the beta suffix
@@ -35,10 +35,10 @@ on merge or by a Git hook.
 
 | Identity | Current value | Purpose |
 | --- | --- | --- |
-| Version | `2.0.0-beta.4` | UI label, archive filename and exact `v2.0.0-beta.4` tag |
+| Version | `2.0.0-beta.5` | UI label, archive filename and exact `v2.0.0-beta.5` tag |
 | InformationalVersion | `$(Version)` plus SDK Git metadata when available | Full build provenance; About shows the product before `+` and exposes the full value in its tooltip/help |
 | AssemblyVersion | `2.0.0.0` | Numeric assembly identity, stable throughout this prerelease cycle |
-| FileVersion | `2.0.0.4` | Numeric Windows file/build revision |
+| FileVersion | `2.0.0.5` | Numeric Windows file/build revision |
 
 Windows numeric fields cannot contain `beta` or `rc`. Increase FileVersion's
 fourth component for the next delivered beta/candidate/stable build of the same
@@ -71,9 +71,11 @@ and ProductVersion with the version source, accepting SDK build metadata.
 6. Confirm the app launches from both generated shortcuts.
 7. Run `Uninstall-PrivacyMask.cmd` and confirm the app and shortcuts are removed.
 
-The packaging script publishes the self-contained `win-x64` single-file build,
-includes the transactional installer and uninstaller, and writes a SHA-256
-checksum beside the versioned ZIP.
+The packaging script publishes the self-contained `win-x64` single-file App and
+Native-AOT stable launcher, includes the transactional installer and uninstaller,
+and writes a SHA-256 checksum beside the versioned ZIP. Publishing the launcher
+from source requires the Visual Studio Windows C++ linker workload; installing
+the finished ZIP does not.
 
 ## Publish a GitHub release
 
@@ -83,7 +85,7 @@ baseline, so the new publisher currently fails closed. This is not an automatic
 environment/secret setup or permission to publish an existing version again.
 
 1. Merge the fully verified release changes into `main`.
-2. Create an annotated version tag matching the source, such as `v2.0.0-beta.4`, on the release commit.
+2. Create an annotated version tag matching the source, such as `v2.0.0-beta.5`, on the release commit.
 3. Push the tag to GitHub.
 4. The `release` workflow requires the named protected environment and a clean
    merged exact version tag, builds/tests the project and normal Windows ZIP,
@@ -99,8 +101,8 @@ environment/secret setup or permission to publish an existing version again.
 Example tag commands:
 
 ```powershell
-git tag -a v2.0.0-beta.4 -m "PrivacyMask v2.0.0-beta.4"
-git push origin v2.0.0-beta.4
+git tag -a v2.0.0-beta.5 -m "PrivacyMask v2.0.0-beta.5"
+git push origin v2.0.0-beta.5
 ```
 
 These commands are a release procedure, not commands run by the current PR.
@@ -137,11 +139,15 @@ committed EXE. The tests use ephemeral memory-only private keys, not production
 credentials. Configuration/custody/OS gates remain deliberately pending; key
 setup, immutable-release settings, tags and publication require separate
 explicit authorization. Do not publish synthetic test metadata or treat a
-missing update manifest as an unsigned fallback. The app has no update client yet.
+missing update manifest as an unsigned fallback. The app does not activate the
+discovery client or update UI yet.
 
 The earlier signing/tooling deliveries kept beta.2 unchanged. The
 [awaited shell lifecycle delivery](update-shell-lifecycle.md) advanced the shipped
 application to beta.3. The [authenticated App readiness delivery](update-app-readiness.md)
 adds a shipped startup/migration path and advances to beta.4 / FileVersion 2.0.0.4,
-without changing settings schema 12 or activating update discovery/UI. Qualify a
-first manual launcher migration before advertising subsequent in-app updates.
+without changing settings schema 12 or activating update discovery/UI. The
+[stable launcher and installer migration](update-stable-launcher.md) advances to
+beta.5 / FileVersion 2.0.0.5, without changing settings schema 12 or activating
+update discovery/UI. Qualify this manual migration before advertising subsequent
+in-app updates.

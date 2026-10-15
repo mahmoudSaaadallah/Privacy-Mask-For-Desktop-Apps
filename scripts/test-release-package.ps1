@@ -49,7 +49,7 @@ if (-not [string]::Equals(
 
 $smokeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("PrivacyMask-package-test-$([Guid]::NewGuid().ToString('N'))")
 $extractPath = Join-Path $smokeRoot 'extracted'
-$installPath = Join-Path $smokeRoot 'installed'
+$installPath = Join-Path $smokeRoot 'PrivacyMask.Desktop'
 $desktopShortcutPath = Join-Path $smokeRoot 'desktop\PrivacyMask.lnk'
 $startMenuFolder = Join-Path $smokeRoot 'start-menu\PrivacyMask'
 
@@ -62,6 +62,7 @@ try {
     'README.md'
     'ShortcutTools.ps1'
     'single-file\PrivacyMask.App.exe'
+    'single-file\PrivacyMask.Launcher.exe'
     'Uninstall-PrivacyMask.cmd'
     'Uninstall-PrivacyMask.ps1'
   ) | Sort-Object
@@ -76,6 +77,7 @@ try {
   }
 
   $packagedExePath = Join-Path $extractPath 'single-file\PrivacyMask.App.exe'
+  $packagedLauncherPath = Join-Path $extractPath 'single-file\PrivacyMask.Launcher.exe'
   $versionInfo = (Get-Item -LiteralPath $packagedExePath).VersionInfo
   Assert-PrivacyMaskPackageVersion -Identity $versionIdentity -FileVersion $versionInfo.FileVersion -ProductVersion $versionInfo.ProductVersion
 
@@ -87,9 +89,13 @@ try {
     -StartMenuFolder $startMenuFolder `
     -SkipRestart
 
-  $installedExePath = Join-Path $installPath 'PrivacyMask.App.exe'
+  $installedExePath = Join-Path $installPath 'app\PrivacyMask.App.exe'
+  $installedLauncherPath = Join-Path $installPath 'PrivacyMask.Launcher.exe'
   if (-not (Test-Path -LiteralPath $installedExePath -PathType Leaf)) {
     throw 'Package smoke install did not create PrivacyMask.App.exe.'
+  }
+  if (-not (Test-Path -LiteralPath $installedLauncherPath -PathType Leaf)) {
+    throw 'Package smoke install did not create PrivacyMask.Launcher.exe.'
   }
 
   $packagedExeHash = (Get-FileHash -LiteralPath $packagedExePath -Algorithm SHA256).Hash
@@ -97,9 +103,13 @@ try {
   if ($packagedExeHash -ne $installedExeHash) {
     throw 'Installed executable does not match the executable in the release archive.'
   }
+  if ((Get-FileHash -LiteralPath $packagedLauncherPath -Algorithm SHA256).Hash -ne
+      (Get-FileHash -LiteralPath $installedLauncherPath -Algorithm SHA256).Hash) {
+    throw 'Installed launcher does not match the launcher in the release archive.'
+  }
 
   . (Join-Path $extractPath 'ShortcutTools.ps1')
-  $expectedTarget = [System.IO.Path]::GetFullPath($installedExePath)
+  $expectedTarget = [System.IO.Path]::GetFullPath($installedLauncherPath)
   foreach ($shortcutPath in @($desktopShortcutPath, (Join-Path $startMenuFolder 'PrivacyMask.lnk'))) {
     $actualIcon = [PrivacyMask.Installer.UnicodeShortcut]::ReadIconLocation($shortcutPath)
     if (-not [string]::Equals($actualIcon, "$expectedTarget,0", [StringComparison]::OrdinalIgnoreCase)) {

@@ -18,7 +18,10 @@ function Test-Dispatch {
     [string]$Name,
     [bool]$Checkout,
     [string]$PublishedFolder,
-    [int]$SourceExitCode = 17
+    [int]$SourceExitCode = 17,
+    [ValidateSet('source', 'published', 'missing')]
+    [string]$Expected = '',
+    [bool]$IncludeLauncher = $true
   )
   $caseRoot = Join-Path $fixtureRoot $Name
   $distributionRoot = Join-Path $caseRoot 'desktop-app/windows/win-x64'
@@ -34,6 +37,9 @@ function Test-Dispatch {
   }
   if ($PublishedFolder) {
     Write-FixtureFile (Join-Path $distributionRoot "$PublishedFolder/PrivacyMask.App.exe") 'Stale fixture, never executed'
+    if ($PublishedFolder -eq 'single-file' -and $IncludeLauncher) {
+      Write-FixtureFile (Join-Path $distributionRoot "$PublishedFolder/PrivacyMask.Launcher.exe") 'Stale fixture, never executed'
+    }
   }
   $start = New-Object System.Diagnostics.ProcessStartInfo
   $start.FileName = $env:ComSpec
@@ -55,14 +61,23 @@ function Test-Dispatch {
       $process.Kill()
       throw "Installer entrypoint test timed out: $Name."
     }
-    $expected = if ($Checkout) { 'source' } else { 'published' }
-    $expectedExit = if ($Checkout) { $SourceExitCode } else { 23 }
+    if ([string]::IsNullOrWhiteSpace($Expected)) {
+      $Expected = if ($Checkout) { 'source' } else { 'published' }
+    }
+    $expectedExit = if ($Expected -eq 'source') { $SourceExitCode } elseif ($Expected -eq 'published') { 23 } else { 2 }
+    if ($Expected -eq 'missing') {
+      if ((Test-Path -LiteralPath $marker) -or $process.ExitCode -ne $expectedExit) {
+        throw "$Name did not reject the incomplete payload with exit $expectedExit. $($process.StandardError.ReadToEnd())"
+      }
+      Write-Host "Passed installer entrypoint rejection: $Name"
+      return
+    }
     if (-not (Test-Path -LiteralPath $marker)) {
       throw "No dispatch marker for $Name. $($process.StandardError.ReadToEnd())"
     }
     $actual = (Get-Content -LiteralPath $marker -Raw).Trim()
-    if ($actual -ne $expected -or $process.ExitCode -ne $expectedExit) {
-      throw "$Name routed to '$actual' with exit $($process.ExitCode); expected '$expected' / $expectedExit."
+    if ($actual -ne $Expected -or $process.ExitCode -ne $expectedExit) {
+      throw "$Name routed to '$actual' with exit $($process.ExitCode); expected '$Expected' / $expectedExit."
     }
     Write-Host "Passed installer entrypoint: $Name"
   }
@@ -78,7 +93,8 @@ try {
   Test-Dispatch 'checkout-without-publish' $true ''
   Test-Dispatch 'checkout-build-failure-no-fallback' $true 'single-file' 41
   Test-Dispatch 'release-single-file-with-unrelated-bat' $false 'single-file'
-  Test-Dispatch 'release-portable-with-unrelated-bat' $false 'app'
+  Test-Dispatch 'release-portable-with-unrelated-bat' $false 'app' 17 'missing'
+  Test-Dispatch 'release-incomplete-single-file' $false 'single-file' 17 'missing' $false
   Write-Host 'Installer entrypoint checks passed without installing or building an application.'
 }
 finally {

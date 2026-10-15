@@ -6,6 +6,7 @@ set "REPO_ROOT=%~dp0"
 set "PUBLISH_SCRIPT=%REPO_ROOT%scripts\publish-win-x64-single-file.ps1"
 set "INSTALL_SCRIPT=%REPO_ROOT%desktop-app\windows\win-x64\Install-PrivacyMask.ps1"
 set "PUBLISHED_APP=%REPO_ROOT%desktop-app\windows\win-x64\single-file\PrivacyMask.App.exe"
+set "PUBLISHED_LAUNCHER=%REPO_ROOT%desktop-app\windows\win-x64\single-file\PrivacyMask.Launcher.exe"
 set "EXIT_CODE=0"
 
 cd /d "%REPO_ROOT%"
@@ -23,6 +24,7 @@ set "EXIT_CODE=%ERRORLEVEL%"
 if not "%EXIT_CODE%"=="0" goto publish_failed
 
 if not exist "%PUBLISHED_APP%" goto published_app_missing
+if not exist "%PUBLISHED_LAUNCHER%" goto published_app_missing
 
 echo.
 echo [2/2] Installing PrivacyMask for the current Windows user...
@@ -58,7 +60,7 @@ goto finish
 :published_app_missing
 set "EXIT_CODE=1"
 echo.
-echo ERROR: The build completed without creating PrivacyMask.App.exe.
+echo ERROR: The build completed without creating PrivacyMask.App.exe and PrivacyMask.Launcher.exe.
 goto finish
 
 :install_failed

@@ -6,12 +6,13 @@ and internal phase-5a/b/c.1/c.2 recovery/prototype/[preparation](update-preparat
 [transaction](update-transaction.md)
 slices and the [phase-5d.1 awaited shell lifecycle](update-shell-lifecycle.md)
 foundation plus [phase-5d.2 authenticated App readiness](update-app-readiness.md)
-are implemented. Phase 5 as a whole is not complete.
+and [phase-5d.3 stable launcher/migration](update-stable-launcher.md) are
+implemented. Phase 5 as a whole is not complete.
 Production signing/environment/OS qualification remain unset;
 see [signing operations](update-signing-operations.md). No update button,
-live network activation, production key, launcher, automatic installation, tag,
-or new release is supplied. App discovery/network activation and UI remain absent;
-the narrowly scoped startup transaction reference now targets `2.0.0-beta.4`.
+live network activation, production key, automatic in-app installation, tag, or
+new release is supplied. App discovery/network activation and UI remain absent;
+the managed launcher/migration testing delivery now targets `2.0.0-beta.5`.
 
 ## Current implementation and gaps
 
@@ -21,11 +22,11 @@ default per-user installation and local settings share
 12. The public source is
 `mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps` on GitHub.
 
-`Install-PrivacyMask.ps1` stages a replacement, preserves local settings, moves
-the existing installation to a backup, and restores it on replacement errors.
-It force-stops the installed process and deletes the backup before checking
-that the replacement starts successfully. A restart failure is only a warning.
-These are useful installation primitives, not an in-app recovery guarantee.
+`Install-PrivacyMask.ps1` now migrates the previous flat executable into the
+managed layout, preserves local settings and startup preference, and points
+shell entry points at a stable native launcher. Manual installer replacement
+still stops the exact installed process and treats restart failure as a warning;
+the in-app transaction uses the separate authenticated readiness protocol.
 
 Before phase 2, `release.yml` published the installer ZIP and SHA-256 file on a
 matching `v*` tag. The new publisher requires signed app-only assets and a
@@ -102,8 +103,8 @@ simply to replace one executable.
 
 ## Managed layout and first-time migration
 
-Managed layout (existing installer is NOT migrated; the internal library/fixtures
-use these names, while the production launcher remains pending):
+Managed layout (created by the beta.5 installer and used by the production
+launcher):
 
 ```text
 %LocalAppData%\PrivacyMask.Desktop\
@@ -123,18 +124,18 @@ canonical path, install identity, owner, architecture, permitted roots and
 reparse-point policy as well. Non-default custom installations need explicit
 qualification before automatic apply is enabled there.
 
-The first updater-capable release needs the existing manual installation
-workflow once. Its new installer migrates the old root executable into the
+The first updater-capable release uses the existing manual installation
+workflow once. Its installer migrates the old root executable into the
 managed app layout, preserves settings at their current path, installs the
 launcher, updates Desktop/Start Menu shortcuts and the existing HKCU startup
 entry without turning startup on for a user who disabled it. The application
 must register the launcher, not itself, for subsequent sign-ins. Uninstall and
 manual reinstall must honor the same lock/journal and ownership rules.
 
-The first migration also needs backup/readiness recovery; do not remove the old
-executable before the new entry points work. A legacy-installer reinstall over
-the new layout is unsupported and must be documented; qualify the new
-installer as the manual repair path.
+The migration transaction retains its directory backup until replacement,
+shortcut and startup work completes, then restores the prior installation on
+failure. Legacy installer scripts pre-dating beta.5 are not a repair path for
+the managed layout; reinstall beta.5 or newer instead.
 
 Application updates in protocol v1 replace only the application payload, not
 the launcher, installer scripts, or user data. The launcher protocol is versioned
@@ -238,9 +239,11 @@ The [phase-5d.2 App readiness path](update-app-readiness.md) parses the private
 update-start contract before normal activation, validates the managed layout,
 strictly migrates the prepared settings baseline and authenticates Ready/commit/
 receipt after singleton, tray, hotkey and first-refresh initialization. It advances
-source to beta.4, but remains unreachable from current installations until the
-stable launcher and installer migration are delivered. It does not authorize an
-update, activate discovery/network UI or implement authenticated old-process exit.
+source to beta.4. The [phase-5d.3 stable launcher/migration](update-stable-launcher.md)
+makes managed startup and crash recovery reachable from beta.5 installations,
+routes shortcuts/startup through the launcher and qualifies legacy migration.
+It does not authorize an update, activate discovery/network UI or implement
+authenticated old-process exit.
 
 ## Related specifications and sources
 

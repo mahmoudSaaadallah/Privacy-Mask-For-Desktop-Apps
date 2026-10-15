@@ -11,15 +11,22 @@ internal sealed class ManagedInstallLease : IDisposable
     internal string Root { get; }
     internal string InstallId { get; }
 
+    internal static ManagedInstallLease Open(string root)
+    {
+        var normalizedRoot = NormalizeRoot(root);
+        AssertPrivate(normalizedRoot);
+        var markerPath = Path.Combine(normalizedRoot, "managed-install.json");
+        AssertPrivate(markerPath);
+        var marker = RecoveryJson.Read(ReadBounded(markerPath, 4096), 4096, RecoveryJson.Context.ManagedInstallMarker);
+        RecoveryRules.Validate(marker);
+        return new ManagedInstallLease(normalizedRoot, marker.InstallId);
+    }
+
     internal ManagedInstallLease(string root, string installId)
     {
-        if (!OperatingSystem.IsWindows() || !RecoveryRules.IsId(installId) || !Path.IsPathFullyQualified(root))
+        if (!RecoveryRules.IsId(installId))
             throw new ReleaseValidationException("Managed installation identity is invalid.");
-        Root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
-        if (Root.StartsWith(@"\\", StringComparison.Ordinal) || Root.Length < 4 || Root[1] != ':' || Root[2] != '\\' ||
-            Root[3..].Contains(':') || Path.GetFileName(Root) != ManifestRules.AppId ||
-            !Directory.Exists(Root) || new DriveInfo(Path.GetPathRoot(Root)!).DriveType != DriveType.Fixed)
-            throw new ReleaseValidationException("Unsupported managed installation location.");
+        Root = NormalizeRoot(root);
         InstallId = installId;
         AssertPrivate(Root);
         ValidateMarker();
@@ -40,6 +47,18 @@ internal sealed class ManagedInstallLease : IDisposable
             _lock = handle;
         }
         catch { handle.Dispose(); throw; }
+    }
+
+    private static string NormalizeRoot(string root)
+    {
+        if (!OperatingSystem.IsWindows() || !Path.IsPathFullyQualified(root))
+            throw new ReleaseValidationException("Managed installation identity is invalid.");
+        var normalized = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+        if (normalized.StartsWith(@"\\", StringComparison.Ordinal) || normalized.Length < 4 || normalized[1] != ':' || normalized[2] != '\\' ||
+            normalized[3..].Contains(':') || Path.GetFileName(normalized) != ManifestRules.AppId ||
+            !Directory.Exists(normalized) || new DriveInfo(Path.GetPathRoot(normalized)!).DriveType != DriveType.Fixed)
+            throw new ReleaseValidationException("Unsupported managed installation location.");
+        return normalized;
     }
 
     internal void AssertHeld()
