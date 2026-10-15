@@ -56,7 +56,8 @@ internal sealed class RecoveryFixture : IDisposable
     {
         foreach (var step in new[] { RecoveryStep.Handoff, RecoveryStep.Replacing, RecoveryStep.AwaitingReadiness, RecoveryStep.Committed })
         {
-            if ((int)Record.Step >= (int)target) break;
+            if ((int)step <= (int)Record.Step) continue;
+            if ((int)step > (int)target) break;
             Record = Record with { Step = step, Revision = Record.Revision + 1 };
             new RecoveryJournalStore(Lease).Write(Record);
         }
