@@ -8,7 +8,8 @@ internal static class LauncherBoot
     internal const string ApplicationFileName = "PrivacyMask.App.exe";
 
     internal static Process Launch(string launcherPath, IReadOnlyList<string> arguments,
-        Func<ProcessStartInfo, Process?>? start = null, Action<string>? inspectApplication = null)
+        Func<ProcessStartInfo, Process?>? start = null, Action<string>? inspectApplication = null,
+        Func<string, bool>? isApplicationRunning = null)
     {
         if (!OperatingSystem.IsWindows() || !Path.IsPathFullyQualified(launcherPath) ||
             arguments.Count > 1 || (arguments.Count == 1 && arguments[0] != "--minimized"))
@@ -22,6 +23,10 @@ internal static class LauncherBoot
         ManagedInstallLease.AssertPrivate(self);
 
         using var lease = ManagedInstallLease.Open(root);
+        var pending = new RecoveryJournalStore(lease).Read();
+        if (pending is { Step: not (RecoveryStep.Committed or RecoveryStep.Recovered) } &&
+            (isApplicationRunning ?? IsApplicationRunning)(Path.Combine(root, "app", ApplicationFileName)))
+            throw new ReleaseValidationException("The running application must finish its update before boot recovery.");
         var recovery = new RecoveryRestorer(lease).Recover();
         if (recovery.Outcome == RecoveryOutcome.RepairRequired)
             throw new ReleaseValidationException("Managed installation requires repair.");
@@ -68,5 +73,21 @@ internal static class LauncherBoot
         if (version.ProductName != "PrivacyMask for Desktop Apps" || productVersion is null ||
             !ManifestRules.IsVersion(productVersion))
             throw new ReleaseValidationException("Unexpected managed application identity.");
+    }
+
+    private static bool IsApplicationRunning(string applicationPath)
+    {
+        var processes = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(ApplicationFileName));
+        try
+        {
+            foreach (var process in processes)
+            {
+                if (process.HasExited) continue;
+                var image = process.MainModule?.FileName ?? throw new ReleaseValidationException("Unable to identify a running application.");
+                if (string.Equals(Path.GetFullPath(image), applicationPath, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return false;
+        }
+        finally { foreach (var process in processes) process.Dispose(); }
     }
 }
