@@ -2,12 +2,12 @@
 
 Status: **internal library + disposable fixtures**, not a production updater or
 apply command. This connects phase-4 staging to phase-5a's journal/baselines.
-App/Core/Windows still do not reference Updates. The prototype helper continues
+At this historical slice boundary App/Core/Windows did not reference Updates. The prototype helper continues
 to accept only its test `--probe` command. No user installation, launcher,
 shortcuts, startup entry, release, key or network preference is changed.
 This slice was delivered at beta.2 / FileVersion 2.0.0.2 / schema 12. The
-subsequent [shell lifecycle](update-shell-lifecycle.md) advances source to beta.3
-without activating preparation in the App.
+subsequent lifecycle/readiness work advances current source to beta.4 without
+activating preparation for end users.
 
 ## Authority and layout
 

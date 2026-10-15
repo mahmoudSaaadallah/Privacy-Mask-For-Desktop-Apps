@@ -20,6 +20,13 @@ using Point = System.Windows.Point;
 
 namespace PrivacyMask.App.Services;
 
+internal sealed record ShellStartupContext(
+    AppSettings Settings,
+    string StartupExecutablePath,
+    bool StartMinimized,
+    bool DeferInteractiveUi,
+    bool RequireSuccessfulInitialRefresh);
+
 public sealed class ShellCoordinator : IAsyncDisposable
 {
     private readonly Dispatcher _dispatcher;
@@ -50,6 +57,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly ShellOperationQueue _operations = new();
     private readonly SemaphoreSlim _panicOperationGate = new(1, 1);
     private readonly SemaphoreSlim _profileProtectionOperationGate = new(1, 1);
+    private readonly ShellStartupContext? _startupContext;
 
     private AppSettings _settings = new();
     private AppSettings _savedSettings = new();
@@ -58,13 +66,21 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private MainWindow? _mainWindow;
     private bool _isShuttingDown;
     private bool _isDisposed;
+    private bool _interactiveStartupCompleted;
     private Task? _disposeTask;
 
     public ShellCoordinator(Dispatcher dispatcher, string[] args, Func<Task> requestShutdown)
+        : this(dispatcher, args, requestShutdown, null)
+    {
+    }
+
+    internal ShellCoordinator(Dispatcher dispatcher, string[] args, Func<Task> requestShutdown,
+        ShellStartupContext? startupContext)
     {
         _dispatcher = dispatcher;
         _args = args;
         _requestShutdown = requestShutdown;
+        _startupContext = startupContext;
         _defaultSettingsFactory = new DefaultSettingsFactory();
         _protectionStateMachine = new ProtectionStateMachine();
         _profileProtectionState = new ProfileProtectionState();
@@ -82,7 +98,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _hotkeyManager = new GlobalHotkeyManager();
         _hotkeyManager.HotkeyPressed += HandleHotkeyPressed;
 
-        var executablePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "PrivacyMask.App.exe");
+        var executablePath = startupContext?.StartupExecutablePath
+            ?? Environment.ProcessPath
+            ?? Path.Combine(AppContext.BaseDirectory, "PrivacyMask.App.exe");
         _startupRegistrationService = new StartupRegistrationService("PrivacyMask.Desktop", executablePath);
 
         _refreshTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)
@@ -141,7 +159,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task StartCoreAsync()
     {
-        _settings = await _settingsStore.LoadAsync();
+        _settings = _startupContext is null
+            ? await _settingsStore.LoadAsync()
+            : AppSettingsCloner.Clone(_startupContext.Settings);
         if (_isShuttingDown) return;
         RebuildWindowProcessFilter();
         var registrationState = _startupRegistrationService.GetState();
@@ -156,16 +176,31 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
         RegisterHotkeys();
         UpdateTrayState();
-        RefreshOverlays();
+        RefreshOverlays(_startupContext?.RequireSuccessfulInitialRefresh == true);
         _refreshTimer.Start();
 
+        if (_startupContext?.DeferInteractiveUi == true) return;
+        await StartInteractiveUiCoreAsync();
+    }
+
+    internal async Task CompleteInteractiveStartupAsync()
+    {
+        if (!await _operations.TryRunAsync(StartInteractiveUiCoreAsync, requireIdle: true))
+            throw new InvalidOperationException("PrivacyMask interactive startup is no longer available.");
+    }
+
+    private async Task StartInteractiveUiCoreAsync()
+    {
+        if (_interactiveStartupCompleted || _isShuttingDown) return;
+        _interactiveStartupCompleted = true;
         if (!_settings.OnboardingCompleted)
         {
             await ShowOnboardingAsync();
             return;
         }
 
-        var shouldStartMinimized = _args.Any(arg => string.Equals(arg, "--minimized", StringComparison.OrdinalIgnoreCase));
+        var shouldStartMinimized = _startupContext?.StartMinimized
+            ?? _args.Any(arg => string.Equals(arg, "--minimized", StringComparison.OrdinalIgnoreCase));
         if (!shouldStartMinimized)
         {
             ShowSettingsWindow();
@@ -238,7 +273,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         RefreshOverlays();
     }
 
-    private void RefreshOverlays()
+    private void RefreshOverlays(bool propagateFailure = false)
     {
         try
         {
@@ -313,6 +348,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         {
             _overlayManager.HideAll();
             UpdateRefreshInterval(OverlayRefreshCadence.IdleInterval);
+            if (propagateFailure) throw;
         }
     }
 

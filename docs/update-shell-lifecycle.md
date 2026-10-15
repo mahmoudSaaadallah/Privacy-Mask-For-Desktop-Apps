@@ -1,5 +1,9 @@
 # Awaited shell shutdown foundation (phase 5d.1)
 
+Historical slice note: this describes the beta.3 boundary. The subsequent
+[authenticated App readiness delivery](update-app-readiness.md) implements the
+strict startup/migration half and advances current source to beta.4.
+
 Status: **shipped App lifecycle changes, not updater activation**. Source version
 advances to `2.0.0-beta.3`, Windows FileVersion `2.0.0.3`; AssemblyVersion remains
 `2.0.0.0` and settings schema remains 12. No release/tag, production key, installed

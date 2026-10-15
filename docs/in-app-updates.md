@@ -5,12 +5,13 @@ Status: phase 1 specifications, phase 2 signing/packaging tooling, phase 3
 and internal phase-5a/b/c.1/c.2 recovery/prototype/[preparation](update-preparation.md)/
 [transaction](update-transaction.md)
 slices and the [phase-5d.1 awaited shell lifecycle](update-shell-lifecycle.md)
-foundation are implemented. Phase 5 as a whole is not complete.
+foundation plus [phase-5d.2 authenticated App readiness](update-app-readiness.md)
+are implemented. Phase 5 as a whole is not complete.
 Production signing/environment/OS qualification remain unset;
 see [signing operations](update-signing-operations.md). No update button,
 live network activation, production key, launcher, automatic installation, tag,
-or new release is supplied. App has no discovery-library reference or UI yet
-and now targets `2.0.0-beta.3` for the shipped lifecycle changes.
+or new release is supplied. App discovery/network activation and UI remain absent;
+the narrowly scoped startup transaction reference now targets `2.0.0-beta.4`.
 
 ## Current implementation and gaps
 
@@ -231,8 +232,15 @@ runtime consent/Panic/settings integration gates.
 
 The [phase-5d.1 shell lifecycle](update-shell-lifecycle.md) serializes complete
 settings mutations and awaits normal shell/window disposal in the actual App,
-advancing source to beta.3. It does not authorize an update, implement strict
-prepared-baseline migration, exchange shutdown/readiness IPC or activate Updates.
+advancing source to beta.3.
+
+The [phase-5d.2 App readiness path](update-app-readiness.md) parses the private
+update-start contract before normal activation, validates the managed layout,
+strictly migrates the prepared settings baseline and authenticates Ready/commit/
+receipt after singleton, tray, hotkey and first-refresh initialization. It advances
+source to beta.4, but remains unreachable from current installations until the
+stable launcher and installer migration are delivered. It does not authorize an
+update, activate discovery/network UI or implement authenticated old-process exit.
 
 ## Related specifications and sources
 
@@ -240,6 +248,7 @@ prepared-baseline migration, exchange shutdown/readiness IPC or activate Updates
 - [Read-only discovery and host contract](update-discovery.md)
 - [Verified download and staging boundaries](update-download.md)
 - [Recovery and threat model](update-recovery.md)
+- [Authenticated App readiness](update-app-readiness.md)
 - [Release process and version policy](release-process.md)
 - [GUI and live release qualification](gui-qualification.md)
 - [GitHub release API](https://docs.github.com/en/rest/releases/releases)

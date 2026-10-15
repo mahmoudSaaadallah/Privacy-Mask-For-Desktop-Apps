@@ -56,7 +56,8 @@ internal sealed class RecoveryFixture : IDisposable
     {
         foreach (var step in new[] { RecoveryStep.Handoff, RecoveryStep.Replacing, RecoveryStep.AwaitingReadiness, RecoveryStep.Committed })
         {
-            if ((int)Record.Step >= (int)target) break;
+            if ((int)step <= (int)Record.Step) continue;
+            if ((int)step > (int)target) break;
             Record = Record with { Step = step, Revision = Record.Revision + 1 };
             new RecoveryJournalStore(Lease).Write(Record);
         }
@@ -67,6 +68,8 @@ internal sealed class RecoveryFixture : IDisposable
         WriteFile(Primary, Encoding.UTF8.GetBytes("new schema primary"));
         WriteFile(Secondary, Encoding.UTF8.GetBytes("new schema backup"));
     }
+    internal void AddDisplacedOriginal() =>
+        WriteFile(Path.Combine(Operation, "displaced-original-app.exe"), OldApp);
     private static void WriteFile(string path, byte[] bytes)
     {
         if (File.Exists(path)) { File.WriteAllBytes(path, bytes); return; }

@@ -1,10 +1,10 @@
 # Bootstrap/readiness prototype (phase 5b)
 
 Status: **developer-only executable/IPC prototype**, not the production launcher.
-App/Core/Windows still do not reference Updates. The installer, shortcuts, startup
+At this historical slice boundary App/Core/Windows did not reference Updates. The installer, shortcuts, startup
 entry and settings schema 12 are unchanged. This slice was delivered at beta.2;
-the subsequent [shell lifecycle](update-shell-lifecycle.md) advances source to
-beta.3 without activating the prototype. No
+subsequent lifecycle/readiness work advances current source to beta.4 without
+activating the prototype. No
 Update button, apply/recover/default-launch command or production key is enabled.
 See [recovery kernel](update-recovery-kernel.md) and [delivery gates](in-app-updates.md).
 

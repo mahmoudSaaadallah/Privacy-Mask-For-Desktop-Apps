@@ -1,13 +1,15 @@
 # Transactional replacement and process readiness (phase 5c.2)
 
 Status: **internal worker exercised with signed disposable TEST processes**.
-This is not the production launcher or an end-user update feature. The actual
-App still has no Updates reference or `--update-start` implementation. The
-bootstrap prototype still only accepts `--probe`; the existing installer,
+This is not the production launcher or an end-user update feature. At this
+historical slice boundary, the actual App had no Updates reference or
+`--update-start` implementation. The later [phase-5d.2 App readiness](update-app-readiness.md)
+supplies that child-side path, while the bootstrap prototype still only accepts
+`--probe`; the existing installer,
 shortcuts/startup and settings schema 12 are unchanged. This slice was delivered
 at beta.2 / FileVersion 2.0.0.2; the subsequent
-[shell lifecycle](update-shell-lifecycle.md) advances source to beta.3 without
-activating the worker. No production key, release/tag or user install is used.
+shell lifecycle/readiness slices advance current source to beta.4 without
+activating the worker for end users. No production key, release/tag or user install is used.
 
 ## Process authority before replacement
 
