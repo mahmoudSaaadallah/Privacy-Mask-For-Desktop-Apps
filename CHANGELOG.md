@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0-beta.9 - Source delivery (not published)
+
+- Add one-shot delayed startup discovery gated by saved opt-in, approved signing trust and managed-install eligibility
+- Persist bounded attempt, per-channel success and global retry history without modifying the settings schema
+- Prevent restart/channel changes or interrupted outcome writes from bypassing known server retry deadlines
+- Cancel/drain background checks on saved opt-out, shutdown and update handoff; never rearm a recurring poller
+- Serialize history across sessions and preserve bounded retry history during manual reinstall
+- Keep production trust empty, in-app download/apply disabled and all existing privacy/PIN behavior unchanged
+
 ## 2.0.0-beta.8 - Source delivery (not published)
 
 - Add Settings > Updates and tray manual checks sharing one cancellable discovery session
