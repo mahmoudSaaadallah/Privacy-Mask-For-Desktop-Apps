@@ -130,6 +130,7 @@ public sealed class ScheduledUpdateCheckTests
         Assert.Equal(0, calls);
         Assert.NotNull(store.Value.LastAttemptUtc);
         Assert.Null(store.Value.PreviewSuccessUtc);
+        Assert.False(store.Value.RequestPending);
     }
 
     [Theory]

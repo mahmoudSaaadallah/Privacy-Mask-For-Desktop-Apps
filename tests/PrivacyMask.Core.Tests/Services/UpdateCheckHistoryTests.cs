@@ -1,5 +1,7 @@
 using System.IO;
 using System.Text.Json;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using PrivacyMask.App.Services;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Updates;
@@ -89,5 +91,45 @@ public sealed class UpdateCheckHistoryTests
         var second = new UpdateCheckHistoryStore(fixture.Root);
         using (first.Acquire()) Assert.ThrowsAny<Exception>(() => second.Acquire());
         using (second.Acquire()) Assert.Equal(0, new FileInfo(Path.Combine(fixture.Root, ".update-check.lock")).Length);
+    }
+
+    [Fact]
+    public async Task OversizedHistoryIsNotBufferedOrReplaced()
+    {
+        using var fixture = new RecoveryFixture();
+        var path = Path.Combine(fixture.Root, UpdateCheckHistoryStore.FileName);
+        using (var file = ManagedInstallLease.CreatePrivateFile(path)) file.Write(new byte[UpdateCheckHistoryStore.MaximumBytes + 1]);
+        await Assert.ThrowsAsync<IOException>(() => new UpdateCheckHistoryStore(fixture.Root).ReadAsync(default));
+        Assert.Equal(UpdateCheckHistoryStore.MaximumBytes + 1, new FileInfo(path).Length);
+    }
+
+    [Fact]
+    public async Task LockedHistoryRemainsIntact()
+    {
+        using var fixture = new RecoveryFixture();
+        var store = new UpdateCheckHistoryStore(fixture.Root);
+        var expected = new UpdateCheckHistory().Attempt(Now).Complete(UpdateReleaseChannel.Stable, new(UpdateCheckStatus.UpToDate), Now);
+        await store.WriteAsync(expected, default);
+        var path = Path.Combine(fixture.Root, UpdateCheckHistoryStore.FileName);
+        using (var locked = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            await Assert.ThrowsAnyAsync<Exception>(() => store.ReadAsync(default));
+        Assert.Equal(expected, await store.ReadAsync(default));
+    }
+
+    [Fact]
+    public async Task ForeignAccessIsRejectedWithoutChangingPermissionsOrContent()
+    {
+        using var fixture = new RecoveryFixture();
+        var store = new UpdateCheckHistoryStore(fixture.Root);
+        await store.WriteAsync(new(), default);
+        var file = new FileInfo(Path.Combine(fixture.Root, UpdateCheckHistoryStore.FileName));
+        var content = File.ReadAllBytes(file.FullName);
+        var security = file.GetAccessControl();
+        security.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null),
+            FileSystemRights.ReadData, AccessControlType.Allow));
+        file.SetAccessControl(security);
+        await Assert.ThrowsAnyAsync<Exception>(() => store.ReadAsync(default));
+        Assert.Equal(content, File.ReadAllBytes(file.FullName));
+        Assert.ThrowsAny<Exception>(() => ManagedInstallLease.AssertPrivate(file.FullName));
     }
 }
