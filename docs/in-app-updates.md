@@ -19,7 +19,10 @@ preferences in beta.8. [Phase-6b durable startup discovery](update-check-schedul
 adds bounded history, one-shot scheduling and persistent retry gates in
 `2.0.0-beta.9`. Empty compiled trust still returns NotConfigured before network,
 installation inspection, history IO or a startup timer. No automatic network
-activation, download/apply UI, production key, tag or Release is supplied.
+activation, production key, tag or Release is supplied. The subsequent
+[phase-6c explicit download UI](update-download-ui.md) connects verified staging,
+progress/cancel and owned-stage discard in `2.0.0-beta.10`. Installation/restart
+UI remains disconnected; approved trust and live qualification remain required.
 
 ## Current implementation and gaps
 

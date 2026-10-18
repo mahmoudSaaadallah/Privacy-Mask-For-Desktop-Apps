@@ -10,6 +10,11 @@ The later [beta.7 storage maintenance](update-retention.md) adds active-workspac
 markers, managed staging admission and bounded expired-stage pruning. Successful
 stages retain the exact four-file contract described below.
 
+The later [beta.10 download UI](update-download-ui.md) connects this stager to
+explicit Settings downloads, progress/cancel and owned-stage discard through
+shared durable admission. Production trust remains empty and installation UI
+is not connected. The phase-4 status above describes its original delivery only.
+
 ## Host/API contract
 
 `UpdateStager.PrepareAsync(candidate, context, stagingRoot, progress, token)`
