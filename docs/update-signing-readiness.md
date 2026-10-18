@@ -8,8 +8,9 @@ settings, enable runtime update operations or publish.
 
 ## Actual starting point
 
-- Source is `2.0.0-beta.12` / Windows file version `2.0.0.12`: this delivery changes
-  the shared compiled App/launcher public trust policy, so it advances the beta.
+- Source is `2.0.0-beta.13` / Windows file version `2.0.0.13`. The
+  [required automatic update policy](update-mandatory.md) is implemented but still
+  gated by disabled runtime activation, unqualified Windows baseline and signing setup.
 - App update UI, owned verified staging, restart consent, authenticated handoff,
   stable launcher and bounded recovery/history are implemented. They are not
   evidence that a real signed A-to-B update has passed on supported Windows.
