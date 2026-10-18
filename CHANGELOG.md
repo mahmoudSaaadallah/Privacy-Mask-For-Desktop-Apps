@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0-beta.8 - Source delivery (not published)
+
+- Add Settings > Updates and tray manual checks sharing one cancellable discovery session
+- Persist Stable/Preview and future automatic-check preferences with existing Save/Discard, migrating settings to schema 13
+- Report unconfigured trust without HTTP, and distinguish failed/incomplete checks from successful up-to-date results
+- Show session-only check status, retry guidance and bounded plain-text release notes; keep download/apply and background checks inactive
+- Disclose GitHub connection metadata in Updates/About help and retain local-only sensitive settings/captures
+- Add preference/session/WPF lifecycle tests and advance Windows file revision to 2.0.0.8
+
 ## 2.0.0-beta.2 - Unreleased
 
 - Prevent information popups from opening automatically on focus or page navigation
