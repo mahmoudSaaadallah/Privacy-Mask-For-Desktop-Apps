@@ -390,6 +390,11 @@ Press `Esc` or close the window to discard the preview and return to the tray.
 - Review [update signing operations](docs/update-signing-operations.md) before
   publishing: production policy/environment are intentionally unconfigured,
   so signed release publication fails closed until explicitly approved setup.
+- Follow the [signing readiness plan](docs/update-signing-readiness.md) for the
+  approved SoloMaintainer review model and separate custody/setup/publication
+  gates. The [isolated update lab runbook](docs/update-qualification-runbook.md)
+  prepares Windows 10/11 evidence; `scripts/prepare-update-qualification.ps1`
+  creates only a fresh local `NotRun` packet, not a VM or completed test report.
 - Run `pwsh -File scripts/test-update-manifest-schema.ps1` to verify the proposed
   update schemas. PowerShell 7 is required for this developer check only;
   end users do not need it. CI and release verification also run this check.

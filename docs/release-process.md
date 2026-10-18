@@ -83,6 +83,11 @@ First complete [protected signing setup](update-signing-operations.md). The
 committed production policy intentionally has no public keys/qualified OS
 baseline, so the new publisher currently fails closed. This is not an automatic
 environment/secret setup or permission to publish an existing version again.
+The [signing readiness plan](update-signing-readiness.md) records the owner's
+SoloMaintainer choice, separate setup approvals and real-App lab gates. A
+GET-only no-environment preflight now blocks signing-job admission if the existing
+reviewer/tag configuration is missing or mismatched; naming an environment alone
+is insufficient. The plan does not create it or authorize a tag push.
 
 1. Merge the fully verified release changes into `main`.
 2. Create an annotated version tag matching the source, such as `v2.0.0-beta.11`, on the release commit.

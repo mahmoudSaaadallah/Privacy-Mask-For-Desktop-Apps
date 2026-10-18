@@ -34,6 +34,14 @@ jobs:
         shell: powershell
         run: .\scripts\test-release-source.ps1
 
+      - name: Test protected release environment admission without external writes
+        shell: powershell
+        run: .\scripts\test-release-environment.ps1
+
+      - name: Test isolated qualification packet preparation
+        shell: powershell
+        run: .\scripts\test-update-qualification.ps1
+
       - name: Test proposed update manifest schemas
         shell: pwsh
         run: .\scripts\test-update-manifest-schema.ps1

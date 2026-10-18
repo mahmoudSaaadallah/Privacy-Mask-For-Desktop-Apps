@@ -26,6 +26,11 @@ UI is connected by the subsequent [phase-6d owned-stage install delivery](update
 in `2.0.0-beta.11`, through existing restart/Panic/edit and authenticated handoff
 gates. Approved trust and live production qualification remain required; the
 current empty-key build does not activate these network/install operations.
+The next [signing readiness and isolated lab preparation](update-signing-readiness.md)
+delivery keeps beta.11, records the approved SoloMaintainer plan and adds
+fail-closed environment admission plus fresh `NotRun` qualification packets.
+It generates no production keys, changes no GitHub environment and does not
+claim real-App Windows 10/11 A-to-B qualification.
 
 ## Current implementation and gaps
 

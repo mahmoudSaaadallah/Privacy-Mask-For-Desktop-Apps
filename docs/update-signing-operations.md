@@ -1,10 +1,12 @@
 # Update signing and release operations
 
-Status: phase 2 provides developer packaging/verification and a draft publisher.
-No production key, protected GitHub environment, OS qualification, immutable
-release setting, tag or release was created by this change. Phase 3 supplies an
-isolated [discovery library](update-discovery.md) sharing public verification.
-App activation/UI, download, installation, launcher and recovery remain later phases.
+Status: phase 2 originally supplied developer packaging/verification and a draft
+publisher. Subsequent deliveries through beta.11 implement discovery, download,
+App install UI, authenticated handoff, launcher and recovery, but production trust
+and live OS qualification remain unconfigured. The current
+[signing readiness plan](update-signing-readiness.md) prepares protected admission
+and isolated lab packets; it creates no production key, GitHub environment,
+repository setting, tag or release.
 
 ## Deliberate setup gate
 
@@ -19,8 +21,10 @@ An owner must approve the following before an authorized release:
 1. Qualify the supported Windows baseline, schema compatibility and source
    migrations. Put the actual minimum build into the policy, not the smoke
    fixture's illustrative 19041. Verify output schema against `AppSettings`.
-2. Choose a NIST P-256 key custodian and an independent protected backup/recovery
-   process. Generate the production key outside development test automation.
+2. Choose a NIST P-256 key custodian and a separately protected backup/recovery
+   process with a restore exercise. For a solo owner these can be the same person,
+   but loss of the primary store must not destroy the backup. Generate the
+   production key outside development test automation, after separate approval.
    Private input format is one unencrypted PKCS#8 `PRIVATE KEY` PEM block; the
    secret store protects it at rest. Do not save it in this checkout, artifacts,
    test fixtures, tickets, screenshots, chat, shell history, or command argv.
@@ -35,11 +39,15 @@ An owner must approve the following before an authorized release:
    The policy contains no private key and accepts no key URL. The first actual
    update client/helper must embed the same reviewed trust roots in its build;
    it may not learn keys from a fetched manifest or dynamically downloaded policy.
-4. Create GitHub environment `privacy-mask-release`, configure required human
-   review and deployment restrictions for the authorized `v*` release tags.
-   Prevent self-approval where supported. Check the exact merged commit/tag and
-   workflow before granting deployment approval. A job's environment name alone
-   does not prove protections were configured by the owner.
+4. After separate setup authorization, create GitHub environment
+   `privacy-mask-release`. The owner approved the tracked `SoloMaintainer` plan:
+   exactly one reviewer, repository owner `mahmoudSaaadallah`; allow self-review
+   deliberately so the owner can approve their own runs. This is not independent
+   review. Restrict deployments to exactly one tag rule `v*`, with no branch rule;
+   disable administrator bypass where available and verify it in the UI. Check
+   the exact merged commit/tag/workflow before each manual deployment approval.
+   A job's environment name alone does not prove protection. Future independent
+   review requires a reviewed policy change and self-review prevention enabled.
 5. Store `PRIVACYMASK_UPDATE_PRIVATE_KEY_PEM` as an **environment secret**, not
    a repository-wide secret; set environment variable `PRIVACYMASK_UPDATE_KEY_ID`
    to the matching reviewed ID. Never paste the secret into a command argument
@@ -51,12 +59,12 @@ An owner must approve the following before an authorized release:
    settings change, after verifying the complete draft publication flow. Do not
    assume the workflow itself toggles that setting.
 
-The signing-tooling delivery kept beta.2; subsequent shell lifecycle and
-[App readiness](update-app-readiness.md) deliveries advance source to beta.4
-without configuring production signing. Never reuse a published version/tag for
-new contents. Setup/tooling does not authorize publishing any version.
-Prepare the next app delivery/version and qualified bootstrap at the appropriate
-later phase before promising end-user in-app updates.
+Earlier signing tooling kept beta.2; later shipped-App changes advanced source
+through beta.11 without configuring production signing. This preparation-only
+delivery keeps beta.11. Never reuse a published version/tag for new contents.
+Setup/tooling does not authorize publishing any version. Prepare the reviewed
+public-root bootstrap before promising end-user in-app updates: empty-trust older
+clients cannot learn their first key from a fetched manifest.
 
 ## Build and validate locally
 
@@ -89,9 +97,14 @@ managed-string copy or defend against a compromised runner/administrator.
 
 1. Human approval/version qualification and merge happen first. An explicitly
    authorized exact product tag is pushed on the merged commit.
-2. `release.yml` uses full Git history, the named environment and per-tag
-   serialization. The source gate rejects a missing/mismatched tag, unmerged
-   source or dirty checkout before the signing step receives its secret.
+2. `release.yml` uses full Git history and per-tag serialization. A separate
+   no-environment preflight checks source/tag and GET-only environment/reviewer/tag
+   configuration. The protected signing job `needs` that preflight. Missing or
+   mismatched environment configuration blocks admission rather than allowing
+   GitHub to create an unprotected environment implicitly. The protected job
+   repeats the source gate before its signing step receives the secret. Approval
+   remains GitHub's manual deployment gate; the diagnostic does not prove approval,
+   bypass settings, immutable settings or key custody.
 3. Build/test normal application and installer ZIP. Run update schema, signature,
    archive, source-gate, publisher and ephemeral real-EXE checks.
 4. Expose the private secret only to the signed-package step. Missing/invalid
@@ -130,6 +143,8 @@ text, not instructions to the updater.
 
 ```powershell
 .\scripts\verify.ps1
+.\scripts\test-release-environment.ps1
+.\scripts\test-update-qualification.ps1
 pwsh -File .\scripts\test-update-manifest-schema.ps1
 .\scripts\package-win-x64-release.ps1 -SkipTests
 pwsh -File .\scripts\test-signed-update-package.ps1
@@ -143,6 +158,11 @@ nor publishes a GitHub release. Publisher/source tests intercept every GitHub/Gi
 command and exercise failure gates without external writes. Windows PowerShell
 5.1 remains supported for the existing installer and source/publisher tests;
 PowerShell 7 is used explicitly for cryptographic/schema packaging checks.
+
+Prepare, but do not execute, live lab cases using the
+[qualification runbook](update-qualification-runbook.md). Packet generation starts
+all 25 cases on each of Windows 10/11 at `NotRun`; it neither provisions a VM nor
+certifies an update.
 
 ## References
 
