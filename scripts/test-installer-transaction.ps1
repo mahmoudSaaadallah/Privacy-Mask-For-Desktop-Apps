@@ -157,6 +157,10 @@ try {
 
   $settingsPath = Join-Path $installPath 'settings.v1.json'
   Set-Content -LiteralPath $settingsPath -Value '{"preserved":true}' -Encoding UTF8
+  $historyPath = Join-Path $installPath 'update-check-history.json'
+  $historyJson = '{"schemaVersion":1,"lastAttemptUtc":"2026-10-18T12:00:00Z","retryAfterUtc":"2026-10-20T12:00:00Z","stableSuccessUtc":null,"previewSuccessUtc":null,"requestPending":false}'
+  Set-Content -LiteralPath $historyPath -Value $historyJson -Encoding UTF8
+  $historyHash = (Get-FileHash -LiteralPath $historyPath -Algorithm SHA256).Hash
   Set-Content -LiteralPath (Join-Path $installPath 'obsolete.dll') -Value 'stale binary' -Encoding ascii
 
   & $installerPath `
@@ -176,6 +180,24 @@ try {
   }
 
   Assert-ShortcutIcons -ExecutablePath $installedLauncherPath
+
+  if ((Get-FileHash -LiteralPath $historyPath -Algorithm SHA256).Hash -cne $historyHash) {
+    throw 'Manual reinstall changed or discarded durable update-check retry history.'
+  }
+  $installedHashBefore = (Get-FileHash -LiteralPath $installedExePath -Algorithm SHA256).Hash
+  Set-Content -LiteralPath $historyPath -Value ('x' * 4097) -Encoding ascii
+  $oversizedHistoryRejected = $false
+  try {
+    & $installerPath -SourcePath $resolvedSourcePath -LauncherSourcePath $resolvedLauncherSourcePath `
+      -InstallPath $installPath -DesktopShortcutPath $desktopShortcutPath -StartMenuFolder $startMenuFolder -SkipRestart
+  }
+  catch { $oversizedHistoryRejected = $true }
+  if (-not $oversizedHistoryRejected -or
+      (Get-FileHash -LiteralPath $installedExePath -Algorithm SHA256).Hash -cne $installedHashBefore -or
+      (Get-Item -LiteralPath $historyPath).Length -le 4096) {
+    throw 'Oversized history was not preserved/rejected before replacing the installed App.'
+  }
+  Set-Content -LiteralPath $historyPath -Value $historyJson -Encoding UTF8
 
   if (Test-Path -LiteralPath (Join-Path $installPath 'obsolete.dll')) {
     throw 'The installer retained a stale binary from the previous installation.'
