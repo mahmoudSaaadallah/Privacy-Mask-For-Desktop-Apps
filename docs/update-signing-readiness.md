@@ -1,24 +1,28 @@
 # Signing readiness and isolated update qualification
 
-Status: preparation only, audited 2026-10-19 (Africa/Cairo), after merged PR #55
-at `b305507ef20b526c1e758c7e0c132fc25d7868cc`. This is not approval to generate
-production keys, create GitHub resources, change repository settings or publish.
+Status: public-key preparation, updated 2026-10-19 (Africa/Cairo), following merged
+PR #56 at `40a8725f052e77ab0ecfe4015f03f21678cd14f1`. The owner supplied and approved
+the public identity and reported a successful encrypted-backup restore. This
+delivery does not access private keys, create GitHub resources, change repository
+settings, enable runtime update operations or publish.
 
 ## Actual starting point
 
-- Source is `2.0.0-beta.11` / Windows file version `2.0.0.11`. This tooling-only
-  delivery changes neither the shipped App nor its version.
+- Source is `2.0.0-beta.12` / Windows file version `2.0.0.12`: this delivery changes
+  the shared compiled App/launcher public trust policy, so it advances the beta.
 - App update UI, owned verified staging, restart consent, authenticated handoff,
   stable launcher and bounded recovery/history are implemented. They are not
   evidence that a real signed A-to-B update has passed on supported Windows.
-- `build/update-release-policy.json` still has an empty public trust list and
-  an unqualified (`null`) minimum Windows build. Runtime trust is also empty.
-  Production signed publication and live in-app update remain blocked.
+- `build/update-release-policy.json` pins `release-key-1` and retains an unqualified
+  (`null`) minimum Windows build. App/launcher compile the same public pin, with a
+  separate disabled runtime activation gate. Production signed publication and
+  live in-app update remain blocked. See [public identity and tests](update-public-trust.md).
 - Read-only GitHub inspection of this public repository, with an authenticated
   administrator, returned zero environments. No `privacy-mask-release` environment
   exists. No secrets were read and no environment was created during preparation.
-- The owner explicitly approved **SoloMaintainer in the plan**. No other setup
-  or publishing authority follows from that approval.
+- The owner explicitly approved **SoloMaintainer in the plan**, then separately
+  authorized public-key integration. Neither approval grants environment, private
+  secret transfer, runtime activation or publication authority.
 
 ## Approved review model: SoloMaintainer
 
@@ -58,17 +62,20 @@ and [job prerequisites](https://docs.github.com/en/actions/reference/workflows-a
 
 ## Execution stages and approval boundaries
 
-1. **Custody decision — pending.** Owner chooses an encrypted secret store, a
-   separately protected backup location and a documented restore exercise. A solo
-   owner may hold both roles, but backup must survive loss of the primary store.
-   Decide access/revocation/recovery before generating a key. No private material
-   belongs in chat, repo, PR, command argv, logs or qualification reports.
-2. **Production key and public roots — separate authorization required.** Generate
-   NIST P-256 outside test automation using the approved custody process. Review
-   the public SPKI fingerprint and immutable key ID; only public roots enter a PR.
-   Update publisher policy and compiled App/launcher trust together, with negative
-   tests for unknown/revoked/mismatched keys. A downloaded manifest cannot teach
-   an untrusted client a signing key. Authenticode is a separate decision.
+1. **Custody — owner-reported restore complete; protection checks pending.** The
+   owner privately generated a key, kept an encrypted PKCS#8 copy and reported
+   successful decryption of an independently downloaded backup with the approved
+   public fingerprint. Confirm account/recovery protection, private sharing and
+   separately protected passphrase recovery. The agent has not read the private
+   key or audited those storage settings. No private material belongs in chat,
+   repo, PR, command argv, logs or qualification reports.
+2. **Public roots — authorized integration, not activation.** Pin the reviewed
+   NIST P-256 public identity `release-key-1` in publisher policy and shared compiled
+   App/launcher policy, with fingerprint/drift and unknown/impersonated/mismatched
+   key tests. Keep runtime activation explicitly false and minimum Windows build
+   unqualified. A downloaded manifest cannot teach a client a signing key.
+   Authenticode is a separate decision; no production private key is needed for
+   this integration or its tests.
 3. **Protected GitHub setup — separate authorization required.** Create the exact
    environment above, set its reviewer/tag restrictions and verify bypass in UI.
    Store the private PEM only as environment secret
@@ -84,8 +91,9 @@ and [job prerequisites](https://docs.github.com/en/actions/reference/workflows-a
    confirmation; the packet generator provisions none of these.
 5. **Bootstrap A, then B — separate publication approval required.** Build reviewed
    distinct versions from exact merged commits, with agreed public roots. Existing
-   empty-trust installations first need a one-time manual bootstrap installer A;
-   they cannot securely acquire the first root via this updater. Record installed
+   empty-trust or activation-disabled installations first need an authorized
+   qualified bootstrap installer A; they cannot acquire initial trust/activation
+   via this disabled updater. Record installed
    launcher identity separately: protocol-v1 updates replace only the App, not the
    launcher. Publish the exact approved A/B assets on the selected Preview channel
    through the protected flow. Never reuse a version/tag or alter released assets.
@@ -132,6 +140,8 @@ offline fixtures. It is expected to fail until separately authorized setup exist
 ./scripts/assert-release-environment.ps1 -Repository mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps
 ```
 
-Next owner decisions: custody store/backup/restore procedure, available disposable
-Windows targets and authorization for the corresponding setup stage. Solo review
-policy does not need to be approved again; actual keys, environment and releases do.
+Next owner decisions: confirm custody/account/recovery protections, available
+disposable Windows targets and authorization for environment/secret setup and
+later limited activation/publication stages. Solo review and the public pin do not
+need to be approved again; no further private-key generation is needed merely to
+finish this plan. Runtime activation and releases still need separate authority.

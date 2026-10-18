@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="..\..\build\update-release-policy.json" LogicalName="PrivacyMask.Tests.ReleasePolicy.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\PrivacyMask.Core\PrivacyMask.Core.csproj" />
     <ProjectReference Include="..\..\src\PrivacyMask.Windows\PrivacyMask.Windows.csproj" />
     <ProjectReference Include="..\..\src\PrivacyMask.App\PrivacyMask.App.csproj" />

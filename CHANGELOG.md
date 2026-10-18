@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0-beta.12 - Source delivery (not published)
+
+- Pin the owner's P-256 public key `release-key-1` in the shared App/launcher trust policy and publisher policy
+- Keep update operations disabled by a separate compiled gate; public pinning alone cannot start HTTP, history access, staging or apply
+- Verify the approved public fingerprint and publisher/runtime consistency; reject unknown IDs, impersonated IDs and mismatched fixture signing keys
+- Advance Windows file revision to 2.0.0.12 without changing settings/history schemas or privacy controls
+- Retain the unqualified Windows baseline and separate environment/bootstrap/activation/release approval gates; no production private key is read or shipped
+
 ## 2.0.0-beta.11 - Source delivery (not published)
 
 - Connect Update now to the session-owned verified stage and existing edit/Panic/restart-consent/authenticated-handoff gates

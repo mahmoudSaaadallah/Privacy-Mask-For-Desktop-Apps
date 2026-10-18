@@ -7,5 +7,10 @@
     "maximumReadableSchema": 13,
     "outputSchema": 13
   },
-  "trustedKeys": []
+  "trustedKeys": [
+    {
+      "keyId": "release-key-1",
+      "publicKeySpkiBase64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET51tmvseX6BRpk7j0M+xCnvYyMogUFwUBHYBGaw6MZeoA26Dm/GgGX/bGHr9PVej4XPOR4QTUnoiKlALmTnZ4A=="
+    }
+  ]
 }
