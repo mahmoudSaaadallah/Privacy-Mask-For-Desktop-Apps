@@ -237,7 +237,7 @@ internal sealed class UpdateRetention(ManagedInstallLease lease, TimeProvider? c
                 StagingWorkspace.ActivityFileName => 0,
                 "package.zip" or "package.partial" or "payload.partial" or "PrivacyMask.App.exe" => ManifestRules.MaximumFileSize,
                 _ => throw new ReleaseValidationException("Unknown staging file.") };
-        if (name == "terminal-journal.json") return RecoveryRules.JournalLimit;
+        if (name is "terminal-journal.json" or RecoveryJournalStore.UnpromotedFileName) return RecoveryRules.JournalLimit;
         if (name is "original-settings.json" or "original-settings.bak" or "failed-primary" or "failed-secondary") return RecoveryRules.SettingsLimit;
         if (name is "original-app.exe" or "target-app.exe" or "displaced-original-app.exe" or "forward-app.tmp" or "failed-app") return ManifestRules.MaximumFileSize;
         if (name == "restore-app.tmp") return ManifestRules.MaximumFileSize;
