@@ -101,4 +101,6 @@ These are synthetic peers, not live real-App A-to-B qualification. Next:
 bounded safe retention, discovery preferences and Settings/tray UI/privacy
 wording, production trust/signing approval, then signed real-App A-to-B and
 Windows 10/11 standard-user/fault qualification. Network activation remains
-disabled until its product and release gates are satisfied.
+disabled until its product and release gates are satisfied. The subsequent
+[beta.7 storage maintenance delivery](update-retention.md) implements bounded
+retention and admission while preserving unknown/uncommitted evidence.

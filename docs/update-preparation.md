@@ -9,6 +9,10 @@ This slice was delivered at beta.2 / FileVersion 2.0.0.2 / schema 12. The
 subsequent lifecycle/readiness work advances current source to beta.4 without
 activating preparation for end users.
 
+The later [beta.7 storage maintenance](update-retention.md) enforces operation
+admission before preparation, keeps a verified recovery pair and safely prunes
+eligible terminal/staging history while preserving unresolved operation copies.
+
 ## Authority and layout
 
 `RecoveryPreparer` requires an already-held `ManagedInstallLease`. It does not

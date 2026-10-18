@@ -26,7 +26,7 @@ PrivacyMask.Desktop/
   managed-install.json          # schema/app/install/protocol identity
   .update.lock                  # exclusive OS file-sharing lease
   update-journal.json           # only authoritative recovery record
-  .update-journal-<guid>.tmp     # interrupted writes: evidence, never commands
+  .update-journal-<guid>.tmp     # historical interrupted-write evidence, never commands
   app/PrivacyMask.App.exe       # only replaceable payload, not the whole root
   settings.v1.json              # preserve current data path
   settings.v1.json.bak          # independently present or absent
