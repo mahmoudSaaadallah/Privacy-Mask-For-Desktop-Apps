@@ -17,7 +17,7 @@ public sealed class DesktopWindowInspector
     private readonly List<DesktopWindowSnapshot> _windows = [];
     private readonly List<WindowSnapshot> _candidateWindows = [];
 
-    public WindowDiscoveryResult Capture(WindowProcessFilter? processFilter = null)
+    public WindowDiscoveryResult Capture(WindowProcessFilter? processFilter = null, bool requireCompleteEnumeration = false)
     {
         var foregroundHandle = NativeMethods.GetForegroundWindow();
         var zOrderIndex = 0;
@@ -25,7 +25,7 @@ public sealed class DesktopWindowInspector
         _windows.Clear();
         _candidateWindows.Clear();
 
-        NativeMethods.EnumWindows((handle, _) =>
+        var complete = NativeMethods.EnumWindows((handle, _) =>
         {
             var wasCaptured = TryCreateSnapshot(
                 handle,
@@ -47,6 +47,9 @@ public sealed class DesktopWindowInspector
 
             return true;
         }, nint.Zero);
+
+        if (requireCompleteEnumeration && !complete)
+            throw new InvalidOperationException("Desktop enumeration did not complete.");
 
         PruneProcessIdentityCache();
 

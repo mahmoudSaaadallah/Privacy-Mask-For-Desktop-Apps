@@ -1,21 +1,21 @@
 namespace PrivacyMask.App.Services;
 
-internal enum UpdateRestartResult { HandedOff, Busy, Canceled, PanicLocked, SettingsChanged }
+internal enum UpdateRestartResult { HandedOff, Busy, Canceled, PanicLocked, SettingsChanged, ProtectedWindowsVisible }
 internal sealed class UnsafeUpdateResumeException : Exception;
 
 internal sealed record UpdateRestartActions(
     Func<bool> HasPanic, Func<bool> HasEdits, Func<bool> IsClosing,
     Func<Task<bool>> ResolveEdits, Func<bool> ConfirmRestart,
-    Func<Task> FreezeUi, Action ThawUi, Func<Task> Shutdown);
+    Func<Task> FreezeUi, Action ThawUi, Func<Task> Shutdown, Func<bool>? HasVisibleProtectedWindows = null);
 
-/// <summary>Dispatcher-affine restart gates. No operation ID, journal or ordinary Exit grants consent.</summary>
+/// <summary>Dispatcher-affine restart gates. No operation ID, journal or ordinary Exit grants update authority.</summary>
 internal sealed class UpdateRestartCoordinator(ShellOperationQueue operations, UpdateRestartActions host)
 {
     private int _busy;
     internal bool IsBusy => Volatile.Read(ref _busy) != 0;
 
     internal async Task<UpdateRestartResult> RunAsync(
-        Func<Action, CancellationToken, Task> handoff, CancellationToken cancellationToken = default)
+        Func<Action, CancellationToken, Task> handoff, CancellationToken cancellationToken = default, bool automatic = false)
     {
         if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0) return UpdateRestartResult.Busy;
         ShellOperationQueue.Suspension? suspension = null;
@@ -27,10 +27,12 @@ internal sealed class UpdateRestartCoordinator(ShellOperationQueue operations, U
             if (host.IsClosing() || operations.IsStopping) return UpdateRestartResult.Busy;
             if (host.HasPanic()) return UpdateRestartResult.PanicLocked;
             cancellationToken.ThrowIfCancellationRequested();
-            if (!await host.ResolveEdits()) return UpdateRestartResult.Canceled;
+            if (automatic && host.HasEdits()) return UpdateRestartResult.SettingsChanged;
+            if (automatic && host.HasVisibleProtectedWindows?.Invoke() == true) return UpdateRestartResult.ProtectedWindowsVisible;
+            if (!automatic && !await host.ResolveEdits()) return UpdateRestartResult.Canceled;
             cancellationToken.ThrowIfCancellationRequested();
             if (host.HasPanic()) return UpdateRestartResult.PanicLocked;
-            if (!host.ConfirmRestart()) return UpdateRestartResult.Canceled;
+            if (!automatic && !host.ConfirmRestart()) return UpdateRestartResult.Canceled;
             cancellationToken.ThrowIfCancellationRequested();
             suspension = operations.TrySuspend();
             if (suspension is null) return UpdateRestartResult.Busy;
@@ -42,6 +44,7 @@ internal sealed class UpdateRestartCoordinator(ShellOperationQueue operations, U
             if (host.IsClosing()) return UpdateRestartResult.Busy;
             if (host.HasPanic()) return UpdateRestartResult.PanicLocked;
             if (host.HasEdits()) return UpdateRestartResult.SettingsChanged;
+            if (automatic && host.HasVisibleProtectedWindows?.Invoke() == true) return UpdateRestartResult.ProtectedWindowsVisible;
             await handoff(AssertReady, cancellationToken);
             handedOff = true;
             await operations.StopAsync();
@@ -68,7 +71,8 @@ internal sealed class UpdateRestartCoordinator(ShellOperationQueue operations, U
         void AssertReady()
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!operations.IsSuspended || host.IsClosing() || host.HasPanic() || host.HasEdits())
+            if (!operations.IsSuspended || host.IsClosing() || host.HasPanic() || host.HasEdits()
+                || (automatic && host.HasVisibleProtectedWindows?.Invoke() == true))
                 throw new InvalidOperationException("Restart conditions changed. Check protection and saved settings before trying again.");
         }
     }

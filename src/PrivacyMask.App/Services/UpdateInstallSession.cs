@@ -47,9 +47,10 @@ internal sealed class UpdateInstallSession(UpdateStatusViewModel status,
             status.FinishInstall(result switch
             {
                 UpdateRestartResult.PanicLocked => "Unlock panic protection using your PIN before installing. Your download is retained.",
-                UpdateRestartResult.SettingsChanged => "Settings changed. Save or discard edits, then try again. Your download is retained.",
+                UpdateRestartResult.ProtectedWindowsVisible => "Required update is waiting for protected application windows to be closed or minimized. Your download is retained.",
+                UpdateRestartResult.SettingsChanged => "Settings changed. Resolve pending edits before restart. Your download is retained.",
                 UpdateRestartResult.Canceled => "Installation cancelled. Your download is retained; protection is unchanged.",
-                UpdateRestartResult.Busy => "Another action is in progress. Try again when it finishes.",
+                UpdateRestartResult.Busy => "Another action is in progress. Your download is retained.",
                 _ => "Installation could not confirm a safe restart. Close sensitive windows and restart PrivacyMask to recover.",
             }, repairRequired: result == UpdateRestartResult.HandedOff);
         }
@@ -63,7 +64,9 @@ internal sealed class UpdateInstallSession(UpdateStatusViewModel status,
         }
         catch (Exception)
         {
-            if (!_accepted && !_stopped) status.FinishInstall("Installation could not proceed safely. Your current application is unchanged. Discard this download and check again, or use View releases.", requiresNewDownload: true);
+            if (!_accepted && !_stopped) status.FinishInstall(status.IsMandatory
+                ? "Installation could not proceed safely. Your current application is unchanged. A fresh required download will be attempted automatically."
+                : "Installation could not proceed safely. Your current application is unchanged. Discard this download and check again, or use View releases.", requiresNewDownload: true);
         }
         finally
         {
