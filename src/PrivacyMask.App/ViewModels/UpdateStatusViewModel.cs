@@ -18,6 +18,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     private bool _cleanupBlocked;
     private bool _isInstalling;
     private bool _repairRequired;
+    private bool _installRetryBlocked;
     private string _downloadText = "";
     private double _downloadPercent;
     private DateTimeOffset? _candidateCheckedUtc;
@@ -29,7 +30,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     public bool CanDownload => CanCheck && HasCandidate && !_cleanupBlocked;
     public bool CanCancelDownload => _isDownloading && !_isStopped && !_isPaused;
     public bool CanDiscardDownload => _downloadReady && !_isChecking && !_isStopped && !_isPaused && !_isInstalling && !_repairRequired;
-    public bool CanInstall => CanDiscardDownload && !_cleanupBlocked;
+    public bool CanInstall => CanDiscardDownload && !_cleanupBlocked && !_installRetryBlocked;
     public bool IsInstalling => _isInstalling;
     public bool HasDownloadStatus => _downloadText.Length != 0;
     public bool IsDownloading => _isDownloading;
@@ -164,7 +165,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     internal void FinishDiscard(bool removed)
     {
         // Only the owned handle's successful cleanup can retire its earlier cleanup warning.
-        if (removed) _cleanupBlocked = false;
+        if (removed) { _cleanupBlocked = false; _installRetryBlocked = false; }
         FinishDownload(removed ? "Download discarded. Your installed application is unchanged."
             : "The verified download remains on disk.", ready: !removed, cleanupIncomplete: !removed);
     }
@@ -176,10 +177,11 @@ public sealed class UpdateStatusViewModel : ObservableObject
         Notify();
     }
 
-    internal void FinishInstall(string message, bool repairRequired = false)
+    internal void FinishInstall(string message, bool repairRequired = false, bool requiresNewDownload = false)
     {
         _isInstalling = false;
         _repairRequired |= repairRequired;
+        _installRetryBlocked |= requiresNewDownload;
         _downloadText = message;
         Notify();
     }

@@ -63,7 +63,7 @@ internal sealed class UpdateInstallSession(UpdateStatusViewModel status,
         }
         catch (Exception)
         {
-            if (!_accepted && !_stopped) status.FinishInstall("Installation could not proceed safely. Your current application is unchanged. Use View releases or try again.");
+            if (!_accepted && !_stopped) status.FinishInstall("Installation could not proceed safely. Your current application is unchanged. Discard this download and check again, or use View releases.", requiresNewDownload: true);
         }
         finally
         {

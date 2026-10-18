@@ -85,13 +85,13 @@ public sealed class UpdateInstallSessionTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task UnsafeCleanupBlocksRetryAndDiscardWhileSafeFailureRetainsBoth(bool unsafeCleanup)
+    public async Task UnsafeCleanupBlocksAllActionsWhileSafeFailureRequiresANewDownload(bool unsafeCleanup)
     {
         var status = Ready();
         var session = new UpdateInstallSession(status, _ => Selection, (_, _) => unsafeCleanup
             ? throw new UnsafeUpdateResumeException() : throw new IOException("secret path and token"), _ => true);
         await session.StartAsync(Selection.Channel);
-        Assert.Equal(!unsafeCleanup, status.CanInstall);
+        Assert.False(status.CanInstall);
         Assert.Equal(!unsafeCleanup, status.CanDiscardDownload);
         Assert.DoesNotContain("secret", status.DownloadText);
         await session.StopAsync();
