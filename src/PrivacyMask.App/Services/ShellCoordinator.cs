@@ -59,6 +59,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly UpdateRestartCoordinator _updateRestart;
     private readonly RuntimeUpdateDiscovery _updateDiscovery;
     private readonly UpdateCheckSession _updateChecks;
+    private readonly RuntimeUpdateDownload _updateDownloads;
+    private readonly UpdateInstallSession _updateInstall;
     private readonly ToolStripMenuItem _checkUpdatesItem;
     private readonly SemaphoreSlim _panicOperationGate = new(1, 1);
     private readonly SemaphoreSlim _profileProtectionOperationGate = new(1, 1);
@@ -98,15 +100,17 @@ public sealed class ShellCoordinator : IAsyncDisposable
             ConfirmUpdateRestart,
             SuspendForUpdateAsync,
             ResumeAfterUpdate,
-            _requestShutdown));
+            ShutdownForUpdateAsync));
         _temporaryRevealGesture = new ExclusiveHoldGesture(TimeSpan.FromMilliseconds(500d));
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
         _updateDiscovery = new RuntimeUpdateDiscovery(_settingsStore.SettingsPath);
-        var downloads = new RuntimeUpdateDownload(_updateDiscovery);
+        _updateDownloads = new RuntimeUpdateDownload(_updateDiscovery);
         _updateChecks = new UpdateCheckSession(_updateDiscovery.CheckAsync,
             history: new UpdateCheckHistoryStore(Path.GetDirectoryName(_settingsStore.SettingsPath)!),
             preflight: _updateDiscovery.Preflight,
-            downloads: new(downloads.PrepareAsync, downloads.DiscardAsync));
+            downloads: new(_updateDownloads.PrepareAsync, _updateDownloads.DiscardAsync));
+        _updateInstall = new(_updateChecks.Status, _updateDownloads.Select, ApplyStagedUpdateAsync,
+            channel => _updateDiscovery.Preflight(channel) is null);
         _windowInspector = new DesktopWindowInspector();
         _applicationCatalog = new DesktopApplicationCatalog(_windowInspector);
         _windowProfileResolver = new WindowProfileResolver(
@@ -268,26 +272,44 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void CancelUpdateDownload() => _updateChecks.CancelDownload();
 
+    private void InstallUpdateFromSettings()
+    {
+        if (!_isShuttingDown && !_isUpdateSuspended)
+            _ = _updateInstall.StartAsync(_savedSettings.UpdateChannel);
+    }
+
+    private Task ShutdownForUpdateAsync()
+    {
+        _updateInstall.AcceptHandoff();
+        return _requestShutdown();
+    }
+
     private void UpdateCheckStatusChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
     {
         if (args.PropertyName == nameof(UpdateStatusViewModel.CanCheck))
             _checkUpdatesItem.Enabled = !_isShuttingDown && !_isUpdateSuspended && _updateChecks.Status.CanCheck;
     }
 
-    // The later Settings/tray update UI will call this only after verified staging.
+    // Only the owned-stage Settings action calls this after verified staging.
     // No command line, activation message, timer or normal Exit routes here.
-    internal async Task<UpdateRestartResult> ApplyStagedUpdateAsync(string operationId, UpdateChannel channel,
+    private async Task<UpdateRestartResult> ApplyStagedUpdateAsync(OwnedUpdateSelection selection,
         CancellationToken cancellationToken = default)
     {
         _dispatcher.VerifyAccess();
         var verifier = UpdateRuntimePolicy.CreateVerifier();
         if (!verifier.IsConfigured) throw new InvalidOperationException("Signed in-app updates are not configured.");
-        using var discovery = new GitHubReleaseClient(verifier);
+        var root = Path.GetDirectoryName(_settingsStore.SettingsPath)!;
+        using var discovery = GitHubReleaseClient.ForManagedApply(verifier, root);
         try
         {
             return await _updateRestart.RunAsync((assertReady, token) => AuthenticatedUpdateHandoff.RunAsync(
-                operationId, channel, _savedSettings.StartMinimized, _settingsStore.SettingsPath,
-                assertReady, verifier, discovery, token), cancellationToken);
+                selection.OperationId, (UpdateChannel)selection.Channel, _savedSettings.StartMinimized, _settingsStore.SettingsPath,
+                () =>
+                {
+                    assertReady();
+                    if (_updateDownloads.Select(_savedSettings.UpdateChannel) != selection)
+                        throw new InvalidOperationException("The selected update or saved channel changed.");
+                }, verifier, discovery, token), cancellationToken);
         }
         catch (UnsafeUpdateResumeException)
         {
@@ -331,11 +353,13 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private async Task DisposeCoreAsync()
     {
         _isShuttingDown = true;
+        var installDrain = _updateInstall.StopAsync();
         _updateChecks.Stop();
         var uiDrain = _mainWindow?.BeginShutdownAsync() ?? Task.CompletedTask;
         if (_notifyIcon.ContextMenuStrip is { } menu) menu.Enabled = false;
         await _operations.StopAsync();
         await _updateChecks.DisposeAsync();
+        await installDrain;
         await uiDrain;
         DisposeResources();
     }
@@ -361,6 +385,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _refreshTimer.Stop();
         _updateChecks.Status.PropertyChanged -= UpdateCheckStatusChanged;
         _updateChecks.Stop();
+        _ = _updateInstall.StopAsync();
         _updateDiscovery.Dispose();
         _refreshTimer.Tick -= RefreshTimerOnTick;
         _hotkeyManager.HotkeyPressed -= HandleHotkeyPressed;
@@ -381,6 +406,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _mainWindow.DownloadUpdateRequested -= DownloadUpdateFromSettingsAsync;
             _mainWindow.DiscardUpdateRequested -= DiscardUpdateFromSettingsAsync;
             _mainWindow.CancelUpdateDownloadRequested -= CancelUpdateDownload;
+            _mainWindow.InstallUpdateRequested -= InstallUpdateFromSettings;
             _mainWindow.AllowClose();
             _mainWindow.Close();
         }
@@ -504,6 +530,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _mainWindow.DownloadUpdateRequested += DownloadUpdateFromSettingsAsync;
             _mainWindow.DiscardUpdateRequested += DiscardUpdateFromSettingsAsync;
             _mainWindow.CancelUpdateDownloadRequested += CancelUpdateDownload;
+            _mainWindow.InstallUpdateRequested += InstallUpdateFromSettings;
         }
         else if (!_mainWindow.IsVisible)
         {
