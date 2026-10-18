@@ -22,7 +22,10 @@ installation inspection, history IO or a startup timer. No automatic network
 activation, production key, tag or Release is supplied. The subsequent
 [phase-6c explicit download UI](update-download-ui.md) connects verified staging,
 progress/cancel and owned-stage discard in `2.0.0-beta.10`. Installation/restart
-UI remains disconnected; approved trust and live qualification remain required.
+UI is connected by the subsequent [phase-6d owned-stage install delivery](update-install-ui.md)
+in `2.0.0-beta.11`, through existing restart/Panic/edit and authenticated handoff
+gates. Approved trust and live production qualification remain required; the
+current empty-key build does not activate these network/install operations.
 
 ## Current implementation and gaps
 

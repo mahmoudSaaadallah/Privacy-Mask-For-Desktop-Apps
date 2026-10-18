@@ -61,7 +61,7 @@ static async Task RunCase(string scenario, string oldExecutable, FixtureAssets a
     using (var output = ManagedInstallLease.CreatePrivateFile(app, 65536)) { await input.CopyToAsync(output); output.Flush(true); }
     var primary = Path.Combine(root, "settings.v1.json");
     var secondary = primary + ".bak";
-    var originalSettings = Encoding.UTF8.GetBytes("{\"fixtureVerifier\":\"private opaque saved bytes\"}");
+    var originalSettings = Encoding.UTF8.GetBytes("{\"version\":12,\"fixtureVerifier\":\"private opaque saved bytes\"}");
     // Failed migration must restore absence too, not manufacture a default settings file.
     var absent = scenario == "MigrateThenFail";
     if (!absent) { Write(primary, originalSettings); Write(secondary, []); }

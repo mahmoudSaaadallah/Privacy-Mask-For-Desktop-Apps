@@ -8,7 +8,8 @@ try
     if (UpdateApplyRequest.IsRequested(args))
     {
         var verifier = UpdateRuntimePolicy.CreateVerifier();
-        using var discovery = new GitHubReleaseClient(verifier);
+        using var discovery = GitHubReleaseClient.ForManagedApply(verifier, Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ManifestRules.AppId));
         var result = await LauncherApply.RunAsync(self, args, verifier, discovery,
             applicationExited: () => applyApplicationExited = true);
         if (result == LauncherApplyOutcome.PreviousVersionRestarted)

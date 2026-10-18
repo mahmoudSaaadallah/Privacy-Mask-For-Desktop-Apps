@@ -380,9 +380,14 @@ internal static class Program
         var downloads = 0;
         var discards = 0;
         var cancels = 0;
+        var installs = 0;
         Task DownloadRequest() { downloads++; return Task.CompletedTask; }
         Task DiscardRequest() { discards++; return Task.CompletedTask; }
         void CancelRequest() { cancels++; }
+        void InstallRequest() { installs++; session.Updates.BeginInstall(); }
+        window.InstallUpdateRequested += InstallRequest;
+        Invoke(window, "InstallUpdate_Click");
+        Check(installs == 0, "Install accepted a non-ready download.");
         window.DownloadUpdateRequested += DownloadRequest;
         window.DiscardUpdateRequested += DiscardRequest;
         window.CancelUpdateDownloadRequested += CancelRequest;
@@ -393,7 +398,7 @@ internal static class Program
         window.DiscardUpdateRequested -= DiscardRequest;
         window.CancelUpdateDownloadRequested -= CancelRequest;
         Check(downloads == 1 && discards == 1 && cancels == 1, "Download/discard/cancel actions are disconnected.");
-        foreach (var state in new[] { "available", "downloading", "ready", "cleanup-failed" })
+        foreach (var state in new[] { "available", "downloading", "ready", "installing", "restarting", "cancelled", "cleanup-failed", "repair-required" })
         {
             var card = (Border)window.FindName("UpdatesCard");
             if (state == "downloading")
@@ -401,12 +406,34 @@ internal static class Program
                 session.Updates.BeginDownload();
                 session.Updates.DownloadProgress(new(UpdateDownloadPhase.Downloading, 35 * 1048576, 70 * 1048576));
             }
-            else if (state == "ready") session.Updates.FinishDownload("Verified download ready. Nothing has been installed.", ready: true);
+            else if (state == "ready")
+            {
+                session.Updates.FinishDownload("Verified download ready. Nothing has been installed.", ready: true);
+                Invoke(window, "InstallUpdate_Click");
+                Invoke(window, "InstallUpdate_Click");
+                Check(installs == 1, "Install action is disconnected or admitted a duplicate.");
+                Check(window.SuspendForUpdateAsync().IsCompleted, "Update suspension waits for its own install caller.");
+                window.ResumeAfterUpdate();
+                session.Updates.FinishInstall("Installation cancelled. Verified download retained.");
+            }
+            else if (state == "installing") session.Updates.BeginInstall();
+            else if (state == "restarting") session.Updates.ShowRestarting();
+            else if (state == "cancelled") session.Updates.FinishInstall("Installation cancelled. Your download is retained.");
             else if (state == "cleanup-failed") session.Updates.FinishDownload("Download failed. Your application is unchanged.", cleanupIncomplete: true);
+            else if (state == "repair-required") session.Updates.FinishInstall("Update recovery needs attention. Close sensitive windows, exit and restart PrivacyMask. Settings stay paused.", repairRequired: true);
             foreach (var width in new[] { 880d, 1000d, 1400d })
             {
                 var size = new Size(width, 780);
                 Layout(root, size);
+                foreach (var button in Find<Button>(card))
+                {
+                    var name = AutomationProperties.GetName(button);
+                    if ((name == "Install verified update now" && session.Updates.CanInstall) ||
+                        (name == "Cancel update download" && session.Updates.IsDownloading) ||
+                        (name == "Discard verified update download" && session.Updates.CanDiscardDownload))
+                        Check(button.Visibility == Visibility.Visible && button.ActualHeight >= 30 && button.ActualWidth >= 80,
+                            $"Update action {name} has no usable rendered area at {width} in {state}.");
+                }
                 foreach (var control in Find<Control>(card))
                 {
                     var bounds = control.TransformToAncestor(card).TransformBounds(new Rect(new Point(), control.RenderSize));
@@ -419,10 +446,11 @@ internal static class Program
             Check(Equals(channel.SelectedItem, session.UpdateChannel) && automatic.IsChecked == session.AutomaticUpdateChecks,
                 "Update preferences lost their two-way bindings.");
         }
+        window.InstallUpdateRequested -= InstallRequest;
         session.Updates.Complete(new(UpdateCheckStatus.NotConfigured), session.UpdateChannel, DateTimeOffset.UtcNow);
         Check(before == System.Text.Json.JsonSerializer.Serialize(session.ToModel()) && !session.HasPendingChanges,
             "Manual discovery changed the settings edit session.");
-        Console.WriteLine("Update card passed: connected check/download/cancel/discard, bounded available/progress/ready/failure layouts and unchanged settings.");
+        Console.WriteLine("Update card passed: connected check/download/cancel/discard/install, no self-drain and bounded ready/restart/cancel/repair layouts with unchanged settings.");
     }
 
     private static void CheckAboutReference(MainWindow window, FrameworkElement root, SettingsViewModel session, string? screenshots)

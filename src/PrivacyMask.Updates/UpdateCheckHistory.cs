@@ -1,7 +1,4 @@
-using PrivacyMask.Core.Models;
-using PrivacyMask.Updates;
-
-namespace PrivacyMask.App.Services;
+namespace PrivacyMask.Updates;
 
 internal sealed record UpdateCheckHistory(int SchemaVersion = 1, DateTimeOffset? LastAttemptUtc = null,
     DateTimeOffset? RetryAfterUtc = null, DateTimeOffset? StableSuccessUtc = null, DateTimeOffset? PreviewSuccessUtc = null,
@@ -17,13 +14,13 @@ internal sealed record UpdateCheckHistory(int SchemaVersion = 1, DateTimeOffset?
         RetryAfterUtc = RetryAfterUtc > now ? RetryAfterUtc : null,
     };
 
-    internal UpdateCheckHistory Complete(UpdateReleaseChannel channel, UpdateCheckResult result, DateTimeOffset now)
+    internal UpdateCheckHistory Complete(UpdateChannel channel, UpdateCheckResult result, DateTimeOffset now)
     {
         var retry = result.RetryAt?.ToUniversalTime();
         var next = this with { RequestPending = false, RetryAfterUtc = retry > RetryAfterUtc || RetryAfterUtc is null ? retry : RetryAfterUtc };
         if (result.Status is not (UpdateCheckStatus.Available or UpdateCheckStatus.UpToDate or UpdateCheckStatus.NoCompatibleUpdate))
             return next;
-        return channel == UpdateReleaseChannel.Stable ? next with { StableSuccessUtc = now } : next with { PreviewSuccessUtc = now };
+        return channel == UpdateChannel.Stable ? next with { StableSuccessUtc = now } : next with { PreviewSuccessUtc = now };
     }
 }
 

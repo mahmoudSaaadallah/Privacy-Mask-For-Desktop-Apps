@@ -49,6 +49,15 @@ public partial class MainWindow : Window
     public event Func<Task>? DownloadUpdateRequested;
     public event Func<Task>? DiscardUpdateRequested;
     public event Action? CancelUpdateDownloadRequested;
+    public event Action? InstallUpdateRequested;
+
+    private void InstallUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_isShuttingDown && !_isUpdateSuspended && ViewModel.Updates.CanInstall)
+            InstallUpdateRequested?.Invoke();
+        // The shell owns this request's drain boundary. Tracking it as a download
+        // handler would make update suspension/shutdown wait for their own caller.
+    }
 
     private async void DownloadUpdate_Click(object sender, RoutedEventArgs e) =>
         await RunDownloadActionAsync(DownloadUpdateRequested);

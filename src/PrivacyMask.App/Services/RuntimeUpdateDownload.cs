@@ -12,6 +12,16 @@ internal sealed record UpdateDownloadActions(
 internal sealed class RuntimeUpdateDownload(RuntimeUpdateDiscovery discovery)
 {
     private StagedUpdate? _staged;
+    private UpdateReleaseChannel? _channel;
+
+    internal OwnedUpdateSelection? Select(UpdateReleaseChannel savedChannel)
+    {
+        if (_staged is null || _channel != savedChannel) return null;
+        // Only the returned owned handle supplies this identity; no UI, settings or CLI path is accepted.
+        var name = Path.GetFileName(_staged.DirectoryPath);
+        var id = name.StartsWith("operation-", StringComparison.Ordinal) ? name["operation-".Length..] : "";
+        return RecoveryRules.IsId(id) ? new(id, _staged.Version, savedChannel) : null;
+    }
 
     internal Task PrepareAsync(UpdateCandidate candidate, UpdateReleaseChannel channel,
         IProgress<UpdateDownloadProgress> progress, CancellationToken token)
@@ -32,6 +42,7 @@ internal sealed class RuntimeUpdateDownload(RuntimeUpdateDiscovery discovery)
                     journals.ArchiveTerminal(terminal.OperationId);
                 using var stager = new UpdateStager(UpdateRuntimePolicy.CreateVerifier());
                 _staged = await stager.PrepareManagedAsync(candidate, RuntimeUpdateDiscovery.Context(channel), lease, progress, token);
+                _channel = channel;
                 // A completed handle is retained even if cancellation raced return: it is verified, never installed.
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or ReleaseValidationException)
@@ -52,6 +63,7 @@ internal sealed class RuntimeUpdateDownload(RuntimeUpdateDiscovery discovery)
         lease.AssertHeld();
         if (!_staged.TryDiscard()) return false;
         _staged = null;
+        _channel = null;
         return true;
     }, token);
 }

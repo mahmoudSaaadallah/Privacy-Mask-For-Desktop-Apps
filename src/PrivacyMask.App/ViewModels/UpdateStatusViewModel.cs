@@ -16,6 +16,9 @@ public sealed class UpdateStatusViewModel : ObservableObject
     private bool _isDiscarding;
     private bool _downloadReady;
     private bool _cleanupBlocked;
+    private bool _isInstalling;
+    private bool _repairRequired;
+    private bool _installRetryBlocked;
     private string _downloadText = "";
     private double _downloadPercent;
     private DateTimeOffset? _candidateCheckedUtc;
@@ -23,10 +26,12 @@ public sealed class UpdateStatusViewModel : ObservableObject
     private readonly Dictionary<UpdateReleaseChannel, DateTimeOffset> _successfulChecks = [];
 
     public bool IsChecking => _isChecking;
-    public bool CanCheck => !_isChecking && !_isStopped && !_isPaused && !_downloadReady;
+    public bool CanCheck => !_isChecking && !_isStopped && !_isPaused && !_downloadReady && !_isInstalling && !_repairRequired;
     public bool CanDownload => CanCheck && HasCandidate && !_cleanupBlocked;
     public bool CanCancelDownload => _isDownloading && !_isStopped && !_isPaused;
-    public bool CanDiscardDownload => _downloadReady && !_isChecking && !_isStopped && !_isPaused;
+    public bool CanDiscardDownload => _downloadReady && !_isChecking && !_isStopped && !_isPaused && !_isInstalling && !_repairRequired;
+    public bool CanInstall => CanDiscardDownload && !_cleanupBlocked && !_installRetryBlocked;
+    public bool IsInstalling => _isInstalling;
     public bool HasDownloadStatus => _downloadText.Length != 0;
     public bool IsDownloading => _isDownloading;
     public double DownloadPercent => _downloadPercent;
@@ -56,7 +61,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     public string ReleaseNotes => _result?.Candidate?.ReleaseNotes is { } notes ? notes[..Math.Min(notes.Length, 4096)] : "";
     public bool HasCandidate => _result?.Status == UpdateCheckStatus.Available && _result.Candidate is not null;
     public string CandidateDetail => HasCandidate
-        ? $"{_result!.Candidate!.Manifest.Package.Size / 1048576d:0.0} MiB. Download verifies the package only; installation is not enabled in this build."
+        ? $"{_result!.Candidate!.Manifest.Package.Size / 1048576d:0.0} MiB. Download verifies a separate package. Update now asks before restarting; masks disappear during restart."
         : "";
 
     internal void Begin()
@@ -160,9 +165,31 @@ public sealed class UpdateStatusViewModel : ObservableObject
     internal void FinishDiscard(bool removed)
     {
         // Only the owned handle's successful cleanup can retire its earlier cleanup warning.
-        if (removed) _cleanupBlocked = false;
+        if (removed) { _cleanupBlocked = false; _installRetryBlocked = false; }
         FinishDownload(removed ? "Download discarded. Your installed application is unchanged."
             : "The verified download remains on disk.", ready: !removed, cleanupIncomplete: !removed);
+    }
+
+    internal void BeginInstall()
+    {
+        _isInstalling = true;
+        _downloadText = "Preparing to install. Resolve unsaved edits and confirm restart; protection remains active until exit.";
+        Notify();
+    }
+
+    internal void FinishInstall(string message, bool repairRequired = false, bool requiresNewDownload = false)
+    {
+        _isInstalling = false;
+        _repairRequired |= repairRequired;
+        _installRetryBlocked |= requiresNewDownload;
+        _downloadText = message;
+        Notify();
+    }
+
+    internal void ShowRestarting()
+    {
+        _downloadText = "Restarting to apply the verified update. Masks disappear during restart; installation success is not yet confirmed.";
+        Notify();
     }
 
     private void Notify()
@@ -170,7 +197,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
         foreach (var property in new[] { nameof(IsChecking), nameof(CanCheck), nameof(CheckLabel), nameof(StatusText),
             nameof(LastCheckText), nameof(RetryText), nameof(ReleaseNotes), nameof(HasCandidate), nameof(CandidateDetail),
             nameof(CanDownload), nameof(CanCancelDownload), nameof(CanDiscardDownload), nameof(HasDownloadStatus),
-            nameof(IsDownloading), nameof(DownloadPercent), nameof(DownloadText) })
+            nameof(IsDownloading), nameof(DownloadPercent), nameof(DownloadText), nameof(CanInstall), nameof(IsInstalling) })
             RaisePropertyChanged(property);
     }
 }

@@ -16,7 +16,7 @@ public sealed class UpdateCheckHistoryTests
     public void CadenceCountsAttemptsNotSuccessAndPreservesFutureClocks()
     {
         Assert.True(new UpdateCheckHistory().StartupDue(Now));
-        var attempted = new UpdateCheckHistory().Attempt(Now).Complete(UpdateReleaseChannel.Preview,
+        var attempted = new UpdateCheckHistory().Attempt(Now).Complete(UpdateChannel.Preview,
             new(UpdateCheckStatus.UnableToCheck), Now);
         Assert.False(new UpdateCheckHistory().Attempt(Now).StartupDue(Now.AddYears(1)));
         Assert.False(attempted.StartupDue(Now.AddHours(23)));
@@ -28,11 +28,11 @@ public sealed class UpdateCheckHistoryTests
     [Fact]
     public void RetryIsGlobalAndFailuresDoNotAdvanceSuccess()
     {
-        var history = new UpdateCheckHistory().Attempt(Now).Complete(UpdateReleaseChannel.Preview,
+        var history = new UpdateCheckHistory().Attempt(Now).Complete(UpdateChannel.Preview,
             new(UpdateCheckStatus.RateLimited, RetryAt: Now.AddDays(2)), Now);
         Assert.False(history.StartupDue(Now.AddDays(1)));
         Assert.Null(history.PreviewSuccessUtc);
-        history = history.Complete(UpdateReleaseChannel.Stable, new(UpdateCheckStatus.UpToDate), Now);
+        history = history.Complete(UpdateChannel.Stable, new(UpdateCheckStatus.UpToDate), Now);
         Assert.Equal(Now, history.StableSuccessUtc);
         Assert.Equal(Now.AddDays(2), history.RetryAfterUtc);
     }
@@ -44,7 +44,7 @@ public sealed class UpdateCheckHistoryTests
         var settings = File.ReadAllBytes(fixture.Primary);
         var store = new UpdateCheckHistoryStore(fixture.Root);
         Assert.Equal(new(), await store.ReadAsync(default));
-        var expected = new UpdateCheckHistory().Attempt(Now).Complete(UpdateReleaseChannel.Preview, new(UpdateCheckStatus.UpToDate), Now);
+        var expected = new UpdateCheckHistory().Attempt(Now).Complete(UpdateChannel.Preview, new(UpdateCheckStatus.UpToDate), Now);
         await store.WriteAsync(expected, default);
         await store.WriteAsync(expected with { RetryAfterUtc = Now.AddDays(1) }, default);
         var saved = await new UpdateCheckHistoryStore(fixture.Root).ReadAsync(default);
@@ -108,7 +108,7 @@ public sealed class UpdateCheckHistoryTests
     {
         using var fixture = new RecoveryFixture();
         var store = new UpdateCheckHistoryStore(fixture.Root);
-        var expected = new UpdateCheckHistory().Attempt(Now).Complete(UpdateReleaseChannel.Stable, new(UpdateCheckStatus.UpToDate), Now);
+        var expected = new UpdateCheckHistory().Attempt(Now).Complete(UpdateChannel.Stable, new(UpdateCheckStatus.UpToDate), Now);
         await store.WriteAsync(expected, default);
         var path = Path.Combine(fixture.Root, UpdateCheckHistoryStore.FileName);
         using (var locked = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))

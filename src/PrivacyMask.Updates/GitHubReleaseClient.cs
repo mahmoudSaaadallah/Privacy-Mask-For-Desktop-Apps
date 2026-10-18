@@ -15,6 +15,14 @@ public sealed class GitHubReleaseClient : IDisposable
     private readonly GitHubTransport _transport;
     private readonly TimeProvider _time;
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private IUpdateCheckHistoryStore? _history;
+
+    internal static GitHubReleaseClient ForManagedApply(UpdateManifestVerifier verifier, string root)
+    {
+        var client = new GitHubReleaseClient(verifier);
+        if (verifier.IsConfigured) client._history = new UpdateCheckHistoryStore(root);
+        return client;
+    }
 
     // Production callers cannot accidentally inject a handler that follows
     // redirects or sends credentials before our URI checks run.
@@ -29,7 +37,16 @@ public sealed class GitHubReleaseClient : IDisposable
         _transport = new(_time, handler);
     }
 
-    public async Task<UpdateCheckResult> CheckAsync(UpdateCheckContext context, CancellationToken cancellationToken = default)
+    public Task<UpdateCheckResult> CheckAsync(UpdateCheckContext context, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (_history is null || !_verifier.IsConfigured || UpdateEligibility.CheckContext(context) is not null)
+            return CheckCoreAsync(context, cancellationToken);
+        return DurableUpdateRequest.RunAsync(_history, context.Channel,
+            token => CheckCoreAsync(context, token), _time, cancellationToken);
+    }
+
+    private async Task<UpdateCheckResult> CheckCoreAsync(UpdateCheckContext context, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
