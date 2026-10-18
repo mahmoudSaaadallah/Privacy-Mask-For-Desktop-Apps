@@ -61,6 +61,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly UpdateCheckSession _updateChecks;
     private readonly RuntimeUpdateDownload _updateDownloads;
     private readonly UpdateInstallSession _updateInstall;
+    private readonly MandatoryUpdateController _mandatoryUpdates;
+    private readonly MandatoryUpdateMonitor _mandatoryMonitor;
     private readonly ToolStripMenuItem _checkUpdatesItem;
     private readonly SemaphoreSlim _panicOperationGate = new(1, 1);
     private readonly SemaphoreSlim _profileProtectionOperationGate = new(1, 1);
@@ -96,11 +98,12 @@ public sealed class ShellCoordinator : IAsyncDisposable
             () => _protectionStateMachine.CurrentMode == RuntimeMode.Panic || _profileProtectionState.HasAnyPanic,
             () => _mainWindow?.HasUpdateBlockingEdits == true,
             () => _isShuttingDown,
-            () => _mainWindow?.ResolveUpdateEditsAsync() ?? Task.FromResult(true),
-            ConfirmUpdateRestart,
+            () => Task.FromResult(_mainWindow?.HasUpdateBlockingEdits != true),
+            () => AutomaticRestartBlockReason() is null,
             SuspendForUpdateAsync,
             ResumeAfterUpdate,
-            ShutdownForUpdateAsync));
+            ShutdownForUpdateAsync,
+            HasVisibleProtectedWindows));
         _temporaryRevealGesture = new ExclusiveHoldGesture(TimeSpan.FromMilliseconds(500d));
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
         _updateDiscovery = new RuntimeUpdateDiscovery(_settingsStore.SettingsPath);
@@ -108,9 +111,19 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _updateChecks = new UpdateCheckSession(_updateDiscovery.CheckAsync,
             history: new UpdateCheckHistoryStore(Path.GetDirectoryName(_settingsStore.SettingsPath)!),
             preflight: _updateDiscovery.Preflight,
-            downloads: new(_updateDownloads.PrepareAsync, _updateDownloads.DiscardAsync));
+            downloads: new(_updateDownloads.PrepareAsync, _updateDownloads.DiscardAsync), mandatory: true);
         _updateInstall = new(_updateChecks.Status, _updateDownloads.Select, ApplyStagedUpdateAsync,
             channel => _updateDiscovery.Preflight(channel) is null);
+        _mandatoryUpdates = new(_updateChecks.Status, new(
+            () => !_isShuttingDown && !_isUpdateSuspended && _updateDiscovery.Preflight(RequiredUpdateChannel) is null,
+            MayHaveNetwork,
+            fresh => fresh ? _updateChecks.CheckAsync(RequiredUpdateChannel) : _updateChecks.CheckMandatoryAsync(SavedUpdatePreferences),
+            () => _updateChecks.DownloadAsync(RequiredUpdateChannel),
+            _updateChecks.RetireFailedDownloadAsync,
+            () => _updateInstall.StartAsync(RequiredUpdateChannel),
+            () => _updateChecks.NextAutomaticAttemptUtc,
+            AutomaticRestartBlockReason));
+        _mandatoryMonitor = new(dispatcher, _mandatoryUpdates);
         _windowInspector = new DesktopWindowInspector();
         _applicationCatalog = new DesktopApplicationCatalog(_windowInspector);
         _windowProfileResolver = new WindowProfileResolver(
@@ -229,7 +242,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         if (!_settings.OnboardingCompleted)
         {
             await ShowOnboardingAsync();
-            if (_settings.OnboardingCompleted) _ = _updateChecks.ScheduleStartupCheck(SavedUpdatePreferences);
+            if (_settings.OnboardingCompleted) _mandatoryMonitor.Start();
             return;
         }
 
@@ -239,10 +252,38 @@ public sealed class ShellCoordinator : IAsyncDisposable
         {
             ShowSettingsWindow();
         }
-        _ = _updateChecks.ScheduleStartupCheck(SavedUpdatePreferences);
+        _mandatoryMonitor.Start();
     }
 
-    private UpdateCheckPreferences SavedUpdatePreferences() => new(_savedSettings.AutomaticUpdateChecks, _savedSettings.UpdateChannel);
+    private UpdateReleaseChannel RequiredUpdateChannel => _updateChecks.Status.RequiredChannel;
+    private UpdateCheckPreferences SavedUpdatePreferences() => new(true, RequiredUpdateChannel);
+
+    private static bool MayHaveNetwork()
+    {
+        try { return System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable(); }
+        catch (System.Net.NetworkInformation.NetworkInformationException) { return true; }
+    }
+
+    private string? AutomaticRestartBlockReason()
+    {
+        if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic || _profileProtectionState.HasAnyPanic)
+            return "Required update is waiting for Panic to be unlocked normally. It will continue automatically.";
+        if (_mainWindow?.HasUpdateBlockingEdits == true)
+            return "Required update is waiting for unsaved or invalid settings edits. It will continue automatically after they are resolved.";
+        return HasVisibleProtectedWindows()
+            ? "Required update is waiting for protected windows to be closed or minimized. It will continue automatically."
+            : null;
+    }
+
+    private bool HasVisibleProtectedWindows()
+    {
+        try
+        {
+            return _windowInspector.Capture(_windowProcessFilter, requireCompleteEnumeration: true).CandidateWindows.Any(window =>
+                window.IsVisible && !window.IsMinimized && _windowProfileResolver.Resolve(window, _savedSettings.AppProfiles) is not null);
+        }
+        catch { return true; } // Uncertain desktop state is never permission to remove masks.
+    }
 
     public void HandleExternalActivation()
     {
@@ -259,13 +300,14 @@ public sealed class ShellCoordinator : IAsyncDisposable
             if (_mainWindow is not null) _mainWindow.ViewModel.SelectedPage = DesktopPage.Settings;
         }
         // Never send a network request for an unsaved editor preview.
-        await _updateChecks.CheckAsync(_savedSettings.UpdateChannel);
+        await _updateChecks.CheckAsync(RequiredUpdateChannel);
+        _mandatoryMonitor.Pulse();
     }
 
     private Task CheckForUpdatesFromSettingsAsync() => CheckForUpdatesAsync(showSettings: false);
 
     private Task DownloadUpdateFromSettingsAsync() => _isShuttingDown || _isUpdateSuspended
-        ? Task.CompletedTask : _updateChecks.DownloadAsync(_savedSettings.UpdateChannel);
+        ? Task.CompletedTask : _updateChecks.DownloadAsync(RequiredUpdateChannel);
 
     private Task DiscardUpdateFromSettingsAsync() => _isShuttingDown || _isUpdateSuspended
         ? Task.CompletedTask : _updateChecks.DiscardDownloadAsync();
@@ -275,11 +317,14 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private void InstallUpdateFromSettings()
     {
         if (!_isShuttingDown && !_isUpdateSuspended)
-            _ = _updateInstall.StartAsync(_savedSettings.UpdateChannel);
+            _ = _updateInstall.StartAsync(RequiredUpdateChannel);
     }
 
     private Task ShutdownForUpdateAsync()
     {
+        // A window can be restored by another process while the worker checks
+        // its handshake. Keep masks alive rather than exit in newly unsafe state.
+        if (AutomaticRestartBlockReason() is not null) throw new UnsafeUpdateResumeException();
         _updateInstall.AcceptHandoff();
         return _requestShutdown();
     }
@@ -290,8 +335,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _checkUpdatesItem.Enabled = !_isShuttingDown && !_isUpdateSuspended && _updateChecks.Status.CanCheck;
     }
 
-    // Only the owned-stage Settings action calls this after verified staging.
-    // No command line, activation message, timer or normal Exit routes here.
+    // Only the session-owned verified stage can reach required automatic apply.
+    // No command line, activation message or ordinary Exit supplies update authority.
     private async Task<UpdateRestartResult> ApplyStagedUpdateAsync(OwnedUpdateSelection selection,
         CancellationToken cancellationToken = default)
     {
@@ -307,9 +352,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
                 () =>
                 {
                     assertReady();
-                    if (_updateDownloads.Select(_savedSettings.UpdateChannel) != selection)
+                    if (_updateDownloads.Select(RequiredUpdateChannel) != selection)
                         throw new InvalidOperationException("The selected update or saved channel changed.");
-                }, verifier, discovery, token), cancellationToken);
+                }, verifier, discovery, token), cancellationToken, automatic: true);
         }
         catch (UnsafeUpdateResumeException)
         {
@@ -323,11 +368,6 @@ public sealed class ShellCoordinator : IAsyncDisposable
             throw;
         }
     }
-
-    private bool ConfirmUpdateRestart() => System.Windows.MessageBox.Show(
-        "PrivacyMask will restart to install this update. Masks disappear during restart. Close or minimize sensitive application windows before continuing.",
-        "Restart to update PrivacyMask", MessageBoxButton.OKCancel, MessageBoxImage.Warning,
-        MessageBoxResult.Cancel) == MessageBoxResult.OK;
 
     private Task SuspendForUpdateAsync()
     {
@@ -353,6 +393,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private async Task DisposeCoreAsync()
     {
         _isShuttingDown = true;
+        _mandatoryMonitor.Dispose();
         var installDrain = _updateInstall.StopAsync();
         _updateChecks.Stop();
         var uiDrain = _mainWindow?.BeginShutdownAsync() ?? Task.CompletedTask;
@@ -382,6 +423,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
         _isDisposed = true;
         _isShuttingDown = true;
+        _mandatoryMonitor.Dispose();
         _refreshTimer.Stop();
         _updateChecks.Status.PropertyChanged -= UpdateCheckStatusChanged;
         _updateChecks.Stop();
