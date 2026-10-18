@@ -36,7 +36,7 @@ try {
   $policyPath = Join-Path $fixtureRoot 'test-policy.json'
   $policy = [ordered]@{
     schemaVersion = 1; minimumWindowsBuild = 19041; minimumUpdaterProtocol = 1
-    settingsCompatibility = @{ minimumReadableSchema = 1; maximumReadableSchema = 12; outputSchema = 12 }
+    settingsCompatibility = @{ minimumReadableSchema = 1; maximumReadableSchema = 13; outputSchema = 13 }
     trustedKeys = @(@{ keyId = 'ephemeral-test-key'; publicKeySpkiBase64 = [Convert]::ToBase64String($key.ExportSubjectPublicKeyInfo()) })
   }
   # Only a PUBLIC test policy is written. The ephemeral private key never goes to disk.
