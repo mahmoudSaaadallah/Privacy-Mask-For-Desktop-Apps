@@ -122,6 +122,7 @@ public sealed class UpdateStager : IDisposable
             ct.ThrowIfCancellationRequested();
             Report(UpdateDownloadPhase.Ready, manifest.Files[0].Size, manifest.Files[0].Size);
             ct.ThrowIfCancellationRequested();
+            workspace.Complete();
             return new(workspace, manifest.Version);
 
             async Task Save(string name, byte[] data)
@@ -157,5 +158,6 @@ public sealed class UpdateStager : IDisposable
     }
 
     public void Dispose() => _transport.Dispose();
+
     private sealed class InlineProgress<T>(Action<T> report) : IProgress<T> { public void Report(T value) => report(value); }
 }
