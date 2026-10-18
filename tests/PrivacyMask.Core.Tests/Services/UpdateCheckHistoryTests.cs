@@ -80,4 +80,14 @@ public sealed class UpdateCheckHistoryTests
         await Assert.ThrowsAsync<IOException>(() => store.WriteAsync(new(), default));
         Assert.Equal(new byte[] { 42 }, File.ReadAllBytes(path));
     }
+
+    [Fact]
+    public void SeparateSessionsCannotAcquireConcurrentHistoryAuthority()
+    {
+        using var fixture = new RecoveryFixture();
+        var first = new UpdateCheckHistoryStore(fixture.Root);
+        var second = new UpdateCheckHistoryStore(fixture.Root);
+        using (first.Acquire()) Assert.ThrowsAny<Exception>(() => second.Acquire());
+        using (second.Acquire()) Assert.Equal(0, new FileInfo(Path.Combine(fixture.Root, ".update-check.lock")).Length);
+    }
 }

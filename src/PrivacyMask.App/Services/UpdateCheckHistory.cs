@@ -29,6 +29,7 @@ internal sealed record UpdateCheckHistory(int SchemaVersion = 1, DateTimeOffset?
 
 internal interface IUpdateCheckHistoryStore
 {
+    IDisposable Acquire();
     Task<UpdateCheckHistory> ReadAsync(CancellationToken token);
     Task WriteAsync(UpdateCheckHistory history, CancellationToken token);
 }

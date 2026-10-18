@@ -273,6 +273,7 @@ public sealed class ScheduledUpdateCheckTests
 
     private sealed class MemoryHistory : IUpdateCheckHistoryStore
     {
+        public IDisposable Acquire() => new MemoryLease();
         internal UpdateCheckHistory Value = new();
         internal int Reads;
         internal int Writes;
@@ -280,6 +281,7 @@ public sealed class ScheduledUpdateCheckTests
         internal bool FailWrite;
         internal int FailWriteAt;
         internal Action? AfterWrite;
+        private sealed class MemoryLease : IDisposable { public void Dispose() { } }
         public Task<UpdateCheckHistory> ReadAsync(CancellationToken token)
         {
             Reads++;

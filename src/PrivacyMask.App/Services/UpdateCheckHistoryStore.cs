@@ -13,6 +13,7 @@ internal sealed class UpdateCheckHistoryStore : IUpdateCheckHistoryStore
     private readonly string _root;
     private readonly string _path;
     private readonly string _temporary;
+    private readonly string _lockPath;
     private static readonly JsonSerializerOptions Options = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -26,6 +27,26 @@ internal sealed class UpdateCheckHistoryStore : IUpdateCheckHistoryStore
         if (Path.GetFileName(_root) != ManifestRules.AppId) throw new ArgumentException("Expected a dedicated managed root.");
         _path = Path.Combine(_root, FileName);
         _temporary = Path.Combine(_root, ".update-check-history.tmp");
+        _lockPath = Path.Combine(_root, ".update-check.lock");
+    }
+
+    public IDisposable Acquire()
+    {
+        ManagedInstallLease.AssertPrivate(_root);
+        FileStream lease;
+        try { lease = ManagedInstallLease.CreatePrivateFile(_lockPath, 1, FileOptions.None); }
+        catch (IOException) when (Exists(_lockPath))
+        {
+            ManagedInstallLease.AssertPrivate(_lockPath);
+            lease = new FileStream(_lockPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None, 1);
+        }
+        try
+        {
+            ManagedInstallLease.AssertPrivate(_lockPath);
+            if (lease.Length != 0) throw new IOException("Unexpected update-check lock contents.");
+            return lease;
+        }
+        catch { lease.Dispose(); throw; }
     }
 
     public async Task<UpdateCheckHistory> ReadAsync(CancellationToken token)

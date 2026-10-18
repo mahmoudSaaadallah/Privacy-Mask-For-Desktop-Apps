@@ -102,6 +102,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
         var token = cancellation.Token;
         var historyIo = false;
         UpdateCheckHistory? admittedHistory = null;
+        IDisposable? historyLease = null;
         try
         {
             if (!automatic) Status.Begin();
@@ -111,6 +112,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
                 return;
             }
             historyIo = _history is not null;
+            historyLease = _history?.Acquire();
             var history = _history is null ? new UpdateCheckHistory() : await _history.ReadAsync(token);
             if (history.RequestPending) throw new InvalidOperationException("Previous request outcome requires inspection.");
             historyIo = false;
@@ -168,6 +170,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
         }
         finally
         {
+            historyLease?.Dispose();
             _activeCancellation = null;
             cancellation.Dispose();
             completion.TrySetResult();
