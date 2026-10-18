@@ -184,9 +184,10 @@ public sealed class UpdateDownloadSessionTests
     {
         using var fixture = new UpdateDiscoveryFixture();
         var candidate = await Available(fixture);
+        var cleanupResolved = false;
         await using var session = new UpdateCheckSession((_, _) => Task.FromResult(new UpdateCheckResult(UpdateCheckStatus.Available, candidate)),
             fixture.Clock, downloads: new((_, _, _, _) => Task.CompletedTask,
-                _ => throws ? throw new IOException("secret path") : Task.FromResult(false)));
+                _ => cleanupResolved ? Task.FromResult(true) : throws ? throw new IOException("secret path") : Task.FromResult(false)));
         await session.CheckAsync(Preview);
         await session.DownloadAsync(Preview);
         await session.DiscardDownloadAsync();
@@ -194,6 +195,11 @@ public sealed class UpdateDownloadSessionTests
         Assert.False(session.Status.CanCheck);
         Assert.Contains("remains on disk", session.Status.DownloadText);
         Assert.DoesNotContain("secret", session.Status.DownloadText);
+        cleanupResolved = true;
+        await session.DiscardDownloadAsync();
+        Assert.True(session.Status.CanCheck);
+        Assert.True(session.Status.CanDownload);
+        Assert.Contains("discarded", session.Status.DownloadText);
     }
 
     [Fact]

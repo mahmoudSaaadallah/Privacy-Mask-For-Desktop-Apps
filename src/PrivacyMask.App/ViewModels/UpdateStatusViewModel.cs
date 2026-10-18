@@ -157,6 +157,14 @@ public sealed class UpdateStatusViewModel : ObservableObject
         Notify();
     }
 
+    internal void FinishDiscard(bool removed)
+    {
+        // Only the owned handle's successful cleanup can retire its earlier cleanup warning.
+        if (removed) _cleanupBlocked = false;
+        FinishDownload(removed ? "Download discarded. Your installed application is unchanged."
+            : "The verified download remains on disk.", ready: !removed, cleanupIncomplete: !removed);
+    }
+
     private void Notify()
     {
         foreach (var property in new[] { nameof(IsChecking), nameof(CanCheck), nameof(CheckLabel), nameof(StatusText),

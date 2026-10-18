@@ -80,12 +80,11 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
         {
             Status.BeginDiscard();
             var removed = await _downloads!.Discard(cancellation.Token);
-            if (!_stopped) Status.FinishDownload(removed ? "Download discarded. Your installed application is unchanged."
-                : "The verified download remains on disk.", ready: !removed, cleanupIncomplete: !removed);
+            if (!_stopped) Status.FinishDiscard(removed);
         }
         catch (Exception)
         {
-            if (!_stopped) Status.FinishDownload("The verified download remains on disk.", ready: true, cleanupIncomplete: true);
+            if (!_stopped) Status.FinishDiscard(removed: false);
         }
         finally
         {

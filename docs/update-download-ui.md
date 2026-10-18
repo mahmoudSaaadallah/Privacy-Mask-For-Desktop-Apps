@@ -33,7 +33,10 @@ introduced. This is the download slice, not completed one-click installation.
 6. Incomplete cleanup is disclosed. Further downloads in this process are
    disabled; unknown files and recovery evidence are preserved. A failed discard
    continues to report retained files, not successful removal. View releases and
-   ordinary Exit remain available. Nothing claims installation success.
+   ordinary Exit remain available. Retrying discard after a temporary lock clears
+   restores admission only when the same owned handle confirms complete removal;
+   it never resets unknown stage or history evidence. Nothing claims installation
+   success.
 
 Closing settings to the tray does not cancel an explicit download. Reopening
 settings binds to the same session/status. Application shutdown and update
