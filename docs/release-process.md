@@ -5,7 +5,7 @@ not committed to the source repository.
 
 ## Version policy
 
-The source currently prepares `2.0.0-beta.9`. This is a testing delivery, not a
+The source currently prepares `2.0.0-beta.10`. This is a testing delivery, not a
 stable release announcement. Publishing/tagging remains a separate authorized
 action after merge and qualification. A commit or PR is not itself a release.
 Earlier source builds displayed 2.0.0 while still unreleased; the beta suffix
@@ -35,10 +35,10 @@ on merge or by a Git hook.
 
 | Identity | Current value | Purpose |
 | --- | --- | --- |
-| Version | `2.0.0-beta.9` | UI label, archive filename and exact `v2.0.0-beta.9` tag |
+| Version | `2.0.0-beta.10` | UI label, archive filename and exact `v2.0.0-beta.10` tag |
 | InformationalVersion | `$(Version)` plus SDK Git metadata when available | Full build provenance; About shows the product before `+` and exposes the full value in its tooltip/help |
 | AssemblyVersion | `2.0.0.0` | Numeric assembly identity, stable throughout this prerelease cycle |
-| FileVersion | `2.0.0.9` | Numeric Windows file/build revision |
+| FileVersion | `2.0.0.10` | Numeric Windows file/build revision |
 
 Windows numeric fields cannot contain `beta` or `rc`. Increase FileVersion's
 fourth component for the next delivered beta/candidate/stable build of the same
@@ -85,7 +85,7 @@ baseline, so the new publisher currently fails closed. This is not an automatic
 environment/secret setup or permission to publish an existing version again.
 
 1. Merge the fully verified release changes into `main`.
-2. Create an annotated version tag matching the source, such as `v2.0.0-beta.9`, on the release commit.
+2. Create an annotated version tag matching the source, such as `v2.0.0-beta.10`, on the release commit.
 3. Push the tag to GitHub.
 4. The `release` workflow requires the named protected environment and a clean
    merged exact version tag, builds/tests the project and normal Windows ZIP,
@@ -101,8 +101,8 @@ environment/secret setup or permission to publish an existing version again.
 Example tag commands:
 
 ```powershell
-git tag -a v2.0.0-beta.9 -m "PrivacyMask v2.0.0-beta.9"
-git push origin v2.0.0-beta.9
+git tag -a v2.0.0-beta.10 -m "PrivacyMask v2.0.0-beta.10"
+git push origin v2.0.0-beta.10
 ```
 
 These commands are a release procedure, not commands run by the current PR.
@@ -181,3 +181,10 @@ beta.9 / FileVersion 2.0.0.9 with schema-13 user settings and independent schema
 bounded check history. It adds one-shot scheduling and persistent retry/admission
 without configuring production keys, publishing a tag/Release, or connecting
 the download/apply UI. Compiled trust remains empty.
+
+The [explicit verified-download UI delivery](update-download-ui.md) advances to
+beta.10 / FileVersion 2.0.0.10 without changing settings/history schemas. Settings
+now connects signed download/progress/cancel/owned-stage discard to the managed
+stager and durable single-flight retry session. No installation/restart UI,
+production trusted key, tag, Release or live activation is introduced. Staging
+tests are not real-App A-to-B or Windows 10/11 physical-fault qualification.
