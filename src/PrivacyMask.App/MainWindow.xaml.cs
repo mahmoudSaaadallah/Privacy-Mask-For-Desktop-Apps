@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private bool _isUpdateSuspended;
     private TaskCompletionSource? _saveFinished;
     private TaskCompletionSource? _runtimeActionFinished;
+    private TaskCompletionSource? _updateCheckFinished;
     private readonly DesktopApplicationCatalog _applicationCatalog;
 
     public MainWindow(SettingsViewModel viewModel, DesktopApplicationCatalog applicationCatalog)
@@ -44,6 +45,36 @@ public partial class MainWindow : Window
     public event Action? DiscardRequested;
     public event Action? GlobalProtectionRequested;
     public event Func<Task>? GlobalPanicRequested;
+    public event Func<Task>? CheckForUpdatesRequested;
+
+    private async void CheckForUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isShuttingDown || _isUpdateSuspended || _updateCheckFinished?.Task.IsCompleted == false
+            || CheckForUpdatesRequested is null) return;
+        _updateCheckFinished = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        try { await CheckForUpdatesRequested.Invoke(); }
+        catch (Exception)
+        {
+            ViewModel.Updates.Complete(new(PrivacyMask.Updates.UpdateCheckStatus.UnableToCheck),
+                ViewModel.UpdateChannel, DateTimeOffset.UtcNow);
+        }
+        finally { _updateCheckFinished.SetResult(); }
+    }
+
+    private void ViewReleases_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isShuttingDown || _isUpdateSuspended) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(AboutInformation.ReleasesUri.AbsoluteUri)
+                { UseShellExecute = true });
+        }
+        catch (Exception)
+        {
+            System.Windows.MessageBox.Show(this, $"Open the releases page manually:\n\n{AboutInformation.ReleasesUri}",
+                "View releases", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
 
     private void GlobalProtection_Click(object sender, RoutedEventArgs e)
     {
@@ -135,7 +166,8 @@ public partial class MainWindow : Window
         // The shell's mutation callback can finish before the event handler's
         // final UI continuation. Do not dispose its view model in that gap.
         return Task.WhenAll(_saveFinished?.Task ?? Task.CompletedTask,
-            _runtimeActionFinished?.Task ?? Task.CompletedTask);
+            _runtimeActionFinished?.Task ?? Task.CompletedTask,
+            _updateCheckFinished?.Task ?? Task.CompletedTask);
     }
 
     internal bool HasUpdateBlockingEdits => ViewModel.HasPendingChanges || HasBindingErrors(this);
@@ -145,7 +177,8 @@ public partial class MainWindow : Window
         _isUpdateSuspended = true;
         IsEnabled = false;
         return Task.WhenAll(_saveFinished?.Task ?? Task.CompletedTask,
-            _runtimeActionFinished?.Task ?? Task.CompletedTask);
+            _runtimeActionFinished?.Task ?? Task.CompletedTask,
+            _updateCheckFinished?.Task ?? Task.CompletedTask);
     }
 
     internal void ResumeAfterUpdate()

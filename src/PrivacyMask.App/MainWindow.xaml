@@ -371,6 +371,40 @@
                     <ScrollViewer x:Name="SettingsPage" Visibility="{Binding IsSettingsPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="28">
                             <TextBlock Text="Settings" Style="{StaticResource PageHeading}" Margin="0,0,0,26"/>
+                            <Border x:Name="UpdatesCard" Style="{StaticResource Card}" Padding="24" Margin="0,0,0,22">
+                                <StackPanel>
+                                    <DockPanel Margin="0,0,0,12">
+                                        <Button DockPanel.Dock="Right" Content="i" Style="{StaticResource CircleHelp}" AutomationProperties.Name="Update privacy information" services:InformationHelp.Text="Manual checks use the saved channel. Save changes to apply preferences. A check connects only to GitHub for release metadata; profiles, PINs, paths, window titles and captures are never sent. Installation always requires separate consent. This testing build has no background requests or in-app download/install activation."/>
+                                        <TextBlock Text="Updates" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                    <TextBlock Text="{x:Static services:AboutInformation.VersionText}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                    <Grid Margin="0,16,0,6"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="160"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="Release channel" VerticalAlignment="Center"/>
+                                        <ComboBox Grid.Column="1" ItemsSource="{x:Static viewModels:SettingsViewModel.UpdateChannels}" SelectedItem="{Binding UpdateChannel,Mode=TwoWay}" AutomationProperties.Name="Update release channel" AutomationProperties.HelpText="Stable excludes prereleases. Preview includes stable and prerelease versions. Save changes before checking the new channel."/>
+                                    </Grid>
+                                    <TextBlock Text="{Binding UpdateChannelExplanation}" Foreground="{StaticResource MutedInkBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                                    <DockPanel>
+                                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsChecked="{Binding AutomaticUpdateChecks,Mode=TwoWay}" AutomationProperties.Name="Automatically check for updates" AutomationProperties.HelpText="Save the background-check preference. Automatic checks are not activated in this build."/>
+                                        <TextBlock Text="Automatically check for updates" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,12,0"/>
+                                    </DockPanel>
+                                    <TextBlock Text="Preference saved for future activation. This build never checks in the background." Foreground="{StaticResource MutedInkBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,14"/>
+                                    <Border Background="#F0F7F8" CornerRadius="6" Padding="12">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Updates.StatusText}" TextWrapping="Wrap" AutomationProperties.Name="Update check status"/>
+                                            <TextBlock Text="{Binding Updates.LastCheckText}" Foreground="{StaticResource MutedInkBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                            <TextBlock Text="{Binding Updates.RetryText}" FontSize="12" TextWrapping="Wrap"/>
+                                            <StackPanel Visibility="{Binding Updates.HasCandidate,Converter={StaticResource BooleanToVisibility}}" Margin="0,8,0,0">
+                                                <TextBlock Text="{Binding Updates.CandidateDetail}" TextWrapping="Wrap" FontSize="12"/>
+                                                <TextBox Text="{Binding Updates.ReleaseNotes,Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" MaxHeight="140" Margin="0,8,0,0" AutomationProperties.Name="Release notes"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                    <controls:AdaptivePairPanel BreakWidth="450" EqualColumns="True" Gap="10" Margin="0,16,0,0">
+                                        <Button Content="{Binding Updates.CheckLabel}" IsEnabled="{Binding Updates.CanCheck}" Click="CheckForUpdates_Click" Style="{StaticResource PrimaryButton}" AutomationProperties.Name="Check for updates"/>
+                                        <Button Content="View releases" Click="ViewReleases_Click" Style="{StaticResource SecondaryButton}" AutomationProperties.Name="View GitHub releases" AutomationProperties.HelpText="Open the fixed public releases page in your browser. No installation or file download starts automatically."/>
+                                    </controls:AdaptivePairPanel>
+                                </StackPanel>
+                            </Border>
                             <Border Style="{StaticResource Card}" Padding="24">
                                 <StackPanel>
                                     <TextBlock Text="Startup" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>

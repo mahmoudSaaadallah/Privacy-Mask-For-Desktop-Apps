@@ -9,6 +9,7 @@ public static class AboutInformation
     public static Uri EmailUri { get; } = new($"mailto:{SupportEmail}");
     public static Uri GitHubUri { get; } = new("https://github.com/mahmoudsaaadallah");
     public static Uri LinkedInUri { get; } = new("https://linkedin.com/in/mahmoudsaaadallah");
+    public static Uri ReleasesUri { get; } = new("https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases");
     private static readonly Assembly ProductAssembly = typeof(AboutInformation).Assembly;
     public static string FullVersion { get; } = ProductAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
         ?? ProductAssembly.GetName().Version?.ToString(3) ?? "unknown";
