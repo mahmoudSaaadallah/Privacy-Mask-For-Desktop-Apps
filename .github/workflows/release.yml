@@ -13,7 +13,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-release-environment:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require approved merged tag source before deployment admission
+        shell: powershell
+        env:
+          PRIVACYMASK_RELEASE_TAG: ${{ github.ref_name }}
+        run: .\scripts\assert-release-source.ps1 -ExpectedTag $env:PRIVACYMASK_RELEASE_TAG
+      - name: Require existing protected release environment without creating it
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRIVACYMASK_RELEASE_REPOSITORY: ${{ github.repository }}
+        run: .\scripts\assert-release-environment.ps1 -Repository $env:PRIVACYMASK_RELEASE_REPOSITORY
+
   package-windows:
+    needs: validate-release-environment
     runs-on: windows-latest
     environment: privacy-mask-release
     permissions:
@@ -51,6 +73,14 @@ jobs:
       - name: Test approved release source gate without Git writes
         shell: powershell
         run: .\scripts\test-release-source.ps1
+
+      - name: Test environment admission without external writes
+        shell: powershell
+        run: .\scripts\test-release-environment.ps1
+
+      - name: Test isolated qualification packet preparation
+        shell: powershell
+        run: .\scripts\test-update-qualification.ps1
 
       - name: Test proposed update manifest schemas
         shell: pwsh
