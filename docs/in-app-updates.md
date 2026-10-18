@@ -15,9 +15,11 @@ whole is not complete.
 Production signing/environment/OS qualification remain unset;
 see [signing operations](update-signing-operations.md). The subsequent
 [phase-6a Settings/tray delivery](update-settings-ui.md) adds manual checks and
-preferences in `2.0.0-beta.8`. Empty compiled trust returns NotConfigured before
-network or installation inspection. No scheduled check, download/apply UI,
-production key, tag or new release is activated.
+preferences in beta.8. [Phase-6b durable startup discovery](update-check-scheduling.md)
+adds bounded history, one-shot scheduling and persistent retry gates in
+`2.0.0-beta.9`. Empty compiled trust still returns NotConfigured before network,
+installation inspection, history IO or a startup timer. No automatic network
+activation, download/apply UI, production key, tag or Release is supplied.
 
 ## Current implementation and gaps
 

@@ -6,7 +6,7 @@ public static class AboutInformation
 {
     public const string Developer = "Mahmoud Saadallah";
     public const string SupportEmail = "mahmoud.saadallah73@gmail.com";
-    public const string UpdatePrivacyDisclosure = "Manual checks use the saved channel. Save changes to apply preferences. When signed checks are enabled, GitHub receives ordinary connection metadata, including your IP address, but never profiles, PINs, executable paths, window titles or captures. Installation requires separate consent. This testing build has no background checks or in-app downloads. View releases opens your browser.";
+    public const string UpdatePrivacyDisclosure = "Checks use saved preferences. No network or startup timer is created without approved signing keys and a supported managed installation. Once configured, one check may run 30 seconds after startup if the last attempt is at least 24 hours old. Save opt-out to cancel pending automatic work; enabling takes effect on the next startup. Manual checks remain available but respect GitHub retry deadlines. GitHub receives ordinary connection metadata, including your IP address, never profiles, PINs, paths, window titles or captures. Installation needs separate consent; in-app downloads remain disabled. View releases opens your browser.";
     public static Uri EmailUri { get; } = new($"mailto:{SupportEmail}");
     public static Uri GitHubUri { get; } = new("https://github.com/mahmoudsaaadallah");
     public static Uri LinkedInUri { get; } = new("https://linkedin.com/in/mahmoudsaaadallah");

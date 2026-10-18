@@ -102,7 +102,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _temporaryRevealGesture = new ExclusiveHoldGesture(TimeSpan.FromMilliseconds(500d));
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
         _updateDiscovery = new RuntimeUpdateDiscovery(_settingsStore.SettingsPath);
-        _updateChecks = new UpdateCheckSession(_updateDiscovery.CheckAsync);
+        _updateChecks = new UpdateCheckSession(_updateDiscovery.CheckAsync,
+            history: new UpdateCheckHistoryStore(Path.GetDirectoryName(_settingsStore.SettingsPath)!),
+            preflight: _updateDiscovery.Preflight);
         _windowInspector = new DesktopWindowInspector();
         _applicationCatalog = new DesktopApplicationCatalog(_windowInspector);
         _windowProfileResolver = new WindowProfileResolver(
@@ -221,6 +223,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         if (!_settings.OnboardingCompleted)
         {
             await ShowOnboardingAsync();
+            if (_settings.OnboardingCompleted) _ = _updateChecks.ScheduleStartupCheck(SavedUpdatePreferences);
             return;
         }
 
@@ -230,7 +233,10 @@ public sealed class ShellCoordinator : IAsyncDisposable
         {
             ShowSettingsWindow();
         }
+        _ = _updateChecks.ScheduleStartupCheck(SavedUpdatePreferences);
     }
+
+    private UpdateCheckPreferences SavedUpdatePreferences() => new(_savedSettings.AutomaticUpdateChecks, _savedSettings.UpdateChannel);
 
     public void HandleExternalActivation()
     {
@@ -295,12 +301,13 @@ public sealed class ShellCoordinator : IAsyncDisposable
     {
         _isUpdateSuspended = true;
         if (_notifyIcon.ContextMenuStrip is { } menu) menu.Enabled = false;
-        return _mainWindow?.SuspendForUpdateAsync() ?? Task.CompletedTask;
+        return Task.WhenAll(_updateChecks.SuspendAsync(), _mainWindow?.SuspendForUpdateAsync() ?? Task.CompletedTask);
     }
 
     private void ResumeAfterUpdate()
     {
         _isUpdateSuspended = false;
+        _updateChecks.Resume();
         if (!_isShuttingDown && _notifyIcon.ContextMenuStrip is { } menu) menu.Enabled = true;
         _mainWindow?.ResumeAfterUpdate();
     }
@@ -559,6 +566,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
         _settings = nextSettings;
         _savedSettings = AppSettingsCloner.Clone(nextSettings);
+        _updateChecks.PreferencesChanged();
         RebuildWindowProcessFilter();
         RegisterHotkeys();
         _mainWindow?.ReplaceViewModel(CreateSettingsViewModel());

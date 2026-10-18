@@ -384,10 +384,10 @@
                                     </Grid>
                                     <TextBlock Text="{Binding UpdateChannelExplanation}" Foreground="{StaticResource MutedInkBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,14"/>
                                     <DockPanel>
-                                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsChecked="{Binding AutomaticUpdateChecks,Mode=TwoWay}" AutomationProperties.Name="Automatically check for updates" AutomationProperties.HelpText="Save the background-check preference. Automatic checks are not activated in this build."/>
+                                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsChecked="{Binding AutomaticUpdateChecks,Mode=TwoWay}" AutomationProperties.Name="Automatically check for updates" AutomationProperties.HelpText="Save to apply. Disabling cancels pending automatic checks; enabling applies at next startup. Requires approved signing keys. Manual checks remain available."/>
                                         <TextBlock Text="Automatically check for updates" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,12,0"/>
                                     </DockPanel>
-                                    <TextBlock Text="Preference saved for future activation. This build never checks in the background." Foreground="{StaticResource MutedInkBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,14"/>
+                                    <TextBlock Text="Startup checks respect a 24-hour interval. Builds without approved signing keys never connect automatically." Foreground="{StaticResource MutedInkBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,14"/>
                                     <Border Background="#F0F7F8" CornerRadius="6" Padding="12">
                                         <StackPanel>
                                             <TextBlock Text="{Binding Updates.StatusText}" TextWrapping="Wrap" AutomationProperties.Name="Update check status"/>

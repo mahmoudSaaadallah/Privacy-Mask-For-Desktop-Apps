@@ -1,5 +1,9 @@
 # Manual update settings and tray integration (phase 6a)
 
+Historical beta.8 slice. The [beta.9 scheduling delivery](update-check-scheduling.md)
+supersedes its session-only timestamps and future-only automatic-check preference;
+production trust remains empty and no automatic network activation is supplied.
+
 Source delivery: `2.0.0-beta.8`, FileVersion `2.0.0.8`, AssemblyVersion
 `2.0.0.0`, settings schema 13. This follows the beta.7 retention delivery.
 This is a source-delivery PR, not a tag, published release or production-key setup.

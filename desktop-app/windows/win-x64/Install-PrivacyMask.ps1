@@ -229,9 +229,20 @@ try {
       Where-Object {
         $_.Name -eq 'settings.v1.json' -or
         $_.Name -eq 'settings.v1.json.bak' -or
+        $_.Name -eq 'update-check-history.json' -or
         $_.Name -like 'settings.v1.corrupt-*.json'
       } |
-      Copy-Item -Destination $stagingPath -Force
+      ForEach-Object {
+        if ($_.Name -eq 'update-check-history.json' -and
+            (($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or $_.Length -gt 4096)) {
+          throw 'Update-check history must be a normal bounded file. The existing installation was not replaced.'
+        }
+        $stateDestination = Join-Path $stagingPath $_.Name
+        Copy-Item -LiteralPath $_.FullName -Destination $stateDestination -Force
+        if ($_.Name -eq 'update-check-history.json' -and (Get-Item -LiteralPath $stateDestination).Length -gt 4096) {
+          throw 'Update-check history grew beyond its storage budget.'
+        }
+      }
   }
 
   $marker = [ordered]@{
