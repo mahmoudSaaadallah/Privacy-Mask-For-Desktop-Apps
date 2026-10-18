@@ -159,5 +159,20 @@ public sealed class UpdateStager : IDisposable
 
     public void Dispose() => _transport.Dispose();
 
+    /// <summary>Managed runtime adapter. Caller retains the same install lease until this complete operation returns.</summary>
+    internal async Task<StagedUpdate> PrepareManagedAsync(UpdateCandidate candidate, UpdateCheckContext context,
+        ManagedInstallLease lease, IProgress<UpdateDownloadProgress>? progress = null, CancellationToken cancellationToken = default)
+    {
+        if (!_verifier.IsConfigured) throw new UpdateDownloadException("update-trust-not-configured");
+        lease.AssertHeld();
+        if (new RecoveryJournalStore(lease).Read() is not null) throw new UpdateDownloadException("existing-recovery-operation");
+        _ = await new UpdateRetention(lease).RunAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        UpdateStoragePolicy.RequireCapacity(lease, creatingStage: true);
+        var root = Path.Combine(lease.Root, "update-staging");
+        if (!Path.Exists(root)) ManagedInstallLease.CreatePrivateDirectory(root);
+        var staged = await PrepareAsync(candidate, context, root, progress, cancellationToken).ConfigureAwait(false);
+        try { lease.AssertHeld(); return staged; }
+        catch { _ = staged.TryDiscard(); throw; }
+    }
     private sealed class InlineProgress<T>(Action<T> report) : IProgress<T> { public void Report(T value) => report(value); }
 }

@@ -56,6 +56,7 @@ internal sealed class RecoveryPreparer
                 throw new ReleaseValidationException("Unsupported preparation context.");
             var store = new RecoveryJournalStore(_lease);
             if (store.Read() is not null) throw new UpdatePreparationException("existing-recovery-operation");
+            UpdateStoragePolicy.RequireCapacity(_lease, creatingStage: false);
 
             // Fixed descendants of the same private managed root: no caller-supplied staging/app paths.
             var stageRoot = Path.Combine(_lease.Root, "update-staging");
