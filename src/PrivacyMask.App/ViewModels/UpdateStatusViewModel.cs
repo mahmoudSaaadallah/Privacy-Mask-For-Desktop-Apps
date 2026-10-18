@@ -24,13 +24,27 @@ public sealed class UpdateStatusViewModel : ObservableObject
     private DateTimeOffset? _candidateCheckedUtc;
     private UpdateReleaseChannel? _checkedChannel;
     private readonly Dictionary<UpdateReleaseChannel, DateTimeOffset> _successfulChecks = [];
+    public bool IsMandatory { get; private set; }
+    public bool UserActionsAllowed => !IsMandatory;
+    public UpdateReleaseChannel RequiredChannel { get; private set; }
+    internal bool HasVerifiedDownload => _downloadReady;
+    internal bool RequiresNewDownload => _installRetryBlocked;
+    internal bool NeedsRepair => _repairRequired || _cleanupBlocked;
+    internal bool CanRetireDownload => _downloadReady && !_isChecking && !_isStopped && !_isPaused && !_isInstalling && !_repairRequired;
+    internal void RequireAutomaticUpdates()
+    {
+        IsMandatory = true;
+        RequiredChannel = SemanticVersion.TryParse(AboutInformation.FullVersion, out var version) && version.IsPrerelease
+            ? UpdateReleaseChannel.Preview : UpdateReleaseChannel.Stable;
+        Notify();
+    }
 
     public bool IsChecking => _isChecking;
     public bool CanCheck => !_isChecking && !_isStopped && !_isPaused && !_downloadReady && !_isInstalling && !_repairRequired;
     public bool CanDownload => CanCheck && HasCandidate && !_cleanupBlocked;
-    public bool CanCancelDownload => _isDownloading && !_isStopped && !_isPaused;
-    public bool CanDiscardDownload => _downloadReady && !_isChecking && !_isStopped && !_isPaused && !_isInstalling && !_repairRequired;
-    public bool CanInstall => CanDiscardDownload && !_cleanupBlocked && !_installRetryBlocked;
+    public bool CanCancelDownload => !IsMandatory && _isDownloading && !_isStopped && !_isPaused;
+    public bool CanDiscardDownload => !IsMandatory && CanRetireDownload;
+    public bool CanInstall => CanRetireDownload && !_cleanupBlocked && !_installRetryBlocked;
     public bool IsInstalling => _isInstalling;
     public bool HasDownloadStatus => _downloadText.Length != 0;
     public bool IsDownloading => _isDownloading;
@@ -61,7 +75,9 @@ public sealed class UpdateStatusViewModel : ObservableObject
     public string ReleaseNotes => _result?.Candidate?.ReleaseNotes is { } notes ? notes[..Math.Min(notes.Length, 4096)] : "";
     public bool HasCandidate => _result?.Status == UpdateCheckStatus.Available && _result.Candidate is not null;
     public string CandidateDetail => HasCandidate
-        ? $"{_result!.Candidate!.Manifest.Package.Size / 1048576d:0.0} MiB. Download verifies a separate package. Update now asks before restarting; masks disappear during restart."
+        ? $"{_result!.Candidate!.Manifest.Package.Size / 1048576d:0.0} MiB. " + (IsMandatory
+            ? "Required update: downloads automatically and installs when Panic, unsaved edits and visible protected windows are clear."
+            : "Download verifies a separate package. Update now asks before restarting; masks disappear during restart.")
         : "";
 
     internal void Begin()
@@ -156,8 +172,10 @@ public sealed class UpdateStatusViewModel : ObservableObject
         _isDownloading = false;
         _isDiscarding = false;
         _downloadReady = ready;
+        if (IsMandatory && !ready) { _result = null; _candidateCheckedUtc = null; }
         _cleanupBlocked |= cleanupIncomplete;
-        _downloadText = message + (cleanupIncomplete ? " Some staging files could not be removed. Use View releases; no installed files were changed." : "");
+        _downloadText = (ready && IsMandatory ? "Verified required update ready. Installation will continue automatically when protection and edits allow a safe restart." : message)
+            + (cleanupIncomplete ? " Some staging files could not be removed. Use View releases; no installed files were changed." : "");
         if (ready) _downloadPercent = 100;
         Notify();
     }
@@ -173,7 +191,8 @@ public sealed class UpdateStatusViewModel : ObservableObject
     internal void BeginInstall()
     {
         _isInstalling = true;
-        _downloadText = "Preparing to install. Resolve unsaved edits and confirm restart; protection remains active until exit.";
+        _downloadText = IsMandatory ? "Preparing required update. Protection remains active until a safe automatic restart."
+            : "Preparing to install. Resolve unsaved edits and confirm restart; protection remains active until exit.";
         Notify();
     }
 
@@ -192,12 +211,20 @@ public sealed class UpdateStatusViewModel : ObservableObject
         Notify();
     }
 
+    internal void ShowAutomaticWait(string reason)
+    {
+        if (_isStopped || !_downloadReady || _isInstalling || _downloadText == reason) return;
+        _downloadText = reason;
+        Notify();
+    }
+
     private void Notify()
     {
         foreach (var property in new[] { nameof(IsChecking), nameof(CanCheck), nameof(CheckLabel), nameof(StatusText),
             nameof(LastCheckText), nameof(RetryText), nameof(ReleaseNotes), nameof(HasCandidate), nameof(CandidateDetail),
             nameof(CanDownload), nameof(CanCancelDownload), nameof(CanDiscardDownload), nameof(HasDownloadStatus),
-            nameof(IsDownloading), nameof(DownloadPercent), nameof(DownloadText), nameof(CanInstall), nameof(IsInstalling) })
+            nameof(IsDownloading), nameof(DownloadPercent), nameof(DownloadText), nameof(CanInstall), nameof(IsInstalling),
+            nameof(IsMandatory), nameof(UserActionsAllowed), nameof(RequiredChannel) })
             RaisePropertyChanged(property);
     }
 }
