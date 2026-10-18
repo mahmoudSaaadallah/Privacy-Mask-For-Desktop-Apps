@@ -208,7 +208,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
                 catch (UpdateDownloadException failure)
                 {
                     // Even download responses share the durable repository-wide server retry gate.
-                    history = history.Complete(channel, new(UpdateCheckStatus.UnableToCheck, RetryAt: failure.RetryAt), _time.GetUtcNow());
+                    history = history.Complete((UpdateChannel)channel, new(UpdateCheckStatus.UnableToCheck, RetryAt: failure.RetryAt), _time.GetUtcNow());
                     admittedHistory = history;
                     historyIo = _history is not null;
                     using var failureDeadline = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -224,7 +224,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
                 }
                 result = new(UpdateCheckStatus.Available, download);
             }
-            history = download is null ? history.Complete(channel, result, _time.GetUtcNow()) : history with { RequestPending = false };
+            history = download is null ? history.Complete((UpdateChannel)channel, result, _time.GetUtcNow()) : history with { RequestPending = false };
             admittedHistory = history;
             historyIo = _history is not null;
             // Once a response exists, persist its retry information even if opt-out/shutdown raced it.
@@ -234,7 +234,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
             admittedHistory = null;
             if (!_stopped)
             {
-                if (download is not null) Status.FinishDownload("Verified download ready. Nothing has been installed. Installation will be connected in a later build.", ready: true);
+                if (download is not null) Status.FinishDownload("Verified download ready. Choose Update now to review restart consent, or discard to free space. Nothing has been installed.", ready: true);
                 else if (token.IsCancellationRequested) Status.Cancel();
                 else Status.Complete(result, channel, _time.GetUtcNow());
             }

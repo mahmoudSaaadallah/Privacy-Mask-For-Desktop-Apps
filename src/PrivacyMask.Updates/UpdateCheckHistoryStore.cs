@@ -1,9 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PrivacyMask.Updates;
-
-namespace PrivacyMask.App.Services;
+namespace PrivacyMask.Updates;
 
 /// <summary>Bounded private scheduling hints, never trust roots, release authority, or user settings.</summary>
 internal sealed class UpdateCheckHistoryStore : IUpdateCheckHistoryStore
@@ -20,6 +18,7 @@ internal sealed class UpdateCheckHistoryStore : IUpdateCheckHistoryStore
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         MaxDepth = 4,
     };
+    private static readonly UpdateCheckHistoryJsonContext Json = new(Options);
 
     internal UpdateCheckHistoryStore(string root)
     {
@@ -71,7 +70,7 @@ internal sealed class UpdateCheckHistoryStore : IUpdateCheckHistoryStore
             if (!names.Add(field.Name)) throw new JsonException("Duplicate update history field.");
         if (!names.SetEquals(["schemaVersion", "lastAttemptUtc", "retryAfterUtc", "stableSuccessUtc", "previewSuccessUtc", "requestPending"]))
             throw new JsonException("Unexpected update history fields.");
-        var history = JsonSerializer.Deserialize<UpdateCheckHistory>(bytes, Options) ?? throw new JsonException();
+        var history = JsonSerializer.Deserialize(bytes, Json.UpdateCheckHistory) ?? throw new JsonException();
         Validate(history);
         return history;
     }
@@ -79,7 +78,7 @@ internal sealed class UpdateCheckHistoryStore : IUpdateCheckHistoryStore
     public async Task WriteAsync(UpdateCheckHistory history, CancellationToken token)
     {
         Validate(history);
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(history, Options);
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(history, Json.UpdateCheckHistory);
         if (bytes.Length > MaximumBytes) throw new IOException("Update history exceeded its budget.");
         token.ThrowIfCancellationRequested();
         ManagedInstallLease.AssertPrivate(_root);
@@ -112,3 +111,7 @@ internal sealed class UpdateCheckHistoryStore : IUpdateCheckHistoryStore
                 throw new JsonException("Invalid update history timestamp.");
     }
 }
+
+[JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Metadata)]
+[JsonSerializable(typeof(UpdateCheckHistory))]
+internal partial class UpdateCheckHistoryJsonContext : JsonSerializerContext;
