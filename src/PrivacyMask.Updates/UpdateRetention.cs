@@ -53,6 +53,7 @@ internal sealed class UpdateRetention(ManagedInstallLease lease, TimeProvider? c
             }
 
             string? retainedId = null;
+            Terminal? retained = null;
             if (terminals.Count > 0)
             {
                 var installed = await PreparationFile.OpenAsync(Path.Combine(lease.Root, "app", LauncherBoot.ApplicationFileName),
@@ -81,6 +82,7 @@ internal sealed class UpdateRetention(ManagedInstallLease lease, TimeProvider? c
                             if (pin.Snapshot != snapshot) throw new ReleaseValidationException("Retained recovery baseline changed.");
                         }
                         retainedId = terminal.Id;
+                        retained = terminal;
                         pins.AddRange(candidatePins);
                         break;
                     }
@@ -93,6 +95,30 @@ internal sealed class UpdateRetention(ManagedInstallLease lease, TimeProvider? c
                 }
                 if (retainedId is null) partial = true; // No proven replacement backup: preserve all terminal histories.
             }
+
+            if (retained?.Journal.Step == RecoveryStep.Committed)
+                foreach (var (name, expected) in new[] {
+                    ("target-app.exe", retained.Journal.TargetApp),
+                    ("displaced-original-app.exe", retained.Journal.OriginalApp),
+                    ("forward-app.tmp", retained.Journal.TargetApp) })
+                {
+                    token.ThrowIfCancellationRequested();
+                    try
+                    {
+                        var path = Path.Combine(retained.Path, name);
+                        if (!File.Exists(path)) continue;
+                        // These optional copies duplicate either the pinned installed App or pinned rollback App.
+                        // Their independent deletion is idempotent; the complete recovery pair/journal stay intact.
+                        using (var duplicate = await PreparationFile.OpenAsync(path, ManifestRules.MaximumFileSize, true, token).ConfigureAwait(false))
+                            if (duplicate.Snapshot != expected) throw new ReleaseValidationException("Redundant recovery copy changed.");
+                        AssertNoJournal();
+                        ManagedInstallLease.AssertPrivate(path);
+                        File.Delete(path);
+                        bytes = checked(bytes + expected.Size);
+                        checkpoint?.Invoke(RetentionCheckpoint.FileRemoved);
+                    }
+                    catch (Exception error) when (IsPreservable(error)) { partial = true; }
+                }
 
             foreach (var path in quarantined.Order(StringComparer.Ordinal))
             {

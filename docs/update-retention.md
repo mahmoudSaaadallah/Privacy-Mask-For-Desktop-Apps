@@ -36,6 +36,14 @@ quarantines remain intact. Malformed or unknown histories remain separately
 preserved. This can leave more than one directory and consumes admission
 capacity; cleanup never invents a replacement backup to meet a numeric target.
 
+Inside the retained Committed directory, exact hash-verified optional
+`target-app.exe`, `displaced-original-app.exe` and `forward-app.tmp` duplicates
+can be deleted independently: their bytes already exist in the pinned installed
+or rollback executable. This keeps one rollback executable rather than retaining
+several redundant full copies. The original App/settings pair and terminal
+journal remain intact; changed/locked copies are preserved. This idempotent
+single-file trim does not require moving the retained recovery directory.
+
 Unarchived operation directories are unresolved, even if old. Their baseline
 copies never expire automatically. Age is not evidence that an uncommitted
 backup is disposable. Repeated unresolved attempts eventually block new
