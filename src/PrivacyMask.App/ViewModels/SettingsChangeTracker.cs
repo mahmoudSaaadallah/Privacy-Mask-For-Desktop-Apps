@@ -80,7 +80,8 @@ internal sealed class SettingsChangeTracker : IDisposable
     {
         var isPersisted = sender switch
         {
-            SettingsViewModel => e.PropertyName is "LaunchAtLogin" or "StartMinimized" or "PanicPin",
+            SettingsViewModel => e.PropertyName is "LaunchAtLogin" or "StartMinimized" or "PanicPin"
+                or "AutomaticUpdateChecks" or "UpdateChannel",
             HotkeyBindingViewModel => e.PropertyName == "Enabled",
             AppProfileViewModel => e.PropertyName is "DisplayName" or "Enabled" or "StartupMode"
                 or "SelectedPresetId" or "MaskIntensity" or "MaskColor" or "HoverRevealWidthPixels"

@@ -12,6 +12,8 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 {
     private bool _launchAtLogin;
     private bool _startMinimized;
+    private bool _automaticUpdateChecks;
+    private UpdateReleaseChannel _updateChannel;
     private PanicPinCredential? _panicPin;
     private DesktopPage _selectedPage = DesktopPage.Overview;
     private SettingsChangeTracker? _changeTracker;
@@ -301,12 +303,16 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         AppSettings settings,
         RuntimeMode currentMode,
         string configPath,
-        IReadOnlySet<HotkeyAction> unavailableHotkeyActions)
+        IReadOnlySet<HotkeyAction> unavailableHotkeyActions,
+        UpdateStatusViewModel? updateStatus = null)
     {
         var viewModel = new SettingsViewModel
         {
             _launchAtLogin = settings.LaunchAtLogin,
             _startMinimized = settings.StartMinimized,
+            _automaticUpdateChecks = settings.AutomaticUpdateChecks,
+            _updateChannel = settings.UpdateChannel,
+            Updates = updateStatus ?? new(),
             _panicPin = PanicPinService.Clone(settings.PanicPin),
             CurrentModeSummary = currentMode switch
             {
@@ -363,6 +369,25 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _startMinimized, value);
     }
 
+    public UpdateStatusViewModel Updates { get; private set; } = new();
+    public static Array UpdateChannels { get; } = Enum.GetValues<UpdateReleaseChannel>();
+    public bool AutomaticUpdateChecks
+    {
+        get => _automaticUpdateChecks;
+        set => SetProperty(ref _automaticUpdateChecks, value);
+    }
+    public UpdateReleaseChannel UpdateChannel
+    {
+        get => _updateChannel;
+        set
+        {
+            if (SetProperty(ref _updateChannel, value)) RaisePropertyChanged(nameof(UpdateChannelExplanation));
+        }
+    }
+    public string UpdateChannelExplanation => UpdateChannel == UpdateReleaseChannel.Preview
+        ? "Preview includes beta, release-candidate and stable releases."
+        : "Stable excludes prereleases. Switching channels never downgrades your installed version.";
+
     public PanicPinCredential? PanicPin => PanicPinService.Clone(_panicPin);
 
     public bool HasPanicPin => _panicPin is not null;
@@ -396,6 +421,8 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
             OnboardingCompleted = true,
             LaunchAtLogin = LaunchAtLogin,
             StartMinimized = StartMinimized,
+            AutomaticUpdateChecks = AutomaticUpdateChecks,
+            UpdateChannel = UpdateChannel,
             CurrentMode = RuntimeMode.Standard,
             PanicPin = PanicPinService.Clone(_panicPin),
             GlobalHotkeys = Hotkeys.Select(binding => binding.ToModel()).ToList(),
