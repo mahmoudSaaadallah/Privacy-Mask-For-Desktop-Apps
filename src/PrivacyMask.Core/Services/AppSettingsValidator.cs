@@ -20,6 +20,8 @@ public static class AppSettingsValidator
         ArgumentNullException.ThrowIfNull(settings);
 
         var errors = new List<SettingsValidationError>();
+        if (!Enum.IsDefined(settings.UpdateChannel))
+            errors.Add(new SettingsValidationError("Update channel", "Choose Stable or Preview."));
         if (settings.PanicPin is not null && !PanicPinService.IsCredentialValid(settings.PanicPin))
         {
             errors.Add(new SettingsValidationError(
