@@ -425,6 +425,15 @@ internal static class Program
             {
                 var size = new Size(width, 780);
                 Layout(root, size);
+                foreach (var button in Find<Button>(card))
+                {
+                    var name = AutomationProperties.GetName(button);
+                    if ((name == "Install verified update now" && session.Updates.CanInstall) ||
+                        (name == "Cancel update download" && session.Updates.IsDownloading) ||
+                        (name == "Discard verified update download" && session.Updates.CanDiscardDownload))
+                        Check(button.Visibility == Visibility.Visible && button.ActualHeight >= 30 && button.ActualWidth >= 80,
+                            $"Update action {name} has no usable rendered area at {width} in {state}.");
+                }
                 foreach (var control in Find<Control>(card))
                 {
                     var bounds = control.TransformToAncestor(card).TransformBounds(new Rect(new Point(), control.RenderSize));
