@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0-beta.11 - Source delivery (not published)
+
+- Connect Update now to the session-owned verified stage and existing edit/Panic/restart-consent/authenticated-handoff gates
+- Serialize install clicks and disable discard/retry during apply; ordinary Exit cancels and drains pre-handoff work without granting consent
+- Separate accepted handoff from its own shutdown task to prevent circular waits; never claim installation success before readiness
+- Share unchanged bounded history with the Native AOT launcher using generated JSON metadata and honor durable GitHub retry gates during apply checks
+- Derive worker compatibility from the pinned prepared settings schema instead of assuming schema 12
+- Keep compiled production trust empty; no tag, Release, signing credentials or live installed-App update is introduced
+
 ## 2.0.0-beta.10 - Source delivery (not published)
 
 - Connect explicit verified downloads to Settings with bounded progress, cancellation and owned-stage discard
