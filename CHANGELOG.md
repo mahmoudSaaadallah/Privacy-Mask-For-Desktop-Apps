@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0-beta.10 - Source delivery (not published)
+
+- Connect explicit verified downloads to Settings with bounded progress, cancellation and owned-stage discard
+- Share single-flight, private durable admission and global GitHub retry deadlines with discovery
+- Require a same-saved-channel candidate checked within 24 hours; downloads never advance successful-check timestamps
+- Stage under the managed installation lease while masking/settings/PIN behavior stays active and unchanged
+- Drain downloads and UI event continuations during shutdown/suspension; ignore queued late progress
+- Keep production trust empty and installation/restart UI disconnected; no tag or Release is published
+
 ## 2.0.0-beta.9 - Source delivery (not published)
 
 - Add one-shot delayed startup discovery gated by saved opt-in, approved signing trust and managed-install eligibility
