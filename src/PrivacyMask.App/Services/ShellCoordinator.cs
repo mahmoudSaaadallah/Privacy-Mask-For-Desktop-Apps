@@ -102,9 +102,11 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _temporaryRevealGesture = new ExclusiveHoldGesture(TimeSpan.FromMilliseconds(500d));
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
         _updateDiscovery = new RuntimeUpdateDiscovery(_settingsStore.SettingsPath);
+        var downloads = new RuntimeUpdateDownload(_updateDiscovery);
         _updateChecks = new UpdateCheckSession(_updateDiscovery.CheckAsync,
             history: new UpdateCheckHistoryStore(Path.GetDirectoryName(_settingsStore.SettingsPath)!),
-            preflight: _updateDiscovery.Preflight);
+            preflight: _updateDiscovery.Preflight,
+            downloads: new(downloads.PrepareAsync, downloads.DiscardAsync));
         _windowInspector = new DesktopWindowInspector();
         _applicationCatalog = new DesktopApplicationCatalog(_windowInspector);
         _windowProfileResolver = new WindowProfileResolver(
@@ -258,6 +260,14 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private Task CheckForUpdatesFromSettingsAsync() => CheckForUpdatesAsync(showSettings: false);
 
+    private Task DownloadUpdateFromSettingsAsync() => _isShuttingDown || _isUpdateSuspended
+        ? Task.CompletedTask : _updateChecks.DownloadAsync(_savedSettings.UpdateChannel);
+
+    private Task DiscardUpdateFromSettingsAsync() => _isShuttingDown || _isUpdateSuspended
+        ? Task.CompletedTask : _updateChecks.DiscardDownloadAsync();
+
+    private void CancelUpdateDownload() => _updateChecks.CancelDownload();
+
     private void UpdateCheckStatusChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
     {
         if (args.PropertyName == nameof(UpdateStatusViewModel.CanCheck))
@@ -368,6 +378,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _mainWindow.GlobalProtectionRequested -= ToggleProtection;
             _mainWindow.GlobalPanicRequested -= ToggleGlobalPanicModeAsync;
             _mainWindow.CheckForUpdatesRequested -= CheckForUpdatesFromSettingsAsync;
+            _mainWindow.DownloadUpdateRequested -= DownloadUpdateFromSettingsAsync;
+            _mainWindow.DiscardUpdateRequested -= DiscardUpdateFromSettingsAsync;
+            _mainWindow.CancelUpdateDownloadRequested -= CancelUpdateDownload;
             _mainWindow.AllowClose();
             _mainWindow.Close();
         }
@@ -488,6 +501,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _mainWindow.GlobalProtectionRequested += ToggleProtection;
             _mainWindow.GlobalPanicRequested += ToggleGlobalPanicModeAsync;
             _mainWindow.CheckForUpdatesRequested += CheckForUpdatesFromSettingsAsync;
+            _mainWindow.DownloadUpdateRequested += DownloadUpdateFromSettingsAsync;
+            _mainWindow.DiscardUpdateRequested += DiscardUpdateFromSettingsAsync;
+            _mainWindow.CancelUpdateDownloadRequested += CancelUpdateDownload;
         }
         else if (!_mainWindow.IsVisible)
         {

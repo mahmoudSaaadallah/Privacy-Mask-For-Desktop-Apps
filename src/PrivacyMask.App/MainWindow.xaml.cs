@@ -46,6 +46,32 @@ public partial class MainWindow : Window
     public event Action? GlobalProtectionRequested;
     public event Func<Task>? GlobalPanicRequested;
     public event Func<Task>? CheckForUpdatesRequested;
+    public event Func<Task>? DownloadUpdateRequested;
+    public event Func<Task>? DiscardUpdateRequested;
+    public event Action? CancelUpdateDownloadRequested;
+
+    private async void DownloadUpdate_Click(object sender, RoutedEventArgs e) =>
+        await RunDownloadActionAsync(DownloadUpdateRequested);
+
+    private async void DiscardUpdate_Click(object sender, RoutedEventArgs e) =>
+        await RunDownloadActionAsync(DiscardUpdateRequested);
+
+    private void CancelUpdateDownload_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_isShuttingDown && !_isUpdateSuspended) CancelUpdateDownloadRequested?.Invoke();
+    }
+
+    private async Task RunDownloadActionAsync(Func<Task>? action)
+    {
+        if (_isShuttingDown || _isUpdateSuspended || action is null || _updateCheckFinished?.Task.IsCompleted == false) return;
+        _updateCheckFinished = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        try { await action(); }
+        catch (Exception)
+        {
+            ViewModel.Updates.FinishDownload("The download could not be completed. No update was installed.", cleanupIncomplete: true);
+        }
+        finally { _updateCheckFinished.SetResult(); }
+    }
 
     private async void CheckForUpdates_Click(object sender, RoutedEventArgs e)
     {

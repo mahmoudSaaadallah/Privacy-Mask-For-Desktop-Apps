@@ -12,6 +12,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
     private readonly Func<UpdateReleaseChannel, CancellationToken, Task<UpdateCheckResult>> _check;
     private readonly Func<UpdateReleaseChannel, UpdateCheckResult?>? _preflight;
     private readonly IUpdateCheckHistoryStore? _history;
+    private readonly UpdateDownloadActions? _downloads;
     private readonly TimeProvider _time;
     private readonly Func<CancellationToken, Task> _startupDelay;
     private readonly CancellationTokenSource _lifetime = new();
@@ -29,17 +30,69 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
     internal UpdateCheckSession(Func<UpdateReleaseChannel, CancellationToken, Task<UpdateCheckResult>> check,
         TimeProvider? time = null, IUpdateCheckHistoryStore? history = null,
         Func<UpdateReleaseChannel, UpdateCheckResult?>? preflight = null,
-        Func<CancellationToken, Task>? startupDelay = null)
+        Func<CancellationToken, Task>? startupDelay = null, UpdateDownloadActions? downloads = null)
     {
         _check = check;
         _time = time ?? TimeProvider.System;
         _history = history;
+        _downloads = downloads;
         _preflight = preflight;
         _startupDelay = startupDelay ?? (token => Task.Delay(TimeSpan.FromSeconds(30), _time, token));
     }
 
     internal UpdateStatusViewModel Status { get; } = new();
     internal Task CheckAsync(UpdateReleaseChannel savedChannel) => StartCheck(savedChannel, automatic: false);
+
+    internal Task DownloadAsync(UpdateReleaseChannel savedChannel)
+    {
+        if (_downloads is null || _stopped || _paused) return Task.CompletedTask;
+        if (_active is { IsCompleted: false }) return _active;
+        if (!Status.CanDownload || Status.Candidate is not { } candidate) return Task.CompletedTask;
+        if (Status.CandidateChannel != savedChannel || Status.CandidateCheckedUtc is not { } checkedAt ||
+            checkedAt > _time.GetUtcNow() || _time.GetUtcNow() - checkedAt > TimeSpan.FromHours(24))
+        {
+            Status.Begin();
+            Status.Complete(new(UpdateCheckStatus.Incomplete), savedChannel, _time.GetUtcNow());
+            return Task.CompletedTask;
+        }
+        return Admit(savedChannel, automatic: false, candidate);
+    }
+
+    internal void CancelDownload()
+    {
+        if (Status.IsDownloading) _activeCancellation?.Cancel();
+    }
+
+    internal Task DiscardDownloadAsync()
+    {
+        if (_downloads is null || !Status.CanDiscardDownload || _active is { IsCompleted: false }) return Task.CompletedTask;
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _active = completion.Task;
+        _activeAutomatic = false;
+        _activeCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        _ = DiscardAsync(_activeCancellation, completion);
+        return _active;
+    }
+
+    private async Task DiscardAsync(CancellationTokenSource cancellation, TaskCompletionSource completion)
+    {
+        try
+        {
+            Status.BeginDiscard();
+            var removed = await _downloads!.Discard(cancellation.Token);
+            if (!_stopped) Status.FinishDiscard(removed);
+        }
+        catch (Exception)
+        {
+            if (!_stopped) Status.FinishDiscard(removed: false);
+        }
+        finally
+        {
+            _activeCancellation = null;
+            cancellation.Dispose();
+            completion.TrySetResult();
+        }
+    }
 
     internal Task ScheduleStartupCheck(Func<UpdateCheckPreferences> savedPreferences)
     {
@@ -86,29 +139,38 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
     {
         if (_stopped || _paused) return Task.CompletedTask;
         if (_active is { IsCompleted: false }) return automatic ? Task.CompletedTask : _active;
+        if (!Status.CanCheck) return Task.CompletedTask;
+        return Admit(channel, automatic);
+    }
+
+    private Task Admit(UpdateReleaseChannel channel, bool automatic, UpdateCandidate? download = null)
+    {
         // Admit before notifying bindings, so reentrant callers join this exact operation.
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _active = completion.Task;
         _activeAutomatic = automatic;
         _activeChannel = channel;
         _activeCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
-        _ = RunAsync(channel, automatic, _activeCancellation, completion);
+        _ = RunAsync(channel, automatic, _activeCancellation, completion, download);
         return _active;
     }
 
     private async Task RunAsync(UpdateReleaseChannel channel, bool automatic,
-        CancellationTokenSource cancellation, TaskCompletionSource completion)
+        CancellationTokenSource cancellation, TaskCompletionSource completion, UpdateCandidate? download)
     {
         var token = cancellation.Token;
         var historyIo = false;
         UpdateCheckHistory? admittedHistory = null;
         IDisposable? historyLease = null;
+        var acceptingProgress = true;
         try
         {
-            if (!automatic) Status.Begin();
+            if (download is not null) Status.BeginDownload();
+            else if (!automatic) Status.Begin();
             if (_preflight?.Invoke(channel) is { } unavailable)
             {
                 if (!automatic) Status.Complete(unavailable, channel, _time.GetUtcNow());
+                if (download is not null) Status.FinishDownload("Download did not start. Use View releases.");
                 return;
             }
             historyIo = _history is not null;
@@ -121,6 +183,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
             if (history.RetryAfterUtc > now)
             {
                 if (!automatic) Status.Complete(new(UpdateCheckStatus.RateLimited, RetryAt: history.RetryAfterUtc), channel, now);
+                if (download is not null) Status.FinishDownload("Download did not start. Wait until the retry time above.");
                 return;
             }
             if (automatic && (!AutomaticAllowed(channel) || !history.StartupDue(now))) return;
@@ -133,8 +196,35 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
             token.ThrowIfCancellationRequested();
             if (automatic && !AutomaticAllowed(channel)) return;
             if (automatic) Status.Begin();
-            var result = await _check(channel, token);
-            history = history.Complete(channel, result, _time.GetUtcNow());
+            UpdateCheckResult result;
+            if (download is null) result = await _check(channel, token);
+            else
+            {
+                var progress = new Progress<UpdateDownloadProgress>(value =>
+                {
+                    if (acceptingProgress && !token.IsCancellationRequested) Status.DownloadProgress(value);
+                });
+                try { await _downloads!.Prepare(download, channel, progress, token); }
+                catch (UpdateDownloadException failure)
+                {
+                    // Even download responses share the durable repository-wide server retry gate.
+                    history = history.Complete(channel, new(UpdateCheckStatus.UnableToCheck, RetryAt: failure.RetryAt), _time.GetUtcNow());
+                    admittedHistory = history;
+                    historyIo = _history is not null;
+                    using var failureDeadline = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    if (_history is not null) await _history.WriteAsync(history, failureDeadline.Token);
+                    admittedHistory = null;
+                    historyIo = false;
+                    if (!_stopped)
+                    {
+                        if (failure.RetryAt is not null) Status.Complete(new(UpdateCheckStatus.RateLimited, RetryAt: history.RetryAfterUtc), channel, _time.GetUtcNow());
+                        Status.FinishDownload("Download failed. Your installed application and protection are unchanged.", cleanupIncomplete: failure.CleanupIncomplete);
+                    }
+                    return;
+                }
+                result = new(UpdateCheckStatus.Available, download);
+            }
+            history = download is null ? history.Complete(channel, result, _time.GetUtcNow()) : history with { RequestPending = false };
             admittedHistory = history;
             historyIo = _history is not null;
             // Once a response exists, persist its retry information even if opt-out/shutdown raced it.
@@ -144,11 +234,12 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
             admittedHistory = null;
             if (!_stopped)
             {
-                if (token.IsCancellationRequested) Status.Cancel();
+                if (download is not null) Status.FinishDownload("Verified download ready. Nothing has been installed. Installation will be connected in a later build.", ready: true);
+                else if (token.IsCancellationRequested) Status.Cancel();
                 else Status.Complete(result, channel, _time.GetUtcNow());
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        catch (OperationCanceledException error) when (token.IsCancellationRequested)
         {
             // Normal cancellation may retire our own admission. Failed/unknown writes stay fail-closed.
             if (_history is not null && admittedHistory is not null)
@@ -160,16 +251,24 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
                 }
                 catch (Exception) { /* Preserve the pending outcome/scratch; never clear it speculatively. */ }
             }
-            if (!_stopped) Status.Cancel();
+            if (!_stopped)
+            {
+                if (download is not null) Status.FinishDownload("Download cancelled. Your installed application and protection are unchanged.",
+                    cleanupIncomplete: error.Data["UpdateCleanupIncomplete"] is true);
+                else Status.Cancel();
+            }
         }
         catch (Exception)
         {
             if (!_stopped) Status.Complete(new(UpdateCheckStatus.UnableToCheck,
                 Reason: _history is not null && (historyIo || admittedHistory is not null)
                     ? "local-check-history-unavailable" : null), channel, _time.GetUtcNow());
+            if (!_stopped && download is not null)
+                Status.FinishDownload("Download could not be completed safely. No update was installed.", cleanupIncomplete: true);
         }
         finally
         {
+            acceptingProgress = false;
             historyLease?.Dispose();
             _activeCancellation = null;
             cancellation.Dispose();

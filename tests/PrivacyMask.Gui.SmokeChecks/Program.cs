@@ -15,6 +15,7 @@ using PrivacyMask.Windows.Models;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
 using PrivacyMask.Windows.Services;
+using PrivacyMask.Updates;
 
 internal static class Program
 {
@@ -303,6 +304,20 @@ internal static class Program
             checking.AllowClose();
             checking.Close();
 
+            var downloading = CreateWindow();
+            var downloadFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var downloadRequests = 0;
+            downloading.DownloadUpdateRequested += () => { downloadRequests++; return downloadFinished.Task; };
+            Invoke(downloading, "DownloadUpdate_Click");
+            Invoke(downloading, "DownloadUpdate_Click");
+            Invoke(downloading, "CheckForUpdates_Click");
+            var downloadDrain = downloading.BeginShutdownAsync();
+            Check(downloadRequests == 1 && !downloadDrain.IsCompleted, "Shutdown ignored a download handler or admitted another action.");
+            downloadFinished.SetResult();
+            PumpUntil(downloadDrain);
+            downloading.AllowClose();
+            downloading.Close();
+
             var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var events = new List<int>();
             var first = queue.TryRunAsync(async () =>
@@ -354,25 +369,60 @@ internal static class Program
         Invoke(window, "CheckForUpdates_Click");
         window.CheckForUpdatesRequested -= CheckRequest;
         Check(requests == 1 && session.Updates.StatusText.Contains("not configured"), "Manual update action is disconnected or misrepresents unconfigured trust.");
-        foreach (var width in new[] { 880d, 1000d, 1400d })
+        // Display-only fixture: never use these bytes for discovery, staging or execution.
+        var manifest = new UpdateManifest(1, ManifestRules.AppId, ManifestRules.Repository, "2.0.0", "v2.0.0",
+            new string('1', 40), "stable", "win-x64", 19041, 1,
+            new(ManifestRules.ArchiveName("2.0.0"), 70 * 1048576, new string('a', 64)),
+            [new("PrivacyMask.App.exe", 140 * 1048576, new string('b', 64))], new(1, 13, 13));
+        var candidate = new UpdateCandidate(10, 103, GitHubUrls.ReleasePage("v2.0.0"), GitHubUrls.AssetApi(103),
+            manifest, default, default, new string('N', 4096));
+        session.Updates.Complete(new(UpdateCheckStatus.Available, candidate), session.UpdateChannel, DateTimeOffset.UtcNow);
+        var downloads = 0;
+        var discards = 0;
+        var cancels = 0;
+        Task DownloadRequest() { downloads++; return Task.CompletedTask; }
+        Task DiscardRequest() { discards++; return Task.CompletedTask; }
+        void CancelRequest() { cancels++; }
+        window.DownloadUpdateRequested += DownloadRequest;
+        window.DiscardUpdateRequested += DiscardRequest;
+        window.CancelUpdateDownloadRequested += CancelRequest;
+        Invoke(window, "DownloadUpdate_Click");
+        Invoke(window, "DiscardUpdate_Click");
+        Invoke(window, "CancelUpdateDownload_Click");
+        window.DownloadUpdateRequested -= DownloadRequest;
+        window.DiscardUpdateRequested -= DiscardRequest;
+        window.CancelUpdateDownloadRequested -= CancelRequest;
+        Check(downloads == 1 && discards == 1 && cancels == 1, "Download/discard/cancel actions are disconnected.");
+        foreach (var state in new[] { "available", "downloading", "ready", "cleanup-failed" })
         {
-            var size = new Size(width, 780);
-            Layout(root, size);
             var card = (Border)window.FindName("UpdatesCard");
-            foreach (var control in Find<Control>(card))
+            if (state == "downloading")
             {
-                var bounds = control.TransformToAncestor(card).TransformBounds(new Rect(new Point(), control.RenderSize));
-                Check(bounds.Left >= -1 && bounds.Right <= card.ActualWidth + 1, $"Update action clipped horizontally at {width}.");
+                session.Updates.BeginDownload();
+                session.Updates.DownloadProgress(new(UpdateDownloadPhase.Downloading, 35 * 1048576, 70 * 1048576));
+            }
+            else if (state == "ready") session.Updates.FinishDownload("Verified download ready. Nothing has been installed.", ready: true);
+            else if (state == "cleanup-failed") session.Updates.FinishDownload("Download failed. Your application is unchanged.", cleanupIncomplete: true);
+            foreach (var width in new[] { 880d, 1000d, 1400d })
+            {
+                var size = new Size(width, 780);
+                Layout(root, size);
+                foreach (var control in Find<Control>(card))
+                {
+                    var bounds = control.TransformToAncestor(card).TransformBounds(new Rect(new Point(), control.RenderSize));
+                    Check(bounds.Left >= -1 && bounds.Right <= card.ActualWidth + 1, $"Update action clipped horizontally at {width}.");
+                }
+                if (screenshots is not null) Render(root, size, 1, System.IO.Path.Combine(screenshots, $"Updates-{state}-{width:0}.png"));
             }
             var channel = Find<ComboBox>(card).Single(combo => AutomationProperties.GetName(combo) == "Update release channel");
             var automatic = Find<CheckBox>(card).Single(box => AutomationProperties.GetName(box) == "Automatically check for updates");
             Check(Equals(channel.SelectedItem, session.UpdateChannel) && automatic.IsChecked == session.AutomaticUpdateChecks,
                 "Update preferences lost their two-way bindings.");
-            if (screenshots is not null) Render(root, size, 1, System.IO.Path.Combine(screenshots, $"Updates-{width:0}.png"));
         }
+        session.Updates.Complete(new(UpdateCheckStatus.NotConfigured), session.UpdateChannel, DateTimeOffset.UtcNow);
         Check(before == System.Text.Json.JsonSerializer.Serialize(session.ToModel()) && !session.HasPendingChanges,
             "Manual discovery changed the settings edit session.");
-        Console.WriteLine("Update card passed: connected action, honest unconfigured status, bounded layouts and non-mutating checks.");
+        Console.WriteLine("Update card passed: connected check/download/cancel/discard, bounded available/progress/ready/failure layouts and unchanged settings.");
     }
 
     private static void CheckAboutReference(MainWindow window, FrameworkElement root, SettingsViewModel session, string? screenshots)

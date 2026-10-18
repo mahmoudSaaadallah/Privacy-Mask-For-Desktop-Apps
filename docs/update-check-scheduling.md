@@ -4,6 +4,10 @@ Source delivery: `2.0.0-beta.9`, FileVersion `2.0.0.9`, AssemblyVersion
 `2.0.0.0`. User settings remain schema 13. The separate check-history format is
 schema 1; it is scheduling metadata, never signed release authority.
 
+The subsequent [beta.10 download UI](update-download-ui.md) shares this session,
+global retry gate and pending-intent protocol with explicit downloads. A download
+does not advance successful discovery timestamps or rearm startup scheduling.
+
 ## Activation and resource policy
 
 Production trust remains empty. Neither startup nor manual discovery may touch

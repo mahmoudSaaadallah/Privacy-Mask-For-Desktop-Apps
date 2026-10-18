@@ -39,10 +39,12 @@ internal sealed class RuntimeUpdateDiscovery : IDisposable
         token.ThrowIfCancellationRequested();
         if (Preflight(channel) is { } unavailable) return Task.FromResult(unavailable);
         _client ??= new GitHubReleaseClient(_verifier);
-        return _client.CheckAsync(new(AboutInformation.FullVersion,
-            channel == UpdateReleaseChannel.Preview ? UpdateChannel.Preview : UpdateChannel.Stable,
-            "win-x64", Environment.OSVersion.Version.Build, 1, AppSettings.CurrentVersion, InstallationKind.Managed), token);
+        return _client.CheckAsync(Context(channel), token);
     }
+
+    internal static UpdateCheckContext Context(UpdateReleaseChannel channel) => new(AboutInformation.FullVersion,
+            channel == UpdateReleaseChannel.Preview ? UpdateChannel.Preview : UpdateChannel.Stable,
+            "win-x64", Environment.OSVersion.Version.Build, 1, AppSettings.CurrentVersion, InstallationKind.Managed);
 
     private static bool SamePath(string left, string right) =>
         string.Equals(Path.GetFullPath(left), Path.GetFullPath(right), StringComparison.OrdinalIgnoreCase);
