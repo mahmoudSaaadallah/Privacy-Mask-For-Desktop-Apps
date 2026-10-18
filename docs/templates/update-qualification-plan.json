@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Preparation only. No test result or release authorization.",
+  "operatingSystems": ["windows-10-x64", "windows-11-x64"],
+  "cases": [
+    {"id":"normal-a-to-b","expected":"Real App A updates to B; authenticated readiness, commit and exact installed identity confirmed."},
+    {"id":"minimized-a-to-b","expected":"Successful update preserves saved minimized startup preference."},
+    {"id":"cancel-download","expected":"Cancellation cleans only owned partial staging; A and masks remain unchanged."},
+    {"id":"cancel-consent","expected":"Cancel restart consent retains verified stage, keeps A running and never creates handoff authority."},
+    {"id":"save-edits","expected":"A complete valid save drains before update preparation; B preserves settings."},
+    {"id":"discard-edits","expected":"Explicitly discard pending edits; update uses the saved baseline only."},
+    {"id":"cancel-edits","expected":"Cancel the edit decision; remain on A without preparing or restarting."},
+    {"id":"invalid-editor","expected":"Invalid numeric/grid input prevents update; edits remain visible."},
+    {"id":"global-panic","expected":"Global Panic blocks apply until normal PIN unlock; update is never an unlock route."},
+    {"id":"profile-panic","expected":"A locked profile blocks apply even without a running protected window."},
+    {"id":"wrong-pin","expected":"Wrong synthetic PIN never reveals content or permits apply; never record the PIN."},
+    {"id":"saved-channel","expected":"Unsaved channel changes cannot choose requests; saved-channel mismatch rejects a retained stage."},
+    {"id":"opt-out","expected":"Saved automatic opt-out prevents background checks; explicit requests remain separately consented."},
+    {"id":"network-interruption","expected":"Network failure does not replace A or turn an incomplete result into up-to-date."},
+    {"id":"server-retry","expected":"Known Retry-After survives channel switch and process restart, including pre-apply checks."},
+    {"id":"invalid-signature-hash","expected":"Altered metadata/archive/payload is rejected before App exit."},
+    {"id":"withdrawn-release","expected":"Fresh apply checks reject a removed or changed release before App exit."},
+    {"id":"low-space","expected":"Preflight and actual write failure preserve baseline/recovery; no partial success claim."},
+    {"id":"locked-files","expected":"Temporary locks are handled truthfully; no unsafe overwrite, deletion or false cleanup success."},
+    {"id":"exit-before-handoff","expected":"Ordinary Exit cancels and drains pre-acceptance cleanup without granting consent or self-deadlock."},
+    {"id":"crash-after-replace","expected":"Isolated VM crash/restart restores or commits according to durable recovery evidence."},
+    {"id":"lost-receipt","expected":"A durable commit is not reverted solely because its final receipt was lost."},
+    {"id":"physical-power-loss","expected":"Separately authorized disposable-machine fault test; VM process-kill is not physical power-loss proof."},
+    {"id":"live-dpi-keyboard","expected":"Real scaling, monitor movement, keyboard and focus preserve usable Update now/Cancel/Discard actions."},
+    {"id":"resource-stability","expected":"Record measured idle/active/update RAM, CPU, disk and eight-hour stability; do not copy historical GUI-only results."}
+  ]
+}
