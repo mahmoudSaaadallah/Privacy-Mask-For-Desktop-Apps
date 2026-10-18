@@ -7,6 +7,12 @@ empty, so apply fails closed before network, preparation, pipe connection or
 shutdown. No Settings/tray update action, tag, release or user installation is
 created by this delivery.
 
+Historical beta.6 status: [beta.11 installation UI](update-install-ui.md) now calls
+the runtime adapter only with the returned owned stage, retaining all consent,
+Panic/edit and authenticated exit gates. Empty production trust still blocks
+live activation; later slices do not turn this document's prototype evidence
+into production real-App qualification.
+
 ## App gates
 
 The internal `ShellCoordinator.ApplyStagedUpdateAsync` entry takes an already

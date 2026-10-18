@@ -6,6 +6,10 @@ Production compiled trust is still empty. No production network activation,
 signing key, tag, Release, installed-App execution or installation change is
 introduced. This is the download slice, not completed one-click installation.
 
+Historical beta.10 slice: [beta.11 owned-stage installation](update-install-ui.md)
+subsequently connects Update now through consent/Panic/edit/handoff gates while
+keeping production trust and live activation unconfigured.
+
 ## User flow, once approved trust is configured
 
 1. Settings > Updates or the tray checks the saved channel through the existing

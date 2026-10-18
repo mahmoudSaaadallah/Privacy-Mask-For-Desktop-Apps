@@ -8,6 +8,11 @@ The subsequent [beta.10 download UI](update-download-ui.md) shares this session,
 global retry gate and pending-intent protocol with explicit downloads. A download
 does not advance successful discovery timestamps or rearm startup scheduling.
 
+The [beta.11 install delivery](update-install-ui.md) shares this same history/store
+with pre-apply App/Native AOT launcher checks. Its JSON format is unchanged;
+generated metadata replaces reflection. Explicit apply rechecks update history
+under their own lease, never under the startup session's active request task.
+
 ## Activation and resource policy
 
 Production trust remains empty. Neither startup nor manual discovery may touch
