@@ -6,9 +6,11 @@ public static class AboutInformation
 {
     public const string Developer = "Mahmoud Saadallah";
     public const string SupportEmail = "mahmoud.saadallah73@gmail.com";
+    public const string UpdatePrivacyDisclosure = "Manual checks use the saved channel. Save changes to apply preferences. When signed checks are enabled, GitHub receives ordinary connection metadata, including your IP address, but never profiles, PINs, executable paths, window titles or captures. Installation requires separate consent. This testing build has no background checks or in-app downloads. View releases opens your browser.";
     public static Uri EmailUri { get; } = new($"mailto:{SupportEmail}");
     public static Uri GitHubUri { get; } = new("https://github.com/mahmoudsaaadallah");
     public static Uri LinkedInUri { get; } = new("https://linkedin.com/in/mahmoudsaaadallah");
+    public static Uri ReleasesUri { get; } = new("https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases");
     private static readonly Assembly ProductAssembly = typeof(AboutInformation).Assembly;
     public static string FullVersion { get; } = ProductAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
         ?? ProductAssembly.GetName().Version?.ToString(3) ?? "unknown";

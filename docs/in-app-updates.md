@@ -13,17 +13,18 @@ implemented, along with the internal
 [phase-5d.6 bounded storage maintenance](update-retention.md). Phase 5 as a
 whole is not complete.
 Production signing/environment/OS qualification remain unset;
-see [signing operations](update-signing-operations.md). No update button,
-live network activation, production key, automatic in-app installation, tag, or
-new release is supplied. App discovery/network activation and UI remain absent;
-the storage maintenance testing delivery now targets `2.0.0-beta.7`.
+see [signing operations](update-signing-operations.md). The subsequent
+[phase-6a Settings/tray delivery](update-settings-ui.md) adds manual checks and
+preferences in `2.0.0-beta.8`. Empty compiled trust returns NotConfigured before
+network or installation inspection. No scheduled check, download/apply UI,
+production key, tag or new release is activated.
 
 ## Current implementation and gaps
 
 The Windows x64 WPF app is distributed as a self-contained executable. The
 default per-user installation and local settings share
 `%LocalAppData%\PrivacyMask.Desktop`; settings use `settings.v1.json` and schema
-12. The public source is
+13. The public source is
 `mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps` on GitHub.
 
 `Install-PrivacyMask.ps1` now migrates the previous flat executable into the
@@ -96,8 +97,8 @@ found. Interpret release notes as display-only text, never commands or HTML.
 | Installed launcher/recovery worker | Installation lock, journal, file changes, readiness and rollback |
 
 `PrivacyMask.Updates` shares public trust and implements discovery with offline
-HTTP fixtures; release tooling alone owns private signing. The App does not
-reference the new library until the later integration delivery.
+HTTP fixtures; release tooling alone owns private signing. The App now uses
+the library for readiness/handoff and manual checks; production trust remains empty.
 Core policy tests remain independent of WPF and HTTP. The App owns UI and shell
 integration. Windows-specific process, filesystem, IPC and launcher behavior
 belongs outside the Core policy. The worker is short-lived, not a Windows

@@ -57,6 +57,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly List<nint> _staleOcclusionHandles = [];
     private readonly ShellOperationQueue _operations = new();
     private readonly UpdateRestartCoordinator _updateRestart;
+    private readonly RuntimeUpdateDiscovery _updateDiscovery;
+    private readonly UpdateCheckSession _updateChecks;
+    private readonly ToolStripMenuItem _checkUpdatesItem;
     private readonly SemaphoreSlim _panicOperationGate = new(1, 1);
     private readonly SemaphoreSlim _profileProtectionOperationGate = new(1, 1);
     private readonly ShellStartupContext? _startupContext;
@@ -98,6 +101,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _requestShutdown));
         _temporaryRevealGesture = new ExclusiveHoldGesture(TimeSpan.FromMilliseconds(500d));
         _settingsStore = new JsonSettingsStore(_defaultSettingsFactory);
+        _updateDiscovery = new RuntimeUpdateDiscovery(_settingsStore.SettingsPath);
+        _updateChecks = new UpdateCheckSession(_updateDiscovery.CheckAsync);
         _windowInspector = new DesktopWindowInspector();
         _applicationCatalog = new DesktopApplicationCatalog(_windowInspector);
         _windowProfileResolver = new WindowProfileResolver(
@@ -149,6 +154,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
         {
             CheckOnClick = true,
         };
+        _checkUpdatesItem = new ToolStripMenuItem("Check for updates", null,
+            async (_, _) => await ObserveShellActionAsync(CheckForUpdatesAsync(showSettings: true)));
+        _updateChecks.Status.PropertyChanged += UpdateCheckStatusChanged;
 
         _notifyIcon.ContextMenuStrip = new ContextMenuStrip();
         _notifyIcon.ContextMenuStrip.Items.AddRange(
@@ -158,6 +166,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _toggleProtectionItem,
             _panicItem,
             new ToolStripMenuItem("Open settings", null, (_, _) => ShowSettingsWindow()),
+            _checkUpdatesItem,
             _launchAtLoginItem,
             new ToolStripSeparator(),
             new ToolStripMenuItem("Exit", null, async (_, _) =>
@@ -228,6 +237,27 @@ public sealed class ShellCoordinator : IAsyncDisposable
         ShowSettingsWindow();
     }
 
+    private async Task CheckForUpdatesAsync(bool showSettings)
+    {
+        _dispatcher.VerifyAccess();
+        if (_isShuttingDown || _isUpdateSuspended) return;
+        if (showSettings)
+        {
+            ShowSettingsWindow();
+            if (_mainWindow is not null) _mainWindow.ViewModel.SelectedPage = DesktopPage.Settings;
+        }
+        // Never send a network request for an unsaved editor preview.
+        await _updateChecks.CheckAsync(_savedSettings.UpdateChannel);
+    }
+
+    private Task CheckForUpdatesFromSettingsAsync() => CheckForUpdatesAsync(showSettings: false);
+
+    private void UpdateCheckStatusChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(UpdateStatusViewModel.CanCheck))
+            _checkUpdatesItem.Enabled = !_isShuttingDown && !_isUpdateSuspended && _updateChecks.Status.CanCheck;
+    }
+
     // The later Settings/tray update UI will call this only after verified staging.
     // No command line, activation message, timer or normal Exit routes here.
     internal async Task<UpdateRestartResult> ApplyStagedUpdateAsync(string operationId, UpdateChannel channel,
@@ -284,9 +314,11 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private async Task DisposeCoreAsync()
     {
         _isShuttingDown = true;
+        _updateChecks.Stop();
         var uiDrain = _mainWindow?.BeginShutdownAsync() ?? Task.CompletedTask;
         if (_notifyIcon.ContextMenuStrip is { } menu) menu.Enabled = false;
         await _operations.StopAsync();
+        await _updateChecks.DisposeAsync();
         await uiDrain;
         DisposeResources();
     }
@@ -310,6 +342,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _isDisposed = true;
         _isShuttingDown = true;
         _refreshTimer.Stop();
+        _updateChecks.Status.PropertyChanged -= UpdateCheckStatusChanged;
+        _updateChecks.Stop();
+        _updateDiscovery.Dispose();
         _refreshTimer.Tick -= RefreshTimerOnTick;
         _hotkeyManager.HotkeyPressed -= HandleHotkeyPressed;
         _hotkeyManager.Dispose();
@@ -325,6 +360,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _mainWindow.DiscardRequested -= DiscardPreview;
             _mainWindow.GlobalProtectionRequested -= ToggleProtection;
             _mainWindow.GlobalPanicRequested -= ToggleGlobalPanicModeAsync;
+            _mainWindow.CheckForUpdatesRequested -= CheckForUpdatesFromSettingsAsync;
             _mainWindow.AllowClose();
             _mainWindow.Close();
         }
@@ -444,6 +480,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _mainWindow.DiscardRequested += DiscardPreview;
             _mainWindow.GlobalProtectionRequested += ToggleProtection;
             _mainWindow.GlobalPanicRequested += ToggleGlobalPanicModeAsync;
+            _mainWindow.CheckForUpdatesRequested += CheckForUpdatesFromSettingsAsync;
         }
         else if (!_mainWindow.IsVisible)
         {
@@ -554,7 +591,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _settings,
             _protectionStateMachine.CurrentMode,
             _settingsStore.SettingsPath,
-            _unavailableHotkeyActions);
+            _unavailableHotkeyActions,
+            _updateChecks.Status);
     }
 
     private void RebuildWindowProcessFilter()

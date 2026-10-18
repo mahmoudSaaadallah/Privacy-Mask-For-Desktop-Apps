@@ -4,8 +4,8 @@
   "minimumUpdaterProtocol": 1,
   "settingsCompatibility": {
     "minimumReadableSchema": 1,
-    "maximumReadableSchema": 12,
-    "outputSchema": 12
+    "maximumReadableSchema": 13,
+    "outputSchema": 13
   },
   "trustedKeys": []
 }

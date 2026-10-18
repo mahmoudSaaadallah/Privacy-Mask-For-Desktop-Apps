@@ -79,6 +79,8 @@ public sealed class DefaultSettingsFactory
         defaults.OnboardingCompleted = persisted.OnboardingCompleted;
         defaults.LaunchAtLogin = persisted.LaunchAtLogin;
         defaults.StartMinimized = persisted.StartMinimized;
+        defaults.AutomaticUpdateChecks = persisted.AutomaticUpdateChecks;
+        defaults.UpdateChannel = Enum.IsDefined(persisted.UpdateChannel) ? persisted.UpdateChannel : defaults.UpdateChannel;
         defaults.CurrentMode = RuntimeMode.Standard;
         defaults.PanicPin = PanicPinService.IsCredentialValid(persisted.PanicPin)
             ? PanicPinService.Clone(persisted.PanicPin)

@@ -13,6 +13,8 @@ public static class AppSettingsCloner
             OnboardingCompleted = settings.OnboardingCompleted,
             LaunchAtLogin = settings.LaunchAtLogin,
             StartMinimized = settings.StartMinimized,
+            AutomaticUpdateChecks = settings.AutomaticUpdateChecks,
+            UpdateChannel = settings.UpdateChannel,
             CurrentMode = settings.CurrentMode,
             PanicPin = PanicPinService.Clone(settings.PanicPin),
             GlobalHotkeys = settings.GlobalHotkeys.Select(CloneHotkey).ToList(),
