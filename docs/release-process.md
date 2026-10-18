@@ -5,7 +5,7 @@ not committed to the source repository.
 
 ## Version policy
 
-The source currently prepares `2.0.0-beta.7`. This is a testing delivery, not a
+The source currently prepares `2.0.0-beta.8`. This is a testing delivery, not a
 stable release announcement. Publishing/tagging remains a separate authorized
 action after merge and qualification. A commit or PR is not itself a release.
 Earlier source builds displayed 2.0.0 while still unreleased; the beta suffix
@@ -35,17 +35,17 @@ on merge or by a Git hook.
 
 | Identity | Current value | Purpose |
 | --- | --- | --- |
-| Version | `2.0.0-beta.7` | UI label, archive filename and exact `v2.0.0-beta.7` tag |
+| Version | `2.0.0-beta.8` | UI label, archive filename and exact `v2.0.0-beta.8` tag |
 | InformationalVersion | `$(Version)` plus SDK Git metadata when available | Full build provenance; About shows the product before `+` and exposes the full value in its tooltip/help |
 | AssemblyVersion | `2.0.0.0` | Numeric assembly identity, stable throughout this prerelease cycle |
-| FileVersion | `2.0.0.7` | Numeric Windows file/build revision |
+| FileVersion | `2.0.0.8` | Numeric Windows file/build revision |
 
 Windows numeric fields cannot contain `beta` or `rc`. Increase FileVersion's
 fourth component for the next delivered beta/candidate/stable build of the same
 core; do not reset it when dropping a prerelease suffix. For example beta.2 can
 use `2.0.0.2`; after more candidates, stable uses the next revision, not `.0`.
 After changing the version core, all numeric identities must match that core.
-The settings schema has an independent lifecycle and remains 12 for this work.
+The settings schema has an independent lifecycle and advances to 13 for updater preferences.
 
 About and Settings use assembly informational metadata, not the numeric assembly
 version as the main product label. The numeric fallback remains for builds
@@ -85,7 +85,7 @@ baseline, so the new publisher currently fails closed. This is not an automatic
 environment/secret setup or permission to publish an existing version again.
 
 1. Merge the fully verified release changes into `main`.
-2. Create an annotated version tag matching the source, such as `v2.0.0-beta.7`, on the release commit.
+2. Create an annotated version tag matching the source, such as `v2.0.0-beta.8`, on the release commit.
 3. Push the tag to GitHub.
 4. The `release` workflow requires the named protected environment and a clean
    merged exact version tag, builds/tests the project and normal Windows ZIP,
@@ -101,8 +101,8 @@ environment/secret setup or permission to publish an existing version again.
 Example tag commands:
 
 ```powershell
-git tag -a v2.0.0-beta.7 -m "PrivacyMask v2.0.0-beta.7"
-git push origin v2.0.0-beta.7
+git tag -a v2.0.0-beta.8 -m "PrivacyMask v2.0.0-beta.8"
+git push origin v2.0.0-beta.8
 ```
 
 These commands are a release procedure, not commands run by the current PR.
@@ -140,7 +140,8 @@ credentials. Configuration/custody/OS gates remain deliberately pending; key
 setup, immutable-release settings, tags and publication require separate
 explicit authorization. Do not publish synthetic test metadata or treat a
 missing update manifest as an unsigned fallback. The app does not activate the
-discovery client or update UI yet.
+discovery client during the earlier tooling deliveries. Beta.8 now adds the
+manual Settings/tray UI, still blocked before HTTP by empty compiled trust.
 
 The earlier signing/tooling deliveries kept beta.2 unchanged. The
 [awaited shell lifecycle delivery](update-shell-lifecycle.md) advanced the shipped
@@ -167,3 +168,10 @@ The [bounded storage maintenance delivery](update-retention.md) advances source
 to beta.7 / FileVersion 2.0.0.7 for shipped launcher cleanup, staging activity
 locks and bounded recovery scratch. AssemblyVersion remains 2.0.0.0 and settings
 schema remains 12. No tag or Release is published by this source-delivery PR.
+
+The [Settings/tray manual discovery delivery](update-settings-ui.md) advances to
+beta.8 / FileVersion 2.0.0.8 and settings schema 13. It persists update
+preferences and exposes manual check status without background checks or
+download/apply activation. Public-key custody/OS qualification still block live
+signed discovery. Existing synthetic schema-12 fixtures continue to exercise
+older-input compatibility; current release policy/output is schema 13.

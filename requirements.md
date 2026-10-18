@@ -12,8 +12,8 @@
 
 - Windows 10 or Windows 11, 64-bit
 - .NET 10 SDK
-- Visual Studio 2022 with the `.NET desktop development` workload, or a compatible editor with WPF support
-- Visual Studio 2022 Build Tools with the `Desktop development with C++`
+- Visual Studio 2022 or later with the `.NET desktop development` workload, or a compatible editor with WPF support
+- Visual Studio or Build Tools 2022 or later with the `Desktop development with C++`
   workload and Windows SDK when publishing/installing from source; the stable
   launcher uses Native AOT and requires the Windows C++ linker
 - PowerShell 5.1 or later
