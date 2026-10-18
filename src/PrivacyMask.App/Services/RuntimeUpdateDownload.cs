@@ -22,17 +22,17 @@ internal sealed class RuntimeUpdateDownload(RuntimeUpdateDiscovery discovery)
         {
             try
             {
-            if (_staged is not null) throw new UpdateDownloadException("download-in-progress");
-            // Preflight again immediately before taking the lease; source/custom/portable roots cannot stage.
-            if (discovery.Preflight(channel) is not null) throw new UpdateDownloadException("update-unavailable");
-            var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ManifestRules.AppId);
-            using var lease = ManagedInstallLease.Open(root);
-            var journals = new RecoveryJournalStore(lease);
-            if (journals.Read() is { Step: RecoveryStep.Committed or RecoveryStep.Recovered } terminal)
-                journals.ArchiveTerminal(terminal.OperationId);
-            using var stager = new UpdateStager(UpdateRuntimePolicy.CreateVerifier());
-            _staged = await stager.PrepareManagedAsync(candidate, RuntimeUpdateDiscovery.Context(channel), lease, progress, token);
-            // A completed handle is retained even if cancellation raced return: it is verified, never installed.
+                if (_staged is not null) throw new UpdateDownloadException("download-in-progress");
+                // Preflight again immediately before taking the lease; source/custom/portable roots cannot stage.
+                if (discovery.Preflight(channel) is not null) throw new UpdateDownloadException("update-unavailable");
+                var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ManifestRules.AppId);
+                using var lease = ManagedInstallLease.Open(root);
+                var journals = new RecoveryJournalStore(lease);
+                if (journals.Read() is { Step: RecoveryStep.Committed or RecoveryStep.Recovered } terminal)
+                    journals.ArchiveTerminal(terminal.OperationId);
+                using var stager = new UpdateStager(UpdateRuntimePolicy.CreateVerifier());
+                _staged = await stager.PrepareManagedAsync(candidate, RuntimeUpdateDiscovery.Context(channel), lease, progress, token);
+                // A completed handle is retained even if cancellation raced return: it is verified, never installed.
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or ReleaseValidationException)
             {

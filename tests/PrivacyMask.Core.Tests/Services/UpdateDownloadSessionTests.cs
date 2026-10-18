@@ -242,6 +242,81 @@ public sealed class UpdateDownloadSessionTests
         return (await client.CheckAsync(fixture.Context)).Candidate!;
     }
 
+    [Fact]
+    public async Task DurableRetryBlocksDownloadEvenWhenTheUiStillHasACandidate()
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        var candidate = await Available(fixture);
+        var store = new MemoryHistory { Value = new(RetryAfterUtc: fixture.Clock.Now.AddDays(1)) };
+        await using var session = new UpdateCheckSession((_, _) => throw new Exception("No discovery"), fixture.Clock, store,
+            downloads: new((_, _, _, _) => throw new Exception("No download"), Discard));
+        session.Status.Complete(new(UpdateCheckStatus.Available, candidate), Preview, fixture.Clock.Now);
+        await session.DownloadAsync(Preview);
+        Assert.Contains("asked us to wait", session.Status.StatusText);
+        Assert.False(store.Value.RequestPending);
+        Assert.False(session.Status.IsDownloading);
+    }
+
+    [Fact]
+    public async Task SavedOptOutDoesNotCancelAnExplicitDownloadButShutdownDoes()
+    {
+        using var fixture = new UpdateDiscoveryFixture();
+        var candidate = await Available(fixture);
+        var preferences = new UpdateCheckPreferences(false, Preview);
+        var cancelled = false;
+        var session = new UpdateCheckSession((_, _) => Task.FromResult(new UpdateCheckResult(UpdateCheckStatus.Available, candidate)), fixture.Clock,
+            downloads: new(async (_, _, _, token) =>
+            {
+                try { await Task.Delay(Timeout.Infinite, token); }
+                finally { cancelled = true; }
+            }, Discard));
+        await session.ScheduleStartupCheck(() => preferences);
+        await session.CheckAsync(Preview);
+        var download = session.DownloadAsync(Preview);
+        session.PreferencesChanged();
+        Assert.False(download.IsCompleted);
+        Assert.False(cancelled);
+        await session.DisposeAsync();
+        Assert.True(download.IsCompleted);
+        Assert.True(cancelled);
+        Assert.False(session.Status.CanDownload);
+    }
+
+    [Fact]
+    public async Task QueuedProgressAfterCompletionCannotOverwriteReadyStatus()
+    {
+        var original = SynchronizationContext.Current;
+        var context = new QueuedContext();
+        SynchronizationContext.SetSynchronizationContext(context);
+        try
+        {
+            var manifest = new UpdateManifest(1, ManifestRules.AppId, ManifestRules.Repository, "2.0.0", "v2.0.0",
+                new string('1', 40), "stable", "win-x64", 19041, 1, new("unused", 1, new string('a', 64)), [], new(1, 13, 13));
+            var candidate = new UpdateCandidate(1, 2, GitHubUrls.ReleasePage("v2.0.0"), GitHubUrls.AssetApi(2), manifest, default, default, "");
+            var session = new UpdateCheckSession((_, _) => Task.FromResult(new UpdateCheckResult(UpdateCheckStatus.Available, candidate)),
+                downloads: new((_, _, progress, _) =>
+                {
+                    progress.Report(new(UpdateDownloadPhase.Downloading, 0, 100));
+                    return Task.CompletedTask;
+                }, Discard));
+            await session.CheckAsync(Preview);
+            await session.DownloadAsync(Preview);
+            var ready = session.Status.DownloadText;
+            context.Drain();
+            Assert.Equal(ready, session.Status.DownloadText);
+            Assert.Equal(100, session.Status.DownloadPercent);
+            await session.DisposeAsync();
+        }
+        finally { SynchronizationContext.SetSynchronizationContext(original); }
+    }
+
+    private sealed class QueuedContext : SynchronizationContext
+    {
+        private readonly Queue<Action> _pending = new();
+        public override void Post(SendOrPostCallback callback, object? state) => _pending.Enqueue(() => callback(state));
+        internal void Drain() { while (_pending.TryDequeue(out var callback)) callback(); }
+    }
+
     private sealed class MemoryHistory : IUpdateCheckHistoryStore
     {
         internal UpdateCheckHistory Value = new();
