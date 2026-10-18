@@ -29,8 +29,9 @@ internal static class LauncherApply
         var version = FileVersionInfo.GetVersionInfo(app).ProductVersion
             ?? throw new ReleaseValidationException("Missing installed version.");
         // Channel authorizes only the already prepared exact target, not selection of a different release.
+        var schema = await PreparedSettingsSchema.ReadAsync(lease, record, cancellationToken).ConfigureAwait(false);
         var context = new UpdateCheckContext(version, record.TargetVersion.Contains('-') ? UpdateChannel.Preview : UpdateChannel.Stable,
-            "win-x64", Environment.OSVersion.Version.Build, 1, 12, InstallationKind.Managed);
+            "win-x64", Environment.OSVersion.Version.Build, 1, schema, InstallationKind.Managed);
         using var exit = AppProcessExit.Capture(lease, request.OperationId, request.ApplicationProcessId,
             request.ApplicationCreationUtcTicks);
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
