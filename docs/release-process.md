@@ -5,7 +5,7 @@ not committed to the source repository.
 
 ## Version policy
 
-The source currently prepares `2.0.0-beta.8`. This is a testing delivery, not a
+The source currently prepares `2.0.0-beta.9`. This is a testing delivery, not a
 stable release announcement. Publishing/tagging remains a separate authorized
 action after merge and qualification. A commit or PR is not itself a release.
 Earlier source builds displayed 2.0.0 while still unreleased; the beta suffix
@@ -35,17 +35,17 @@ on merge or by a Git hook.
 
 | Identity | Current value | Purpose |
 | --- | --- | --- |
-| Version | `2.0.0-beta.8` | UI label, archive filename and exact `v2.0.0-beta.8` tag |
+| Version | `2.0.0-beta.9` | UI label, archive filename and exact `v2.0.0-beta.9` tag |
 | InformationalVersion | `$(Version)` plus SDK Git metadata when available | Full build provenance; About shows the product before `+` and exposes the full value in its tooltip/help |
 | AssemblyVersion | `2.0.0.0` | Numeric assembly identity, stable throughout this prerelease cycle |
-| FileVersion | `2.0.0.8` | Numeric Windows file/build revision |
+| FileVersion | `2.0.0.9` | Numeric Windows file/build revision |
 
 Windows numeric fields cannot contain `beta` or `rc`. Increase FileVersion's
 fourth component for the next delivered beta/candidate/stable build of the same
 core; do not reset it when dropping a prerelease suffix. For example beta.2 can
 use `2.0.0.2`; after more candidates, stable uses the next revision, not `.0`.
 After changing the version core, all numeric identities must match that core.
-The settings schema has an independent lifecycle and advances to 13 for updater preferences.
+The settings schema has an independent lifecycle and remains 13 for this delivery.
 
 About and Settings use assembly informational metadata, not the numeric assembly
 version as the main product label. The numeric fallback remains for builds
@@ -85,7 +85,7 @@ baseline, so the new publisher currently fails closed. This is not an automatic
 environment/secret setup or permission to publish an existing version again.
 
 1. Merge the fully verified release changes into `main`.
-2. Create an annotated version tag matching the source, such as `v2.0.0-beta.8`, on the release commit.
+2. Create an annotated version tag matching the source, such as `v2.0.0-beta.9`, on the release commit.
 3. Push the tag to GitHub.
 4. The `release` workflow requires the named protected environment and a clean
    merged exact version tag, builds/tests the project and normal Windows ZIP,
@@ -101,8 +101,8 @@ environment/secret setup or permission to publish an existing version again.
 Example tag commands:
 
 ```powershell
-git tag -a v2.0.0-beta.8 -m "PrivacyMask v2.0.0-beta.8"
-git push origin v2.0.0-beta.8
+git tag -a v2.0.0-beta.9 -m "PrivacyMask v2.0.0-beta.9"
+git push origin v2.0.0-beta.9
 ```
 
 These commands are a release procedure, not commands run by the current PR.
@@ -175,3 +175,9 @@ preferences and exposes manual check status without background checks or
 download/apply activation. Public-key custody/OS qualification still block live
 signed discovery. Existing synthetic schema-12 fixtures continue to exercise
 older-input compatibility; current release policy/output is schema 13.
+
+The [durable startup-discovery delivery](update-check-scheduling.md) advances to
+beta.9 / FileVersion 2.0.0.9 with schema-13 user settings and independent schema-1
+bounded check history. It adds one-shot scheduling and persistent retry/admission
+without configuring production keys, publishing a tag/Release, or connecting
+the download/apply UI. Compiled trust remains empty.

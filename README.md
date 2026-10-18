@@ -2,7 +2,7 @@
 
 PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
-The current source targets `2.0.0-beta.8`, a testing build, not a declaration
+The current source targets `2.0.0-beta.9`, a testing build, not a declaration
 that a stable 2.0.0 release has been published. Check the releases page for
 available downloads. About and Settings show the product version; hover the
 About version for full build/source metadata and the numeric Windows file version.
@@ -26,7 +26,7 @@ About version for full build/source metadata and the numeric Windows file versio
 - PrivacyMask does not inject into protected applications.
 - Profiles, PINs, executable paths, window titles and captures are never sent to a server.
 - Settings > Updates and the tray offer manual signed-release checks. Approved
-  signing keys are still absent in beta.8, so these report "not configured"
+  signing keys are still absent in beta.9, so these report "not configured"
   without a network request. Once enabled, checks contact GitHub and expose
   normal connection metadata such as your IP address. View releases opens your
   browser only when requested. No background checks run in this build.
@@ -50,7 +50,7 @@ Minimum requirements:
 You do not need the source code or the .NET SDK to install a published release.
 
 1. Open [GitHub releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). Releases marked **Pre-release** are testing builds; the `latest` link is for stable releases.
-2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.8-win-x64.zip` for beta.8, and extract the whole archive.
+2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.9-win-x64.zip` for beta.9, and extract the whole archive.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
 5. Complete onboarding. Use **Add application** to select a running program or browse to its `.exe` file.
@@ -65,9 +65,13 @@ restarts it minimized. A failed update restores the previous installation.
 Settings > Updates and the tray now include **Check for updates**. The button
 reports that signed updates are not configured until release signing is approved.
 **View releases** opens the public downloads page for manual installation.
-In-app download/install and automatic checks are not activated in beta.8.
+In-app download/install and automatic network checks are not activated in beta.9.
 The automatic-check preference and Stable/Preview selection use Save/Discard;
-the former is saved for future activation, and manual checks use the saved channel.
+manual checks use the saved channel. Once signing is approved, the implemented
+startup scheduler waits 30 seconds and checks at most once per 24 hours since
+the last attempt, without recurring polling. Saving opt-out cancels pending
+automatic work; enabling applies at the next startup. Known GitHub retry
+deadlines survive restarts and cannot be bypassed by manual checks or channel changes.
 Beta/rc builds initially choose Preview; switching to Stable never downgrades.
 
 To run the release without installing it, open `single-file` in the extracted
@@ -80,10 +84,10 @@ installation in `%LocalAppData%\PrivacyMask.Desktop`.
 The matching `.sha256` release asset can be used to verify the downloaded ZIP:
 
 ```powershell
-(Get-FileHash .\PrivacyMask-2.0.0-beta.8-win-x64.zip -Algorithm SHA256).Hash
+(Get-FileHash .\PrivacyMask-2.0.0-beta.9-win-x64.zip -Algorithm SHA256).Hash
 ```
 
-Compare the output with the hash in `PrivacyMask-2.0.0-beta.8-win-x64.zip.sha256`.
+Compare the output with the hash in `PrivacyMask-2.0.0-beta.9-win-x64.zip.sha256`.
 Use the actual versioned filenames if you downloaded another release.
 
 ## One-click install from source
@@ -171,8 +175,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-win-x64-release.ps1
 
 Release package output:
 
-- `artifacts/release/PrivacyMask-2.0.0-beta.8-win-x64.zip`
-- `artifacts/release/PrivacyMask-2.0.0-beta.8-win-x64.zip.sha256`
+- `artifacts/release/PrivacyMask-2.0.0-beta.9-win-x64.zip`
+- `artifacts/release/PrivacyMask-2.0.0-beta.9-win-x64.zip.sha256`
 
 ## Repository layout
 
@@ -369,8 +373,9 @@ Press `Esc` or close the window to discard the preview and return to the tray.
   The beta.7 [storage maintenance](docs/update-retention.md) retains a verified
   recovery pair, prunes obsolete terminal history/expired staging, and bounds
   admission around unresolved evidence. The beta.8 Settings/tray UI adds manual
-  checks, session-only status and schema-13 preferences. Approved compiled trust
-  roots, scheduled checks, UI download/apply and live qualification remain pending;
+  checks and schema-13 preferences. Beta.9 adds [durable startup discovery](docs/update-check-scheduling.md)
+  with bounded history, opt-out and persistent retry admission. Approved compiled trust
+  roots, network activation, UI download/apply and live qualification remain pending;
   normal Exit is not update consent or authorization.
 - Review [update signing operations](docs/update-signing-operations.md) before
   publishing: production policy/environment are intentionally unconfigured,

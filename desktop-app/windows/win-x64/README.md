@@ -6,7 +6,7 @@ application files are intentionally not stored in Git.
 ## Install a GitHub release
 
 1. Open [PrivacyMask releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). **Pre-release** builds are for testing; `latest` selects stable releases.
-2. Download the archive matching your chosen release, for example `PrivacyMask-2.0.0-beta.8-win-x64.zip`.
+2. Download the archive matching your chosen release, for example `PrivacyMask-2.0.0-beta.9-win-x64.zip`.
 3. Extract the whole ZIP; do not run the installer from inside the archive.
 4. Double-click `Install-PrivacyMask.cmd`.
 5. Start PrivacyMask from the Desktop or Start Menu shortcut.
@@ -34,6 +34,9 @@ launch at sign in.
   but signed discovery reports "not configured" without approved compiled keys.
   Use View releases for manual installation. Background checks and in-app
   download/apply are not activated yet.
+  Beta.9 implements bounded startup scheduling, but creates no timer/request
+  without approved signing keys. Manual reinstall preserves its bounded retry
+  history; unknown pending history is not automatically reset.
 - To uninstall, run `Uninstall-PrivacyMask.cmd` from an extracted release package.
 
 ## Build and install from source
