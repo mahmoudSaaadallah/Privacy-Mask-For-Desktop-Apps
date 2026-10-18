@@ -13,7 +13,8 @@ personal settings/PIN. This packet does not provision a VM or install anything.
    from a CI runner or set the policy's minimum build from a fixture example.
 2. Obtain separate owner approval for signing custody, public fingerprints,
    compiled App/launcher roots, bootstrap eligibility and publishing the exact
-   A/B test releases. Current empty production roots cannot perform live A-to-B.
+   A/B test releases. Beta.12 pins the owner's public root but retains a disabled
+   runtime activation gate; current production runtime cannot perform live A-to-B.
    Offline fixture signing tests are not a bypass and do not qualify the real App.
    The planned SoloMaintainer policy requires the owner's manual release approval;
    it deliberately allows self-review and must not be described as independent

@@ -2,18 +2,21 @@
 
 Status: phase 2 originally supplied developer packaging/verification and a draft
 publisher. Subsequent deliveries through beta.11 implement discovery, download,
-App install UI, authenticated handoff, launcher and recovery, but production trust
-and live OS qualification remain unconfigured. The current
+App install UI, authenticated handoff, launcher and recovery. Beta.12 now
+[pins the owner's public key](update-public-trust.md), but runtime activation and
+live OS qualification remain unconfigured. The current
 [signing readiness plan](update-signing-readiness.md) prepares protected admission
 and isolated lab packets; it creates no production key, GitHub environment,
 repository setting, tag or release.
 
 ## Deliberate setup gate
 
-`build/update-release-policy.json` intentionally has `minimumWindowsBuild: null`
-and `trustedKeys: []`. Production signed packaging fails closed until both are
-reviewed and configured. This also blocks the new tag-driven release publisher:
-it does not silently publish an unsigned installer-only release instead.
+`build/update-release-policy.json` pins the approved public key `release-key-1`
+and intentionally retains `minimumWindowsBuild: null`. Production signed packaging
+fails closed until the Windows baseline is qualified and configured. App/launcher
+also retain a separate disabled compiled activation gate. This blocks live runtime
+updates independently of the tag-driven release publisher's missing environment.
+The publisher never silently falls back to an unsigned installer-only release.
 Normal local installer packaging remains available without a signing key.
 
 An owner must approve the following before an authorized release:
@@ -26,8 +29,11 @@ An owner must approve the following before an authorized release:
    but loss of the primary store must not destroy the backup. Generate the
    production key outside development test automation, after separate approval.
    Private input format is one unencrypted PKCS#8 `PRIVATE KEY` PEM block; the
-   secret store protects it at rest. Do not save it in this checkout, artifacts,
-   test fixtures, tickets, screenshots, chat, shell history, or command argv.
+   secret store protects it at rest. This describes signing-process input, not
+   backup storage: keep backup files encrypted and decrypt only for approved
+   direct secret input, not an unencrypted disk export. Do not save it in this
+   checkout, artifacts, test fixtures, tickets, screenshots, chat, shell history,
+   or command argv.
 3. Commit only its public SubjectPublicKeyInfo DER encoded as canonical Base64
    and an immutable lower-case key ID in the policy through a reviewed PR.
    Example shape below uses a placeholder, not a usable public key:
@@ -60,8 +66,9 @@ An owner must approve the following before an authorized release:
    assume the workflow itself toggles that setting.
 
 Earlier signing tooling kept beta.2; later shipped-App changes advanced source
-through beta.11 without configuring production signing. This preparation-only
-delivery keeps beta.11. Never reuse a published version/tag for new contents.
+through beta.11 without configuring production signing. The public-root delivery
+advances source to beta.12, with runtime activation still disabled. Never reuse a
+published version/tag for new contents.
 Setup/tooling does not authorize publishing any version. Prepare the reviewed
 public-root bootstrap before promising end-user in-app updates: empty-trust older
 clients cannot learn their first key from a fetched manifest.

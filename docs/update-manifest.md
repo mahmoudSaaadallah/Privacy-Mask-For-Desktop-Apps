@@ -133,8 +133,11 @@ work offline. This freshness rule does not claim complete remote revocation.
 
 ## Key rotation and compromise boundaries
 
-Normal rotation: ship a bridge app signed by an already trusted key, containing
-the next public key; only then publish using the new key. Key IDs are immutable.
+Normal rotation: first bridge every verifier with the next public key using an
+already trusted distribution path; only then publish using the new key. Key IDs
+are immutable. With protocol-v1, App-only updates cannot change launcher trust.
+A launcher without the next root requires a qualified complete installer update;
+shipping only a bridge App does not suffice. See [public trust](update-public-trust.md).
 Old clients that do not trust a key cannot install its releases; give a manual
 bootstrap route rather than learning keys from an untrusted response.
 
