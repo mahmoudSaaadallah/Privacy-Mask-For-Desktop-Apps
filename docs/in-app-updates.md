@@ -24,13 +24,17 @@ activation, production key, tag or Release is supplied. The subsequent
 progress/cancel and owned-stage discard in `2.0.0-beta.10`. Installation/restart
 UI is connected by the subsequent [phase-6d owned-stage install delivery](update-install-ui.md)
 in `2.0.0-beta.11`, through existing restart/Panic/edit and authenticated handoff
-gates. Approved trust and live production qualification remain required; the
-current empty-key build does not activate these network/install operations.
+gates. At that beta.11 boundary, empty trust prevents network/install operations.
 The next [signing readiness and isolated lab preparation](update-signing-readiness.md)
 delivery keeps beta.11, records the approved SoloMaintainer plan and adds
 fail-closed environment admission plus fresh `NotRun` qualification packets.
 It generates no production keys, changes no GitHub environment and does not
 claim real-App Windows 10/11 A-to-B qualification.
+The subsequent [beta.12 public trust delivery](update-public-trust.md) embeds the
+owner's approved P-256 public key in App/launcher and publisher policy. A separate
+compiled activation gate stays false; no network/install operation is enabled and
+the Windows baseline remains unqualified. Secret/environment setup and live
+qualification are still separate owner-authorized steps.
 
 ## Current implementation and gaps
 
@@ -111,7 +115,8 @@ found. Interpret release notes as display-only text, never commands or HTML.
 
 `PrivacyMask.Updates` shares public trust and implements discovery with offline
 HTTP fixtures; release tooling alone owns private signing. The App now uses
-the library for readiness/handoff and manual checks; production trust remains empty.
+the library for readiness/handoff and manual checks. Beta.12 pins the owner public
+key, while the separate compiled runtime activation gate remains disabled.
 Core policy tests remain independent of WPF and HTTP. The App owns UI and shell
 integration. Windows-specific process, filesystem, IPC and launcher behavior
 belongs outside the Core policy. The worker is short-lived, not a Windows

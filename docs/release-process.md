@@ -5,7 +5,7 @@ not committed to the source repository.
 
 ## Version policy
 
-The source currently prepares `2.0.0-beta.11`. This is a testing delivery, not a
+The source currently prepares `2.0.0-beta.12`. This is a testing delivery, not a
 stable release announcement. Publishing/tagging remains a separate authorized
 action after merge and qualification. A commit or PR is not itself a release.
 Earlier source builds displayed 2.0.0 while still unreleased; the beta suffix
@@ -35,10 +35,10 @@ on merge or by a Git hook.
 
 | Identity | Current value | Purpose |
 | --- | --- | --- |
-| Version | `2.0.0-beta.11` | UI label, archive filename and exact `v2.0.0-beta.11` tag |
+| Version | `2.0.0-beta.12` | UI label, archive filename and exact `v2.0.0-beta.12` tag |
 | InformationalVersion | `$(Version)` plus SDK Git metadata when available | Full build provenance; About shows the product before `+` and exposes the full value in its tooltip/help |
 | AssemblyVersion | `2.0.0.0` | Numeric assembly identity, stable throughout this prerelease cycle |
-| FileVersion | `2.0.0.11` | Numeric Windows file/build revision |
+| FileVersion | `2.0.0.12` | Numeric Windows file/build revision |
 
 Windows numeric fields cannot contain `beta` or `rc`. Increase FileVersion's
 fourth component for the next delivered beta/candidate/stable build of the same
@@ -80,8 +80,8 @@ the finished ZIP does not.
 ## Publish a GitHub release
 
 First complete [protected signing setup](update-signing-operations.md). The
-committed production policy intentionally has no public keys/qualified OS
-baseline, so the new publisher currently fails closed. This is not an automatic
+committed production policy pins the owner's public key but intentionally has no
+qualified OS baseline, so the publisher currently fails closed. This is not an automatic
 environment/secret setup or permission to publish an existing version again.
 The [signing readiness plan](update-signing-readiness.md) records the owner's
 SoloMaintainer choice, separate setup approvals and real-App lab gates. A
@@ -90,7 +90,7 @@ reviewer/tag configuration is missing or mismatched; naming an environment alone
 is insufficient. The plan does not create it or authorize a tag push.
 
 1. Merge the fully verified release changes into `main`.
-2. Create an annotated version tag matching the source, such as `v2.0.0-beta.11`, on the release commit.
+2. Create an annotated version tag matching the source, such as `v2.0.0-beta.12`, on the release commit.
 3. Push the tag to GitHub.
 4. The `release` workflow requires the named protected environment and a clean
    merged exact version tag, builds/tests the project and normal Windows ZIP,
@@ -106,8 +106,8 @@ is insufficient. The plan does not create it or authorize a tag push.
 Example tag commands:
 
 ```powershell
-git tag -a v2.0.0-beta.11 -m "PrivacyMask v2.0.0-beta.11"
-git push origin v2.0.0-beta.11
+git tag -a v2.0.0-beta.12 -m "PrivacyMask v2.0.0-beta.12"
+git push origin v2.0.0-beta.12
 ```
 
 These commands are a release procedure, not commands run by the current PR.
@@ -202,3 +202,10 @@ App/Native AOT launcher apply checks share durable GitHub retry history, and
 worker compatibility uses pinned prepared settings rather than assuming schema 12.
 Production trust, activation and live real-App/OS/fault qualification remain
 unapproved. Publishing a tag/Release is still a separate authorized action.
+
+The [owner public-key bootstrap delivery](update-public-trust.md) advances to
+beta.12 / FileVersion 2.0.0.12. It pins the same owner-approved P-256 public root in
+publisher policy and the shared App/launcher library. A separate compiled runtime
+activation gate remains false, and the Windows baseline stays unqualified. Public
+pinning neither starts HTTP nor authorizes a signing secret, environment change,
+tag, release, installed-App update or live qualification claim.
