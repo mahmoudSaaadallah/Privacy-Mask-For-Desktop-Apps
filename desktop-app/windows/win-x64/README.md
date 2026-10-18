@@ -6,7 +6,7 @@ application files are intentionally not stored in Git.
 ## Install a GitHub release
 
 1. Open [PrivacyMask releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). **Pre-release** builds are for testing; `latest` selects stable releases.
-2. Download the archive matching your chosen release, for example `PrivacyMask-2.0.0-beta.10-win-x64.zip`.
+2. Download the archive matching your chosen release, for example `PrivacyMask-2.0.0-beta.11-win-x64.zip`.
 3. Extract the whole ZIP; do not run the installer from inside the archive.
 4. Double-click `Install-PrivacyMask.cmd`.
 5. Start PrivacyMask from the Desktop or Start Menu shortcut.
@@ -39,6 +39,10 @@ launch at sign in.
   history; unknown pending history is not automatically reset.
   Beta.10 connects explicit verified-download progress/cancel/discard behind the
   same absent-key gate. Nothing installs or restarts from the update UI yet.
+  Beta.11 connects Update now only for an owned verified download, through
+  Save/Discard/Cancel, normal Panic unlock and explicit restart consent. Masks
+  disappear during restart. Production keys/activation remain unconfigured,
+  so continue using manual installation in this build.
 - To uninstall, run `Uninstall-PrivacyMask.cmd` from an extracted release package.
 
 ## Build and install from source
