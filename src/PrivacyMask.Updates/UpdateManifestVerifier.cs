@@ -6,11 +6,20 @@ namespace PrivacyMask.Updates;
 public sealed class UpdateManifestVerifier
 {
     private readonly TrustedReleaseKey[] _keys;
-    public bool IsConfigured => _keys.Length != 0;
+    private readonly bool _updateOperationsEnabled;
+    internal bool HasTrustedKeys => _keys.Length != 0;
+    /// <summary>Both pinned trust and permission to use update operations are required.</summary>
+    public bool IsConfigured => _updateOperationsEnabled && HasTrustedKeys;
 
     public UpdateManifestVerifier(IEnumerable<TrustedReleaseKey> pinnedKeys)
+        : this(pinnedKeys, updateOperationsEnabled: true) { }
+
+    // A public pin is not release/qualification approval. Keep this compiled
+    // runtime gate inside the verifier so every existing consumer fails closed.
+    internal UpdateManifestVerifier(IEnumerable<TrustedReleaseKey> pinnedKeys, bool updateOperationsEnabled)
     {
         ArgumentNullException.ThrowIfNull(pinnedKeys);
+        _updateOperationsEnabled = updateOperationsEnabled;
         _keys = pinnedKeys.Take(17).ToArray();
         if (_keys.Length > 16) throw new ReleaseValidationException("Too many pinned update keys.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
@@ -41,7 +50,7 @@ public sealed class UpdateManifestVerifier
 
     public UpdateManifest Verify(byte[] manifestBytes, byte[] envelopeBytes)
     {
-        if (!IsConfigured) throw new ReleaseValidationException("Update trust roots are not configured.");
+        if (!IsConfigured) throw new ReleaseValidationException("Signed update operations are not configured.");
         if (manifestBytes.Length is 0 or > ManifestRules.ManifestLimit)
             throw new ReleaseValidationException("Invalid manifest length.");
         var envelope = ContractJson.Read<SignatureEnvelope>(envelopeBytes, ManifestRules.SignatureLimit);
