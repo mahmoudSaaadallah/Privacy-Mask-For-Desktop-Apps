@@ -14,7 +14,9 @@ public sealed class UpdateCheckHistoryTests
     public void CadenceCountsAttemptsNotSuccessAndPreservesFutureClocks()
     {
         Assert.True(new UpdateCheckHistory().StartupDue(Now));
-        var attempted = new UpdateCheckHistory().Attempt(Now);
+        var attempted = new UpdateCheckHistory().Attempt(Now).Complete(UpdateReleaseChannel.Preview,
+            new(UpdateCheckStatus.UnableToCheck), Now);
+        Assert.False(new UpdateCheckHistory().Attempt(Now).StartupDue(Now.AddYears(1)));
         Assert.False(attempted.StartupDue(Now.AddHours(23)));
         Assert.True(attempted.StartupDue(Now.AddHours(24)));
         Assert.False(attempted.StartupDue(Now.AddDays(-1)));

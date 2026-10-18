@@ -48,7 +48,7 @@ internal sealed class UpdateCheckHistoryStore : IUpdateCheckHistoryStore
         var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (var field in json.RootElement.EnumerateObject())
             if (!names.Add(field.Name)) throw new JsonException("Duplicate update history field.");
-        if (!names.SetEquals(["schemaVersion", "lastAttemptUtc", "retryAfterUtc", "stableSuccessUtc", "previewSuccessUtc"]))
+        if (!names.SetEquals(["schemaVersion", "lastAttemptUtc", "retryAfterUtc", "stableSuccessUtc", "previewSuccessUtc", "requestPending"]))
             throw new JsonException("Unexpected update history fields.");
         var history = JsonSerializer.Deserialize<UpdateCheckHistory>(bytes, Options) ?? throw new JsonException();
         Validate(history);
@@ -85,6 +85,7 @@ internal sealed class UpdateCheckHistoryStore : IUpdateCheckHistoryStore
     private static void Validate(UpdateCheckHistory history)
     {
         if (history.SchemaVersion != 1) throw new JsonException("Unsupported update history schema.");
+        if (history.RequestPending && history.LastAttemptUtc is null) throw new JsonException("Invalid pending request history.");
         foreach (var stamp in new[] { history.LastAttemptUtc, history.RetryAfterUtc, history.StableSuccessUtc, history.PreviewSuccessUtc })
             if (stamp is { } value && (value.Offset != TimeSpan.Zero || value < DateTimeOffset.UnixEpoch))
                 throw new JsonException("Invalid update history timestamp.");
