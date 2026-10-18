@@ -106,6 +106,7 @@ internal static class Program
                 Check(session.OverviewAppProfiles.Count == 6, "Dashboard is not bounded.");
                 CheckHelpAndSidebar(window, root, session);
                 CheckAboutReference(window, root, session, screenshots);
+                CheckUpdateSettings(window, root, session, screenshots);
                 session.SelectedPage = DesktopPage.Security;
                 Layout(root, new Size(960, 520));
                 var globalHelp = Find<RadioButton>(root).Single(radio => AutomationProperties.GetName(radio) == "Explain global panic");
@@ -289,6 +290,19 @@ internal static class Program
             updating.Close();
 
             var queue = new ShellOperationQueue();
+            var checking = CreateWindow();
+            var checkFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var checkRequests = 0;
+            checking.CheckForUpdatesRequested += () => { checkRequests++; return checkFinished.Task; };
+            Invoke(checking, "CheckForUpdates_Click");
+            Invoke(checking, "CheckForUpdates_Click");
+            var checkDrain = checking.BeginShutdownAsync();
+            Check(checkRequests == 1 && !checkDrain.IsCompleted, "Shutdown ignored a pending manual update handler or admitted a duplicate.");
+            checkFinished.SetResult();
+            PumpUntil(checkDrain);
+            checking.AllowClose();
+            checking.Close();
+
             var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var events = new List<int>();
             var first = queue.TryRunAsync(async () =>
@@ -322,6 +336,43 @@ internal static class Program
         while (!task.IsCompleted && deadline.Elapsed < TimeSpan.FromSeconds(5)) Drain();
         Check(task.IsCompleted, "Dispatcher operation failed to finish before its test deadline.");
         task.GetAwaiter().GetResult();
+    }
+
+    private static void CheckUpdateSettings(MainWindow window, FrameworkElement root, SettingsViewModel session, string? screenshots)
+    {
+        session.SelectedPage = DesktopPage.Settings;
+        var before = System.Text.Json.JsonSerializer.Serialize(session.ToModel());
+        var requests = 0;
+        Task CheckRequest()
+        {
+            requests++;
+            session.Updates.Begin();
+            session.Updates.Complete(new(PrivacyMask.Updates.UpdateCheckStatus.NotConfigured), session.UpdateChannel, DateTimeOffset.UtcNow);
+            return Task.CompletedTask;
+        }
+        window.CheckForUpdatesRequested += CheckRequest;
+        Invoke(window, "CheckForUpdates_Click");
+        window.CheckForUpdatesRequested -= CheckRequest;
+        Check(requests == 1 && session.Updates.StatusText.Contains("not configured"), "Manual update action is disconnected or misrepresents unconfigured trust.");
+        foreach (var width in new[] { 880d, 1000d, 1400d })
+        {
+            var size = new Size(width, 780);
+            Layout(root, size);
+            var card = (Border)window.FindName("UpdatesCard");
+            foreach (var control in Find<Control>(card))
+            {
+                var bounds = control.TransformToAncestor(card).TransformBounds(new Rect(new Point(), control.RenderSize));
+                Check(bounds.Left >= -1 && bounds.Right <= card.ActualWidth + 1, $"Update action clipped horizontally at {width}.");
+            }
+            var channel = Find<ComboBox>(card).Single(combo => AutomationProperties.GetName(combo) == "Update release channel");
+            var automatic = Find<CheckBox>(card).Single(box => AutomationProperties.GetName(box) == "Automatically check for updates");
+            Check(Equals(channel.SelectedItem, session.UpdateChannel) && automatic.IsChecked == session.AutomaticUpdateChecks,
+                "Update preferences lost their two-way bindings.");
+            if (screenshots is not null) Render(root, size, 1, System.IO.Path.Combine(screenshots, $"Updates-{width:0}.png"));
+        }
+        Check(before == System.Text.Json.JsonSerializer.Serialize(session.ToModel()) && !session.HasPendingChanges,
+            "Manual discovery changed the settings edit session.");
+        Console.WriteLine("Update card passed: connected action, honest unconfigured status, bounded layouts and non-mutating checks.");
     }
 
     private static void CheckAboutReference(MainWindow window, FrameworkElement root, SettingsViewModel session, string? screenshots)
