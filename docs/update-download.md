@@ -6,6 +6,10 @@ or release is introduced by this phase. It was delivered at beta.2 / schema 12;
 subsequent App lifecycle/readiness slices advance current source to beta.4
 without activating downloads. See [delivery phases](in-app-updates.md).
 
+The later [beta.7 storage maintenance](update-retention.md) adds active-workspace
+markers, managed staging admission and bounded expired-stage pruning. Successful
+stages retain the exact four-file contract described below.
+
 ## Host/API contract
 
 `UpdateStager.PrepareAsync(candidate, context, stagingRoot, progress, token)`

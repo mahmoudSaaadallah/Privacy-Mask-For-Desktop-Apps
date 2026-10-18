@@ -37,6 +37,8 @@ internal static class LauncherBoot
             new RecoveryJournalStore(lease).ArchiveTerminal(terminal.OperationId);
         }
 
+        // Best effort only: cleanup failure must not block a verified, recovered application from starting.
+        _ = new UpdateRetention(lease).RunAsync().GetAwaiter().GetResult();
         return StartVerifiedApplication(lease, arguments.Count == 1, start, inspectApplication);
     }
 

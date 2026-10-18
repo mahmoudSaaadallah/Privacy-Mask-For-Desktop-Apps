@@ -9,13 +9,14 @@ foundation plus [phase-5d.2 authenticated App readiness](update-app-readiness.md
 and [phase-5d.3 stable launcher/migration](update-stable-launcher.md) are
 implemented, along with the internal
 [phase-5d.4 authenticated handoff contract](update-handoff.md) and
-[phase-5d.5 runtime handoff](update-runtime-handoff.md). Phase 5 as a
+[phase-5d.5 runtime handoff](update-runtime-handoff.md) plus
+[phase-5d.6 bounded storage maintenance](update-retention.md). Phase 5 as a
 whole is not complete.
 Production signing/environment/OS qualification remain unset;
 see [signing operations](update-signing-operations.md). No update button,
 live network activation, production key, automatic in-app installation, tag, or
 new release is supplied. App discovery/network activation and UI remain absent;
-the runtime handoff testing delivery now targets `2.0.0-beta.6`.
+the storage maintenance testing delivery now targets `2.0.0-beta.7`.
 
 ## Current implementation and gaps
 
@@ -251,8 +252,11 @@ adds strict apply arguments and a mutually authenticated, single-use App/launche
 shutdown exchange. The [phase-5d.5 runtime handoff](update-runtime-handoff.md)
 connects it to App consent/Panic/edit and writer-suspension gates and the installed
 launcher's apply route. Production trust is still unconfigured; no update UI or
-background network path invokes the adapter. Bounded retention and real-App
-qualification remain required before end-user activation.
+background network path invokes the adapter. The [phase-5d.6 maintenance slice](update-retention.md)
+retains a verified recovery pair, quarantines obsolete history/expired staging,
+protects live downloads and bounds storage admission/recovery scratch. Unknown
+or uncommitted evidence is preserved and can block further attempts at capacity.
+Real-App and Windows fault qualification remain required before end-user activation.
 
 ## Related specifications and sources
 

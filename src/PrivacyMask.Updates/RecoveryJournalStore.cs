@@ -5,6 +5,8 @@ internal enum JournalCheckpoint { TempCreated, TempFlushed, Promoted, TerminalAr
 /// <summary>Atomic active record; unpromoted scratch is evidence, never a recovery command.</summary>
 internal sealed class RecoveryJournalStore(ManagedInstallLease lease, Action<JournalCheckpoint>? checkpoint = null)
 {
+    internal const string TemporaryFileName = ".update-journal.tmp";
+    internal const string UnpromotedFileName = "unpromoted-journal.json";
     private string ActivePath => Path.Combine(lease.Root, "update-journal.json");
 
     internal RecoveryJournal? Read()
@@ -62,7 +64,8 @@ internal sealed class RecoveryJournalStore(ManagedInstallLease lease, Action<Jou
             throw new ReleaseValidationException("Invalid recovery transition or changed operation identity.");
         var bytes = RecoveryJson.Write(record, RecoveryJson.Context.RecoveryJournal);
         if (bytes.Length > RecoveryRules.JournalLimit) throw new ReleaseValidationException("Recovery journal exceeds its bound.");
-        var temporary = Path.Combine(lease.Root, ".update-journal-" + Guid.NewGuid().ToString("N") + ".tmp");
+        var temporary = Path.Combine(lease.Root, TemporaryFileName);
+        PreserveInterruptedWrite(temporary, record.OperationId);
         using (var file = ManagedInstallLease.CreatePrivateFile(temporary))
         {
             checkpoint?.Invoke(JournalCheckpoint.TempCreated);
@@ -76,6 +79,36 @@ internal sealed class RecoveryJournalStore(ManagedInstallLease lease, Action<Jou
         if (previous is null) File.Move(temporary, ActivePath, overwrite: false);
         else File.Replace(temporary, ActivePath, destinationBackupFileName: null, ignoreMetadataErrors: false);
         checkpoint?.Invoke(JournalCheckpoint.Promoted);
+    }
+
+    private void PreserveInterruptedWrite(string temporary, string operationId)
+    {
+        StagingWorkspace.AssertSafe(temporary);
+        try { _ = File.GetAttributes(temporary); }
+        catch (FileNotFoundException) { return; }
+        var pending = ReadScratch(temporary);
+        var evidence = Path.Combine(lease.OperationDirectory(operationId), UnpromotedFileName);
+        StagingWorkspace.AssertSafe(evidence);
+        if (File.Exists(evidence))
+        {
+            if (!ReadScratch(evidence).AsSpan().SequenceEqual(pending))
+                throw new ReleaseValidationException("Conflicting unpromoted journal evidence.");
+            // Remove only a byte-identical duplicate; the retained non-authoritative copy remains.
+            File.Delete(temporary);
+        }
+        else File.Move(temporary, evidence, overwrite: false);
+
+        static byte[] ReadScratch(string path)
+        {
+            ManagedInstallLease.AssertPrivate(path);
+            using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (file.Length > RecoveryRules.JournalLimit)
+                throw new ReleaseValidationException("Unpromoted journal exceeds its bound.");
+            var bytes = new byte[(int)file.Length];
+            file.ReadExactly(bytes);
+            if (file.ReadByte() != -1) throw new ReleaseValidationException("Unpromoted journal changed.");
+            return bytes;
+        }
     }
 
     /// <summary>Explicit terminal lifecycle only. Keeps journal and all baselines; never prunes evidence.</summary>

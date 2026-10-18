@@ -43,7 +43,8 @@ internal static class PreparationSmoke
         context = context with { WindowsBuild = Environment.OSVersion.Version.Build };
         using var packageHandler = new FileAssetHandler(Path.Combine(assets, candidate.Manifest.Package.AssetName), false);
         using var stager = new UpdateStager(verifier, TimeProvider.System, packageHandler);
-        var stage = await stager.PrepareAsync(candidate, context, Path.Combine(root, "update-staging"));
+        var stage = await stager.PrepareManagedAsync(candidate, context, lease);
+        Check(!File.Exists(Path.Combine(stage.DirectoryPath, StagingWorkspace.ActivityFileName)), "ready managed stage releases its activity marker");
         var operationId = Path.GetFileName(stage.DirectoryPath)["operation-".Length..];
         using var discoveryHandler = new PreparationReleaseHandler(candidate);
         using var discovery = new GitHubReleaseClient(verifier, TimeProvider.System, discoveryHandler);
@@ -63,7 +64,27 @@ internal static class PreparationSmoke
         // The retained target remains independently signed/hash-verified after staging disappears.
         var signed = verifier.Verify(File.ReadAllBytes(Path.Combine(operation, "update-manifest.json")), File.ReadAllBytes(Path.Combine(operation, "update-manifest.sig.json")));
         UpdatePayload.InspectExecutable(Path.Combine(operation, "target-app.exe"), signed.Version, signed.CommitSha);
+        // Repeated failed/canceled attempts must not retain another full real App forever.
+        var oldId = Guid.NewGuid().ToString("N");
+        var oldOperation = Path.Combine(root, "update-operations", "operation-" + oldId);
+        ManagedInstallLease.CreatePrivateDirectory(oldOperation);
+        foreach (var name in new[] { "original-app.exe", "original-settings.json", "original-settings.bak" })
+        {
+            using var input = File.OpenRead(Path.Combine(operation, name));
+            using var output = ManagedInstallLease.CreatePrivateFile(Path.Combine(oldOperation, name), 65536);
+            await input.CopyToAsync(output); output.Flush(true);
+        }
+        Write(Path.Combine(oldOperation, "terminal-journal.json"), ContractJson.Write(record with {
+            OperationId = oldId, Step = RecoveryStep.Recovered, Revision = 3 }));
+        File.SetLastWriteTimeUtc(Path.Combine(oldOperation, "terminal-journal.json"), DateTime.UtcNow.AddDays(-2));
+        var retention = await new UpdateRetention(lease).RunAsync();
+        Check(retention.RemovedDirectories == 1 && !Directory.Exists(oldOperation), "superseded real App backup pruned");
+        Check(File.Exists(Path.Combine(operation, "original-app.exe")), "matching real App rollback pair retained");
+        Check(RecoveryRestorer.Inspect(app, ManifestRules.MaximumFileSize) == before &&
+            File.ReadAllBytes(primary).SequenceEqual(oldSettings) && new FileInfo(secondary).Length == 0,
+            "maintenance never changes real installed fixture App/settings");
         Console.WriteLine("Passed real-EXE authenticated preparation: live PE identities, signed bytes, exact baseline/settings copies and terminal archival; offline, no execution or installed-app mutation.");
+        Console.WriteLine("Passed real-EXE managed staging and bounded retention: current rollback pair kept; superseded backup removed.");
     }
 
     private static void Write(string path, byte[] bytes)

@@ -64,6 +64,7 @@ internal static class LauncherApply
         else if (result.Outcome != TransactionOutcome.RecoveredFiles)
             throw new ReleaseValidationException("Update recovery requires repair.");
         new RecoveryJournalStore(lease).ArchiveTerminal(request.OperationId);
+        _ = await new UpdateRetention(lease).RunAsync().ConfigureAwait(false);
         using var previous = LauncherBoot.StartVerifiedApplication(lease, request.Mode == UpdateStartMode.Minimized, restart);
         return LauncherApplyOutcome.PreviousVersionRestarted;
     }

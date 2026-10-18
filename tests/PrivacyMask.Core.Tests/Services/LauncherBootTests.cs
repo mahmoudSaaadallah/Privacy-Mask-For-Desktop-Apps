@@ -6,6 +6,31 @@ namespace PrivacyMask.Core.Tests.Services;
 
 public sealed class LauncherBootTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Boot_runs_maintenance_and_cleanup_failure_does_not_block_the_verified_app(bool foreignFile)
+    {
+        using var fixture = new RetentionFixture();
+        var keep = fixture.Archive("2.0.0-beta.3", "2.0.0-beta.4", installedTarget: true);
+        var old = fixture.Archive("2.0.0-beta.2", "2.0.0-beta.3");
+        if (foreignFile) RetentionFixture.Write(Path.Combine(old, "private.txt"), [1]);
+        var stage = fixture.Stage(stale: true);
+        var launcher = Path.Combine(fixture.Install.Root, LauncherBoot.LauncherFileName);
+        RetentionFixture.Write(launcher, [1]);
+        fixture.Install.Lease.Dispose();
+        var starts = 0;
+        using var child = LauncherBoot.Launch(launcher, [], start => {
+            starts++;
+            Assert.Equal(fixture.Install.App, start.FileName);
+            Assert.True(Directory.Exists(keep));
+            Assert.Equal(foreignFile, Directory.Exists(old));
+            Assert.False(Directory.Exists(stage));
+            return Process.GetCurrentProcess();
+        }, _ => { });
+        Assert.Equal(1, starts);
+    }
+
     [Fact]
     public void Boot_never_recovers_an_uncommitted_operation_while_the_managed_app_is_alive()
     {

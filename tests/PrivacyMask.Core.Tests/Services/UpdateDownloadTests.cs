@@ -266,6 +266,7 @@ public sealed class UpdateDownloadTests
         finally { Directory.Delete(f.Root); } // exact fixture junction, not its target
         Directory.CreateDirectory(f.Root);
         var workspace = new StagingWorkspace(f.Root, f.Candidate.Manifest);
+        workspace.Complete(); // Path-substitution attack against a completed workspace, after its activity lock is released.
         var moved = workspace.Root + "-original";
         Directory.Move(workspace.Root, moved);
         CreateJunction(workspace.Root, outside);

@@ -36,6 +36,7 @@ internal static class AuthenticatedUpdateHandoff
                 var existing = store.Read();
                 if (existing is { Step: RecoveryStep.Committed or RecoveryStep.Recovered }) store.ArchiveTerminal(existing.OperationId);
                 else if (existing is not null) throw new InvalidOperationException("A previous update needs recovery before another update can start.");
+                _ = await new UpdateRetention(lease).RunAsync(operationId, cancellationToken);
                 installId = lease.InstallId;
                 ownsPreparation = true; // Covers loss of the response after a durable Prepared promotion.
                 await new RecoveryPreparer(lease, verifier, discovery).PrepareAsync(operationId, context, cancellationToken);
@@ -95,6 +96,7 @@ internal static class AuthenticatedUpdateHandoff
                             if (lease.InstallId != installId || record.OperationId != operationId)
                                 throw new InvalidOperationException("Update identity changed during cancellation.");
                             store.AbandonPrepared(operationId);
+                            _ = await new UpdateRetention(lease).RunAsync(operationId);
                         }
                     }
                 }

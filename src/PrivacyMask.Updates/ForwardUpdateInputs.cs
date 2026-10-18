@@ -38,6 +38,11 @@ internal sealed class ForwardUpdateInputs : IDisposable
             var names = new List<string> { "original-app.exe", "target-app.exe", "update-manifest.json", "update-manifest.sig.json" };
             if (record.SettingsPrimary.Exists) names.Add("original-settings.json");
             if (record.SettingsBackup.Exists) names.Add("original-settings.bak");
+            if (File.Exists(Path.Combine(inputs.Operation, RecoveryJournalStore.UnpromotedFileName)))
+            {
+                names.Add(RecoveryJournalStore.UnpromotedFileName);
+                _ = await Pin(RecoveryJournalStore.UnpromotedFileName, RecoveryRules.JournalLimit, false).ConfigureAwait(false);
+            }
             var actual = Directory.EnumerateFileSystemEntries(inputs.Operation).Take(names.Count + 1).Select(Path.GetFileName).ToArray();
             if (actual.Length != names.Count || actual.Any(name => !names.Contains(name!, StringComparer.Ordinal)))
                 throw new ReleaseValidationException("Unexpected forward operation evidence.");

@@ -7,8 +7,10 @@ namespace PrivacyMask.Updates;
 internal sealed class StagingWorkspace
 {
     internal const long SafetyMargin = 64L * 1024 * 1024;
+    internal const string ActivityFileName = ".stage.lock";
     private readonly List<string> _owned = [];
     private bool _cleaned;
+    private FileStream? _activity;
     public string Root { get; }
 
     public StagingWorkspace(string stagingRoot, UpdateManifest manifest, Func<string, long>? availableSpace = null)
@@ -36,6 +38,18 @@ internal sealed class StagingWorkspace
             InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
         new DirectoryInfo(Root).Create(security);
         AssertSafe(Root);
+        _activity = Create(ActivityFileName);
+    }
+
+    internal void Complete()
+    {
+        // A crashed download leaves an unlocked marker; a live producer holds it across every gap between files.
+        _activity?.Dispose();
+        _activity = null;
+        var marker = Path.Combine(Root, ActivityFileName);
+        AssertSafe(marker);
+        File.Delete(marker);
+        _owned.Remove(marker);
     }
 
     public FileStream Create(string name)
@@ -69,6 +83,8 @@ internal sealed class StagingWorkspace
     private bool CleanupCore()
     {
         if (_cleaned) return true;
+        _activity?.Dispose();
+        _activity = null;
         // Reparse/lock/access failures preserve evidence, never follow a new link.
         try
         {

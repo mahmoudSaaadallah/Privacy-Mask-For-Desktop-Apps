@@ -78,7 +78,7 @@ public sealed class RecoveryJournalTests
         Assert.Throws<SimulatedRecoveryCrash>(() => store.Write(next));
         f.Reopen();
         Assert.Equal(promoted ? next : f.Record, new RecoveryJournalStore(f.Lease).Read());
-        Assert.Equal(promoted ? 0 : 1, Directory.GetFiles(f.Root, ".update-journal-*.tmp").Length);
+        Assert.Equal(!promoted, File.Exists(Path.Combine(f.Root, RecoveryJournalStore.TemporaryFileName)));
         f.AssertOriginal();
     }
 
