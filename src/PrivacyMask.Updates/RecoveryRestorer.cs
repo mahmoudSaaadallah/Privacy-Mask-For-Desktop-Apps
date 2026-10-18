@@ -67,6 +67,9 @@ internal sealed class RecoveryRestorer(ManagedInstallLease lease, Action<Restore
             void Preflight(string target, string label, RecoveryFile baseline, long bound)
             {
                 var actual = Inspect(target, bound);
+                var scratch = Inspect(Path.Combine(operation, "restore-" + label + ".tmp"), bound);
+                if (scratch.Exists && scratch != baseline)
+                    throw new ReleaseValidationException("Recovery scratch conflicts with the retained baseline.");
                 var evidence = Path.Combine(operation, "failed-" + label);
                 StagingWorkspace.AssertSafe(evidence);
                 // If both exist and differ, don't overwrite prior evidence or discard the installed file.
@@ -82,20 +85,26 @@ internal sealed class RecoveryRestorer(ManagedInstallLease lease, Action<Restore
                 string? scratch = null;
                 if (baseline.Exists)
                 {
-                    scratch = Path.Combine(operation, "restore-" + label + "-" + Guid.NewGuid().ToString("N") + ".tmp");
+                    scratch = Path.Combine(operation, "restore-" + label + ".tmp");
                     // Copy from a verified retained baseline; never consume the last good backup.
-                    using var input = new FileStream(backup, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    using (var output = ManagedInstallLease.CreatePrivateFile(scratch, 64 * 1024))
+                    // A locked target can be retried repeatedly. Reuse only an exact verified scratch,
+                    // never allocate another random full-size copy or overwrite conflicting evidence.
+                    if (!Inspect(scratch, bound).Exists)
                     {
-                        if (baseline.Size == 0)
+                        using var input = new FileStream(backup, FileMode.Open, FileAccess.Read, FileShare.Read);
+                        using (var output = ManagedInstallLease.CreatePrivateFile(scratch, 64 * 1024))
                         {
-                            if (input.ReadByte() != -1 || Convert.ToHexStringLower(SHA256.HashData(Array.Empty<byte>())) != baseline.Sha256)
-                                throw new ReleaseValidationException("Empty snapshot changed.");
+                            if (baseline.Size == 0)
+                            {
+                                if (input.ReadByte() != -1 || Convert.ToHexStringLower(SHA256.HashData(Array.Empty<byte>())) != baseline.Sha256)
+                                    throw new ReleaseValidationException("Empty snapshot changed.");
+                            }
+                            else UpdatePayload.CopyVerifiedAsync(input, output, baseline.Size, baseline.Sha256!).GetAwaiter().GetResult();
+                            output.Flush(flushToDisk: true);
                         }
-                        else UpdatePayload.CopyVerifiedAsync(input, output, baseline.Size, baseline.Sha256!).GetAwaiter().GetResult();
-                        output.Flush(flushToDisk: true);
                     }
                     ManagedInstallLease.AssertPrivate(scratch);
+                    if (!Matches(scratch, baseline, bound)) throw new ReleaseValidationException("Recovery scratch changed.");
                 }
                 StagingWorkspace.AssertSafe(target);
                 var current = Inspect(target, bound);
