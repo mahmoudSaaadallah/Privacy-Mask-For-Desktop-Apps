@@ -1,4 +1,6 @@
 using System.Security;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace PrivacyMask.Updates;
@@ -272,5 +274,6 @@ internal sealed class UpdateRetention(ManagedInstallLease lease, TimeProvider? c
         SemanticVersion.TryParse(value, out var version) ? version : throw new ReleaseValidationException("Invalid terminal version.");
 
     private static bool IsPreservable(Exception error) => error is IOException or UnauthorizedAccessException or
-        ReleaseValidationException or JsonException or SecurityException;
+        ReleaseValidationException or JsonException or SecurityException or DecoderFallbackException or
+        CryptographicException or FormatException or OverflowException;
 }

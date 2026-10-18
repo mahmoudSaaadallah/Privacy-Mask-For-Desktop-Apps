@@ -51,6 +51,7 @@ public sealed class UpdateRetentionTests
 
     [Theory]
     [InlineData("malformed-journal")]
+    [InlineData("invalid-utf8")]
     [InlineData("unknown-file")]
     [InlineData("foreign-install")]
     [InlineData("wrong-id")]
@@ -64,6 +65,7 @@ public sealed class UpdateRetentionTests
         var archive = Path.Combine(candidate, "terminal-journal.json");
         var record = ContractJson.Read<RecoveryJournal>(File.ReadAllBytes(archive), RecoveryRules.JournalLimit);
         if (change == "malformed-journal") File.WriteAllText(archive, "broken JSON");
+        if (change == "invalid-utf8") File.WriteAllBytes(archive, [0xff]);
         if (change == "unknown-file") RetentionFixture.Write(Path.Combine(candidate, "notes.txt"), [1]);
         if (change == "nested-directory") ManagedInstallLease.CreatePrivateDirectory(Path.Combine(candidate, "nested"));
         if (change is "foreign-install" or "wrong-id" or "nonterminal")
@@ -188,12 +190,14 @@ public sealed class UpdateRetentionTests
         Assert.Throws<ReleaseValidationException>(() => UpdateStoragePolicy.RequireCapacity(f.Install.Lease, true));
     }
 
-    [Fact]
-    public async Task Malformed_active_journal_and_cancellation_never_authorize_cleanup()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Malformed_active_journal_and_cancellation_never_authorize_cleanup(bool invalidUtf8)
     {
         using var f = new RetentionFixture();
         var stage = f.Stage(stale: true);
-        File.WriteAllText(Path.Combine(f.Install.Root, "update-journal.json"), "broken");
+        File.WriteAllBytes(Path.Combine(f.Install.Root, "update-journal.json"), invalidUtf8 ? [0xff] : "broken"u8.ToArray());
         Assert.Equal(RetentionOutcome.Partial, (await f.Run()).Outcome);
         Assert.True(Directory.Exists(stage));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new UpdateRetention(f.Install.Lease).RunAsync(
