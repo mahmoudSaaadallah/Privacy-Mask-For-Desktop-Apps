@@ -1,10 +1,10 @@
-# Required automatic updates — beta.14 Preview trial
+# Required automatic updates — beta.15 Preview B preparation
 
-Source: `2.0.0-beta.14`, FileVersion `2.0.0.14`. Settings/history schemas remain
+Source: `2.0.0-beta.15`, FileVersion `2.0.0.15`. Settings/history schemas remain
 13/1 and updater protocol remains 1. This implements the owner's required-update
 policy with the explicitly agreed privacy deferrals. Preview activation is now
 enabled for managed Windows 11 x64 installations; stable stays disabled. This
-source delivery does not publish a release or claim live qualification. See the
+source delivery does not publish B or claim a completed live A-to-B update. See the
 owner-approved [simple A/B experiment](update-preview-trial.md).
 
 ## End-user policy after separate signed activation
@@ -72,9 +72,11 @@ One authorized qualified complete installer must bootstrap App and launcher.
 Preview runtime activation uses the binary's own prerelease identity. Stable
 activation remains false. The publisher/runtime share a Windows 11 build-22000
 technical filter, not a claim that all such OS builds are qualified. Public
-`release-key-1` trust remains pinned. Protected setup exists and the owner reported
-secret upload; metadata presence is not a signing test. Separate exact-tag release
-approval and the basic real Windows 11 A/B run remain pending; full Windows 10/11
+`release-key-1` trust remains pinned. A's protected signing and independent
+verification passed, and beta.14 was published through approved explicit-ID
+recovery after the draft-lookup incident. The owner reports a successful check
+from the friend's installed A copy. B's separate exact-tag publication approval
+and the actual Windows 11 A-to-B transition remain pending; full Windows 10/11
 stable/fault qualification remains separate. This source-delivery PR does not read
 the owner's private key, mutate GitHub configuration or publish a release.
 
