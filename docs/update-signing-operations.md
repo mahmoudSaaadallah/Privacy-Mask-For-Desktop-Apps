@@ -127,11 +127,15 @@ managed-string copy or defend against a compromised runner/administrator.
    key or unsigned fallback is allowed.
 5. Independently validate generated signed assets with the public policy.
 6. The publisher rechecks the remote tag (including annotated tags) against the
-   verified checkout commit, creates a Draft with exactly five assets, and
-   compares every remote uploaded asset's name/size/SHA-256 digest/state with
-   the local files. Recheck tag identity before publication.
-7. Only then clear Draft. Beta/rc is prerelease and not Latest; a stable release
-   is explicitly Latest. Confirm the expected published state from the API.
+   verified checkout commit and refuses any existing release/draft for this tag
+   before creating a Draft with exactly five assets. It matches the returned
+   created URL against authenticated paginated listings, requires exactly one
+   matching numeric ID and reads that ID directly. GitHub's tag-name endpoint
+   is for published releases, not drafts. Compare every remote uploaded asset's
+   name/size/SHA-256 digest/state with local files; recheck tag identity.
+7. Only then clear Draft through PATCH of that exact numeric ID, never a tag-based
+   edit. Beta/rc is prerelease and not Latest; a future qualified stable release
+   is explicitly Latest. Confirm the same ID and expected published state by ID.
 
 The five files are the normal installer ZIP/checksum, app-only update ZIP,
 `update-manifest.json`, and `update-manifest.sig.json`. Scripts/settings/launcher
@@ -149,6 +153,11 @@ text, not instructions to the updater.
 - Publication/API-confirmation failure: inspect actual remote state first. The
   edit may have succeeded despite losing its response; do not blindly publish
   another release or claim rollback of a public release.
+- The [beta.14 incident](release-publication-incident.md) left two unpublished
+  drafts after two attempts. Do not rerun the tagged workflow, move its tag,
+  select a draft automatically, or delete either draft as part of this fix.
+  Recovery must separately identify one existing ID, verify its actual signed
+  assets/source and obtain explicit approval before changing remote state.
 - A published immutable release must not be patched in place. Correct the
   source and publish a new reviewed version after normal qualification.
 - A compromised signing key requires the separate incident/verified repair
