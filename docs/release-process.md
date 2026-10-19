@@ -5,7 +5,7 @@ not committed to the source repository.
 
 ## Version policy
 
-The source currently prepares `2.0.0-beta.14`. This is a testing delivery, not a
+The source currently prepares `2.0.0-beta.15`. This is a testing delivery, not a
 stable release announcement. Publishing/tagging remains a separate authorized
 action after merge and qualification. A commit or PR is not itself a release.
 Earlier source builds displayed 2.0.0 while still unreleased; the beta suffix
@@ -35,10 +35,10 @@ on merge or by a Git hook.
 
 | Identity | Current value | Purpose |
 | --- | --- | --- |
-| Version | `2.0.0-beta.14` | UI label, archive filename and exact `v2.0.0-beta.14` tag |
+| Version | `2.0.0-beta.15` | UI label, archive filename and exact `v2.0.0-beta.15` tag |
 | InformationalVersion | `$(Version)` plus SDK Git metadata when available | Full build provenance; About shows the product before `+` and exposes the full value in its tooltip/help |
 | AssemblyVersion | `2.0.0.0` | Numeric assembly identity, stable throughout this prerelease cycle |
-| FileVersion | `2.0.0.14` | Numeric Windows file/build revision |
+| FileVersion | `2.0.0.15` | Numeric Windows file/build revision |
 
 Windows numeric fields cannot contain `beta` or `rc`. Increase FileVersion's
 fourth component for the next delivered beta/candidate/stable build of the same
@@ -91,7 +91,7 @@ reviewer/tag configuration is missing or mismatched; naming an environment alone
 is insufficient. The plan does not create it or authorize a tag push.
 
 1. Merge the fully verified release changes into `main`.
-2. After exact source/tag approval, create an annotated version tag matching the source, such as `v2.0.0-beta.14`, on the release commit.
+2. After exact source/tag approval, create an annotated version tag matching the source, such as `v2.0.0-beta.15`, on the release commit.
 3. Push the tag to GitHub.
 4. The `release` workflow requires the named protected environment and a clean
    merged exact version tag, builds/tests the project and normal Windows ZIP,
@@ -113,8 +113,8 @@ is insufficient. The plan does not create it or authorize a tag push.
 Example tag commands:
 
 ```powershell
-git tag -a v2.0.0-beta.14 -m "PrivacyMask v2.0.0-beta.14"
-git push origin v2.0.0-beta.14
+git tag -a v2.0.0-beta.15 -m "PrivacyMask v2.0.0-beta.15"
+git push origin v2.0.0-beta.15
 ```
 
 These commands are a release procedure, not commands run by the current PR.

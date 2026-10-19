@@ -33,6 +33,20 @@ either is the correct recovery candidate. No draft was selected, resumed,
 published or deleted by this source fix. The tag was not moved, and the owner
 private key was not accessed locally. No installed-App upgrade is claimed.
 
+### Later authorized recovery — completed
+
+After PR #62 merged and the owner explicitly approved the selected ID, both
+downloaded draft sets passed public-key/signature/payload/source checks. The
+selected installer also passed isolated install/uninstall smoke. Release ID
+`417143478` was published at 2026-10-19 11:14:29 UTC as
+[beta.14 Preview](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases/tag/v2.0.0-beta.14),
+not Latest. Anonymous API/download checks confirmed the same five verified
+assets. No asset was replaced, no private key accessed locally and no App/tag
+rebuilt or moved. Other draft `417123685` was left unpublished and untouched.
+The old workflow remains failed historically; it was not rerun or rewritten.
+The two-unpublished-drafts observation above describes the incident, not the
+post-recovery state. No real installed-App A-to-B upgrade has yet been claimed.
+
 ## Source correction
 
 - Before creation, inspect all authenticated release pages and refuse any

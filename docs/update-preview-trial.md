@@ -2,9 +2,26 @@
 
 The owner approved this smaller experiment after choosing normal use on a
 friend's Windows 11 device instead of a VM. A is **2.0.0-beta.14**, with successful
-automatic discovery every **10 minutes**. B is planned as **2.0.0-beta.15**, with
-the normal **24-hour** cadence. This source delivery prepares A; it does not
-publish either version, execute production signing or claim a real-device pass.
+automatic discovery every **10 minutes**. A was published after the reviewed
+explicit-ID recovery described in [the publication incident](release-publication-incident.md).
+B source now prepares **2.0.0-beta.15**, with the normal **24-hour** cadence.
+This delivery does not publish B, execute production signing or claim a completed
+real-device A-to-B pass.
+
+## Current baseline evidence
+
+The owner reported installing A on the friend's device. An initial screenshot
+showed the unsupported-install message and no successful check; the owner later
+confirmed that instance had been launched from the extracted folder. After using
+the installed shortcut, a screenshot showed beta.14, Preview, UpToDate and a
+successful check timestamp. This supports a working managed-install check, not
+proof that that check was automatic or that an upgrade transaction has passed.
+
+Keep A installed/running/online while preparing B in its separate PR. After
+separate publication approval, do not manually install B or press Check for
+updates during the polling test. Resolve ordinary privacy deferrals and observe
+the next admitted automatic check, download, apply and restart. B uses daily
+successful checks; it never overwrites A's required history/settings schemas.
 
 ## Scope and unchanged safeguards
 
@@ -53,6 +70,10 @@ publish either version, execute production signing or claim a real-device pass.
    profile and let its first successful check finish. Confirm the 10-minute
    schedule is visible. Record only non-sensitive OS build/architecture, App
    version/source, installed launcher identity and normal check result.
+   If the UI says to use a release installer, first check whether the running
+   process is the extracted portable copy. Exit that copy normally and launch
+   the installed shortcut. Never bypass managed-path/marker/ACL/OS checks to
+   force a request; other unsupported-install causes still require diagnosis.
 5. Prepare B in a separate PR, advancing product/file versions to beta.15/.15.
    The exact-version interval rule already makes B daily; do not broaden the
    beta.14 exception. Review/merge/test B and separately approve/publish exact
