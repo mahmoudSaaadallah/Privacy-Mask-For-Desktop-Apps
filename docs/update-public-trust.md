@@ -1,5 +1,10 @@
 # Owner public-key bootstrap — beta.12
 
+Historical beta.12 record: the public identity below is unchanged, but its
+activation-disabled statements describe that delivery. Beta.14 separately enables
+the owner-approved [Windows 11 Preview A/B experiment](update-preview-trial.md),
+not stable activation or completed OS qualification.
+
 Source delivery: `2.0.0-beta.12`, FileVersion `2.0.0.12`, AssemblyVersion
 `2.0.0.0`. Settings schema stays 13; history schema and updater protocol stay 1.
 No tag or Release is created by this delivery. Public trust is pinned, but runtime

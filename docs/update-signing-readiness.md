@@ -1,25 +1,30 @@
 # Signing readiness and isolated update qualification
 
-Status: signing-secret preparation, updated 2026-10-19 (Africa/Cairo), following
-merged PR #59 at `86b9861`. Owner-authorized environment setup is now verified
+Status: owner-approved Preview trial preparation, updated 2026-10-19 (Africa/Cairo),
+following merged PR #60 at `c4c41af`. Owner-authorized environment setup is verified
 through GitHub's API, including explicit Boolean `can_admins_bypass: false`.
 The public environment variable `PRIVACYMASK_UPDATE_KEY_ID=release-key-1` has been
-set and read back. The environment had zero secret names at inspection; private
-key transfer remains an owner-operated step. This delivery does not access private
-keys, upload secrets, enable runtime update operations, push tags or publish.
+set and read back. The owner completed direct secret upload and supplied its
+success/name/timestamp output; GET-only metadata inspection also confirms the
+signing-secret name exists, without reading its value. This delivery prepares
+Preview activation, never stable qualification. No private key is read locally,
+no secret is uploaded by the agent, and no tag or release is published.
 
 ## Actual starting point
 
-- Source is `2.0.0-beta.13` / Windows file version `2.0.0.13`. The
-  [required automatic update policy](update-mandatory.md) is implemented but still
-  gated by disabled runtime activation, unqualified Windows baseline and signing setup.
+- Source is `2.0.0-beta.14` / Windows file version `2.0.0.14`. The owner approved
+  a [simple Windows 11 A/B Preview trial](update-preview-trial.md), without requiring
+  a VM for ordinary use/basic consenting upgrade testing. Preview operations are
+  enabled in the new binary; stable stays disabled. Only beta.14 checks every
+  10 minutes after success; beta.15 and later default back to 24 hours.
 - App update UI, owned verified staging, privacy-aware automatic restart, authenticated handoff,
   stable launcher and bounded recovery/history are implemented. They are not
   evidence that a real signed A-to-B update has passed on supported Windows.
-- `build/update-release-policy.json` pins `release-key-1` and retains an unqualified
-  (`null`) minimum Windows build. App/launcher compile the same public pin, with a
-  separate disabled runtime activation gate. Production signed publication and
-  live in-app update remain blocked. See [public identity and tests](update-public-trust.md).
+- `build/update-release-policy.json` pins `release-key-1` and sets build 22000 as a
+  Windows 11 technical filter for the Preview, not a qualified minimum OS claim.
+  App/launcher compile the same pin and reject stable runtime activation.
+  Protected source admission permits prerelease publication only. Exact-tag
+  approval, successful production signing and a real device update remain pending.
 - Initial GitHub inspection returned zero environments. Following separate owner
   authorization, `privacy-mask-release` now exists with exactly one required
   reviewer (`mahmoudSaaadallah`), self-review allowed and exactly one selected
@@ -28,8 +33,9 @@ keys, upload secrets, enable runtime update operations, push tags or publish.
   The strengthened assertion also requires explicit Boolean administrator-bypass
   denial; missing, null, string, numeric or enabled bypass metadata is rejected.
 - The owner approved **SoloMaintainer**, public-key integration and now the scoped
-  environment setup. Private secret transfer, runtime activation and publication
-  remain separate stages. Passing the API guard proves only the currently
+  environment setup, owner-operated secret upload and this limited Preview
+  activation experiment. Exact publication approval and stable qualification
+  remain separate. Passing the API guard proves only the currently
   returned configuration, not per-run approval, key custody or live updates.
 
 ## Approved review model: SoloMaintainer
@@ -91,10 +97,14 @@ entry or each release approval, the owner should also inspect the UI:
 This manual step follows [GitHub's environment setup instructions](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments).
 No test tag or signing run is needed to verify these settings. Do not add the
 private PEM or its passphrase to chat, this document or a PR.
-For the next owner-operated step, use the [direct secret-input guide](update-signing-secret-setup.md).
+The completed owner-operated step is documented in the [direct secret-input guide](update-signing-secret-setup.md).
 The key-ID variable is public metadata, not a substitute for the private secret.
 
-## Execution stages and approval boundaries
+## Full qualification backlog and approval boundaries
+
+The newer [Preview A/B runbook](update-preview-trial.md) is the explicitly approved
+smaller experiment; the full disposable-target/fault matrix below is still pending
+for stable qualification. Do not relabel those cases Pass after one normal upgrade.
 
 1. **Custody — owner-reported restore complete; protection checks pending.** The
    owner privately generated a key, kept an encrypted PKCS#8 copy and reported
@@ -106,16 +116,16 @@ The key-ID variable is public metadata, not a substitute for the private secret.
 2. **Public roots — authorized integration, not activation.** Pin the reviewed
    NIST P-256 public identity `release-key-1` in publisher policy and shared compiled
    App/launcher policy, with fingerprint/drift and unknown/impersonated/mismatched
-   key tests. Keep runtime activation explicitly false and minimum Windows build
-   unqualified. A downloaded manifest cannot teach a client a signing key.
+   key tests. Stable activation stays false; the owner separately approved Preview
+   activation with the Windows 11 technical filter. A downloaded manifest cannot
+   teach a client a signing key.
    Authenticode is a separate decision; no production private key is needed for
    this integration or its tests.
-3. **Protected GitHub setup — configuration verified; secret entry pending.** The
+3. **Protected GitHub setup — configuration and secret-name metadata verified.** The
    separately authorized environment/reviewer/tag configuration passed its live
    strengthened GET-only guard, including administrator bypass disabled. Only
-   the public key-ID variable has been added. Secret transfer is owner-operated
-   and requires review of the destination and account protection. In that later
-   stage, store the private PEM only as environment secret
+   public key-ID variable has been added by the agent. The owner, not the agent,
+   completed the private input. The private PEM belongs only in environment secret
    `PRIVACYMASK_UPDATE_PRIVATE_KEY_PEM`, with environment variable
    `PRIVACYMASK_UPDATE_KEY_ID`. Use an approved secret-input mechanism, never
    plaintext terminal arguments. Test the read-only gate afterwards; reject extra
@@ -178,9 +188,10 @@ configuration drift, including bypass. It does not verify secret contents or rea
 ./scripts/assert-release-environment.ps1 -Repository mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps
 ```
 
-Next owner actions: inspect the protected environment, confirm
-custody/account/recovery protections, perform the direct secret-input step if
-approved, and confirm disposable Windows targets for later qualification.
+Next owner actions: review/merge the Preview activation delivery, approve exact
+A's tag/source and protected signing job, then follow the basic A/B runbook with
+the consenting friend. Confirm custody/account/recovery protections and arrange
+disposable Windows targets separately for full stable/fault qualification.
 Environment creation, solo review and the public pin do not need to be approved
 again; no further private-key generation is needed merely to finish this plan.
-Runtime activation and releases still need separate authority.
+Exact release publication and stable activation still need separate authority.

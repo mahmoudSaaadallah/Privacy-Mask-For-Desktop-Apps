@@ -44,6 +44,11 @@ try {
   try { & (Join-Path $PSScriptRoot 'assert-release-source.ps1') -ExpectedTag 'v99.0.0' } catch { $rejected = $true }
   if (-not $rejected) { throw 'Source gate accepted wrong product/tag identity.' }
   $script:sourceChecks++
+  $sourceGate = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'assert-release-source.ps1') -Raw
+  if ($sourceGate -notmatch 'Get-PrivacyMaskReleaseFlags[^\r\n]+-PreviewOnly') {
+    throw 'Protected source admission lost Preview-only rollout enforcement.'
+  }
+  $script:sourceChecks++
   Write-Host "Passed $script:sourceChecks source gate checks with mocked git; no actual tags or network changes."
 }
 finally {

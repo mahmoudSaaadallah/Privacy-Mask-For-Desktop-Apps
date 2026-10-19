@@ -6,7 +6,7 @@ namespace PrivacyMask.App.Services;
 
 internal sealed record UpdateCheckPreferences(bool Automatic, UpdateReleaseChannel Channel);
 
-/// <summary>Dispatcher-owned discovery: at most one delayed startup check, never a recurring poller.</summary>
+/// <summary>Dispatcher-owned single-flight discovery; the required monitor schedules build-specific checks.</summary>
 internal sealed class UpdateCheckSession : IAsyncDisposable
 {
     private readonly Func<UpdateReleaseChannel, CancellationToken, Task<UpdateCheckResult>> _check;
@@ -27,18 +27,23 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
     private bool _stopped;
     private bool _paused;
     private readonly bool _mandatory;
+    private readonly TimeSpan _successfulCheckInterval;
     internal DateTimeOffset? NextAutomaticAttemptUtc { get; private set; }
 
     internal UpdateCheckSession(Func<UpdateReleaseChannel, CancellationToken, Task<UpdateCheckResult>> check,
         TimeProvider? time = null, IUpdateCheckHistoryStore? history = null,
         Func<UpdateReleaseChannel, UpdateCheckResult?>? preflight = null,
-        Func<CancellationToken, Task>? startupDelay = null, UpdateDownloadActions? downloads = null, bool mandatory = false)
+        Func<CancellationToken, Task>? startupDelay = null, UpdateDownloadActions? downloads = null, bool mandatory = false,
+        TimeSpan? successfulCheckInterval = null)
     {
         _check = check;
         _time = time ?? TimeProvider.System;
         _history = history;
         _downloads = downloads;
         _mandatory = mandatory;
+        _successfulCheckInterval = successfulCheckInterval ?? UpdateRuntimePolicy.SuccessfulCheckInterval;
+        if (_successfulCheckInterval <= TimeSpan.Zero || _successfulCheckInterval > TimeSpan.FromHours(24))
+            throw new ArgumentOutOfRangeException(nameof(successfulCheckInterval));
         if (mandatory) Status.RequireAutomaticUpdates();
         _preflight = preflight;
         _startupDelay = startupDelay ?? (token => Task.Delay(TimeSpan.FromSeconds(30), _time, token));
@@ -192,7 +197,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
             historyIo = _history is not null;
             historyLease = _history?.Acquire();
             var history = _history is null ? new UpdateCheckHistory() : await _history.ReadAsync(token);
-            NextAutomaticAttemptUtc = history.MandatoryDueAt(_time.GetUtcNow());
+            NextAutomaticAttemptUtc = history.MandatoryDueAt(_time.GetUtcNow(), _successfulCheckInterval);
             if (history.RequestPending) throw new InvalidOperationException("Previous request outcome requires inspection.");
             historyIo = false;
             var now = _time.GetUtcNow();
@@ -203,10 +208,10 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
                 if (download is not null) Status.FinishDownload("Download did not start. Wait until the retry time above.");
                 return;
             }
-            if (automatic && (!AutomaticAllowed(channel) || (_mandatory ? history.MandatoryDueAt(now) > now : !history.StartupDue(now)))) return;
+            if (automatic && (!AutomaticAllowed(channel) || (_mandatory ? history.MandatoryDueAt(now, _successfulCheckInterval) > now : !history.StartupDue(now)))) return;
             history = history.Attempt(now);
-            NextAutomaticAttemptUtc = history.MandatoryDueAt(now);
-            // Persist admission BEFORE HTTP; interrupted failures still count toward the 24-hour limit.
+            NextAutomaticAttemptUtc = history.MandatoryDueAt(now, _successfulCheckInterval);
+            // Persist admission BEFORE HTTP; unknown outcomes cannot bypass the retry/history gate.
             historyIo = _history is not null;
             if (_history is not null) await _history.WriteAsync(history, token);
             historyIo = false;
@@ -228,7 +233,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
                     // Even download responses share the durable repository-wide server retry gate.
                     history = history.Complete((UpdateChannel)channel, new(UpdateCheckStatus.UnableToCheck, RetryAt: failure.RetryAt), _time.GetUtcNow());
                     admittedHistory = history;
-                    NextAutomaticAttemptUtc = history.MandatoryDueAt(_time.GetUtcNow());
+                    NextAutomaticAttemptUtc = history.MandatoryDueAt(_time.GetUtcNow(), _successfulCheckInterval);
                     historyIo = _history is not null;
                     using var failureDeadline = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                     if (_history is not null) await _history.WriteAsync(history, failureDeadline.Token);
@@ -244,7 +249,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
                 result = new(UpdateCheckStatus.Available, download);
             }
             history = download is null ? history.Complete((UpdateChannel)channel, result, _time.GetUtcNow()) : history with { RequestPending = false };
-            NextAutomaticAttemptUtc = history.MandatoryDueAt(_time.GetUtcNow());
+            NextAutomaticAttemptUtc = history.MandatoryDueAt(_time.GetUtcNow(), _successfulCheckInterval);
             admittedHistory = history;
             historyIo = _history is not null;
             // Once a response exists, persist its retry information even if opt-out/shutdown raced it.

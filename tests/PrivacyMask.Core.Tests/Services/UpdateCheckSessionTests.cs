@@ -8,11 +8,11 @@ namespace PrivacyMask.Core.Tests.Services;
 public sealed class UpdateCheckSessionTests
 {
     [Fact]
-    public async Task UnconfiguredRuntimeMakesNoNetworkAndDoesNotInspectInvalidSettingsPath()
+    public async Task UnsupportedRuntimeMakesNoNetworkAndDoesNotInspectInvalidSettingsPath()
     {
         using var discovery = new RuntimeUpdateDiscovery("\0invalid");
         var result = await discovery.CheckAsync(UpdateReleaseChannel.Preview, CancellationToken.None);
-        Assert.Equal(UpdateCheckStatus.NotConfigured, result.Status);
+        Assert.Equal(UpdateCheckStatus.ManualUpdateRequired, result.Status);
     }
 
     [Fact]

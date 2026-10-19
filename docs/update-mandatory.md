@@ -1,19 +1,22 @@
-# Required automatic updates — beta.13
+# Required automatic updates — beta.14 Preview trial
 
-Source: `2.0.0-beta.13`, FileVersion `2.0.0.13`. Settings/history schemas remain
+Source: `2.0.0-beta.14`, FileVersion `2.0.0.14`. Settings/history schemas remain
 13/1 and updater protocol remains 1. This implements the owner's required-update
-policy with the explicitly agreed privacy deferrals. It does not publish a release
-or enable the still-disabled compiled activation gate.
+policy with the explicitly agreed privacy deferrals. Preview activation is now
+enabled for managed Windows 11 x64 installations; stable stays disabled. This
+source delivery does not publish a release or claim live qualification. See the
+owner-approved [simple A/B experiment](update-preview-trial.md).
 
 ## End-user policy after separate signed activation
 
 - Startup queues discovery once interactive startup/onboarding completes. A
-  successful check is authoritative for scheduling for 24 hours, including across
+  successful check is authoritative for scheduling for 10 minutes in exactly
+  beta.14, and 24 hours in beta.15 and later, including across
   restarts. One timer schedules the next due check while the process stays running.
 - Network availability/address changes queue coalesced dispatcher hints. Being
   online is not proof that GitHub is reachable; HTTPS results remain authoritative.
   There is no separate connectivity service, ping or third-party Internet probe.
-- Daily scheduling uses the existing private bounded history. Failed requests
+- Build-specific scheduling uses the existing private bounded history. Failed requests
   retry no sooner than 15 minutes. Persisted GitHub Retry-After always takes
   precedence. Unknown/pending history is not erased to force a request.
 - Stable builds follow Stable; beta/rc builds follow Preview. Channel filtering
@@ -66,20 +69,25 @@ uninstall, modify local software or install an older binary. Older empty-trust o
 activation-disabled builds cannot retroactively acquire compulsory behavior.
 One authorized qualified complete installer must bootstrap App and launcher.
 
-`UpdateRuntimePolicy.UpdateOperationsEnabled` remains false and the publisher's
-minimum Windows build remains null. Public `release-key-1` trust remains pinned.
-Environment/secret setup, qualified test bootstrap/activation, real Windows 10/11
-A-to-B and separate release approval are still required. This source-delivery PR
-does not read the owner's private key, configure GitHub or authorize publication.
+Preview runtime activation uses the binary's own prerelease identity. Stable
+activation remains false. The publisher/runtime share a Windows 11 build-22000
+technical filter, not a claim that all such OS builds are qualified. Public
+`release-key-1` trust remains pinned. Protected setup exists and the owner reported
+secret upload; metadata presence is not a signing test. Separate exact-tag release
+approval and the basic real Windows 11 A/B run remain pending; full Windows 10/11
+stable/fault qualification remains separate. This source-delivery PR does not read
+the owner's private key, mutate GitHub configuration or publish a release.
 
 ## Evidence
 
-Unit fixtures cover required pipeline, reconnect/single-flight, daily persisted
+Unit fixtures cover required pipeline, reconnect/single-flight, build-specific persisted
 admission, failure cooldown, Retry-After, safety deferrals/rechecks, direct backend
 cancel/discard refusal, unusable-stage refresh, locked preferences, stop/drain and
-self-shutdown boundaries. Compiled WPF smoke checks verify locked controls, hidden
-cancel/discard actions and no activation-disabled monitor. Fixtures use synthetic
-data/keys and do not execute a real installed-App update.
+self-shutdown boundaries. Preview fixtures also cover signed B discovery on A's
+10-minute clock, history reuse with B's daily cadence and unchanged retry gates.
+Compiled WPF smoke checks verify locked controls, hidden cancel/discard actions,
+enabled monitor startup, schedule disclosure and no disabled-host monitor. Fixtures
+use synthetic data/keys and do not execute a real installed-App update.
 
 Network hints use [.NET NetworkChange](https://learn.microsoft.com/en-us/dotnet/api/system.net.networkinformation.networkchange.networkavailabilitychanged).
 See [signing readiness](update-signing-readiness.md), [public trust](update-public-trust.md)

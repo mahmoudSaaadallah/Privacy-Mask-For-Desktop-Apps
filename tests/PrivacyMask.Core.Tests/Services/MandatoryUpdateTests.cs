@@ -191,7 +191,7 @@ public sealed class MandatoryUpdateTests
     }
 
     [Fact]
-    public async Task MandatorySessionIgnoresOldOptOutAndReusesPersistedDailyAdmission()
+    public async Task MandatorySessionIgnoresOldOptOutAndReusesPersistedBuildCadence()
     {
         var store = new History();
         var clock = new DiscoveryClock();
@@ -208,7 +208,10 @@ public sealed class MandatoryUpdateTests
         await Run();
         await Run();
         Assert.Equal(1, calls);
-        clock.Now = clock.Now.AddHours(24);
+        clock.Now += UpdateRuntimePolicy.SuccessfulCheckInterval - TimeSpan.FromSeconds(1);
+        await Run();
+        Assert.Equal(1, calls);
+        clock.Now += TimeSpan.FromSeconds(1);
         await Run();
         Assert.Equal(2, calls);
     }
@@ -221,7 +224,7 @@ public sealed class MandatoryUpdateTests
         Assert.Equal(now.AddMinutes(15), failure.MandatoryDueAt(now));
         Assert.Equal(now.AddDays(3), (failure with { RetryAfterUtc = now.AddDays(3) }).MandatoryDueAt(now));
         Assert.Equal(DateTimeOffset.MaxValue, (failure with { RequestPending = true }).MandatoryDueAt(now));
-        Assert.Equal(now.AddDays(1), (failure with { PreviewSuccessUtc = now }).MandatoryDueAt(now));
+        Assert.Equal(now + UpdateRuntimePolicy.SuccessfulCheckInterval, (failure with { PreviewSuccessUtc = now }).MandatoryDueAt(now));
     }
 
     // Display/state-machine fixture only; no signed data, staging, process or network authority.

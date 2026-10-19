@@ -101,8 +101,9 @@ Use `gh secret list --repo mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps --env
 to confirm the **name and timestamp only**. Presence does not prove key contents
 or successful signing. A future separately approved qualified signing run must
 verify its public identity and signed assets. Do not create a test tag or release
-merely to check this setup. Runtime activation remains disabled and the supported
-Windows baseline remains unqualified.
+merely to check this setup. This secret-input procedure does not activate runtime
+updates. Beta.14 separately prepares the [limited Preview experiment](update-preview-trial.md);
+stable activation and full Windows qualification remain pending.
 
 References: [GitHub CLI secret stdin and local encryption](https://cli.github.com/manual/gh_secret_set),
 [environment protection and secret access](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments),

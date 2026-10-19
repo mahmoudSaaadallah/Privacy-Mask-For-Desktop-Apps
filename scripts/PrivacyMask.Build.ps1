@@ -69,11 +69,15 @@ function Get-PrivacyMaskProductVersion {
 function Get-PrivacyMaskReleaseFlags {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
-    [Parameter(Mandatory = $true)][string]$Tag
+    [Parameter(Mandatory = $true)][string]$Tag,
+    [switch]$PreviewOnly
   )
   $identity = Get-PrivacyMaskVersionIdentity -RepoRoot $RepoRoot
   if ($Tag -cne $identity.ExpectedTag) {
     throw "Release tag '$Tag' does not match '$($identity.ExpectedTag)'."
+  }
+  if ($PreviewOnly -and -not $identity.IsPrerelease) {
+    throw 'This updater rollout permits Preview releases only. Stable publication needs a separately reviewed qualification change.'
   }
   # The workflow already runs on an existing pushed tag. Never let gh invent one.
   '--verify-tag'

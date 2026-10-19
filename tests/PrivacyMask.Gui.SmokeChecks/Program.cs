@@ -482,9 +482,30 @@ internal static class Program
         Check(!monitor.IsRunning, "Activation-disabled build started an automatic monitor.");
         monitor.Dispose();
         monitor.Pulse();
+        var previewStatus = new UpdateStatusViewModel();
+        previewStatus.RequireAutomaticUpdates();
+        var automaticChecks = 0;
+        var previewController = new MandatoryUpdateController(previewStatus, new(() => true, () => true,
+            _ =>
+            {
+                automaticChecks++;
+                previewStatus.Complete(new(UpdateCheckStatus.UpToDate), previewStatus.RequiredChannel, DateTimeOffset.UtcNow);
+                return Task.CompletedTask;
+            }, () => Task.CompletedTask, () => Task.CompletedTask, () => Task.CompletedTask,
+            () => DateTimeOffset.UtcNow.AddHours(24), () => null));
+        using (var previewMonitor = new MandatoryUpdateMonitor(Dispatcher.CurrentDispatcher, previewController))
+        {
+            previewMonitor.Start();
+            Drain();
+            Check(previewMonitor.IsRunning && automaticChecks == 1, "Enabled Preview did not start its automatic dispatcher check.");
+        }
+        Check(Find<TextBlock>(root).Any(text => text.Text == AboutInformation.UpdateScheduleSummary),
+            "Settings do not disclose the actual compiled update schedule.");
+        var expectedCadence = AboutInformation.ProductVersion == "2.0.0-beta.14" ? "10 minutes" : "24 hours";
+        Check(AboutInformation.UpdateScheduleSummary.Contains(expectedCadence), "Trial cadence does not match the current version.");
         window.AllowClose();
         window.Close();
-        Console.WriteLine("Required update policy passed: locked preferences, hidden cancel/discard actions and no activation-disabled monitor.");
+        Console.WriteLine("Required update policy passed: locked preferences, hidden cancel/discard actions, enabled Preview startup and no disabled-host monitor.");
     }
 
     private static void CheckAboutReference(MainWindow window, FrameworkElement root, SettingsViewModel session, string? screenshots)
