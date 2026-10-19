@@ -40,7 +40,7 @@ public sealed class ScheduledUpdateCheckTests
     }
 
     [Fact]
-    public async Task UnconfiguredProductionCreatesNoTimerNoHistoryIoAndNoRequest()
+    public async Task UnsupportedProductionInstallationCreatesNoTimerNoHistoryIoAndNoRequest()
     {
         using var runtime = new RuntimeUpdateDiscovery("\0invalid");
         var store = new MemoryHistory();
@@ -52,7 +52,7 @@ public sealed class ScheduledUpdateCheckTests
         Assert.Equal(0, delays);
         Assert.Equal(0, store.Reads);
         Assert.Equal(0, store.Writes);
-        Assert.Contains("not configured", session.Status.StatusText);
+        Assert.Contains("release installer", session.Status.StatusText);
     }
 
     [Fact]

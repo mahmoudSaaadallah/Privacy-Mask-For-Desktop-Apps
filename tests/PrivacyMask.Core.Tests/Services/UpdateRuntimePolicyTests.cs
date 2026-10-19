@@ -29,9 +29,9 @@ public sealed class UpdateRuntimePolicyTests
         var policy = ReadPublisherPolicy();
         Assert.Equal(UpdateRuntimePolicy.TrustedKeys.ToArray(), policy.TrustedKeys.ToArray());
         Assert.Single(policy.TrustedKeys);
-        Assert.Null(policy.MinimumWindowsBuild);
-        // Adding a key must not silently invent a qualified Windows baseline.
-        Assert.Throws<ReleaseValidationException>(() => ManifestRules.Validate(policy));
+        Assert.Equal(UpdateRuntimePolicy.MinimumAutomaticWindowsBuild, policy.MinimumWindowsBuild);
+        // A technical Preview floor is not a completed Windows qualification report.
+        ManifestRules.Validate(policy);
     }
 
     [Fact]
@@ -44,12 +44,12 @@ public sealed class UpdateRuntimePolicyTests
     }
 
     [Fact]
-    public void ShippedVerifierRetainsPublicTrustButRefusesOperations()
+    public void ShippedPreviewVerifierEnablesOnlyPinnedAuthenticatedOperations()
     {
         var verifier = UpdateRuntimePolicy.CreateVerifier();
         Assert.True(verifier.HasTrustedKeys);
-        Assert.False(UpdateRuntimePolicy.UpdateOperationsEnabled);
-        Assert.False(verifier.IsConfigured);
+        Assert.True(UpdateRuntimePolicy.UpdateOperationsEnabled);
+        Assert.True(verifier.IsConfigured);
         Assert.Throws<ReleaseValidationException>(() => verifier.Verify([], []));
     }
 
@@ -57,7 +57,7 @@ public sealed class UpdateRuntimePolicyTests
     public async Task PinnedButUnapprovedRuntimeCannotSendHttp()
     {
         using var fixture = new UpdateDiscoveryFixture();
-        using var client = new GitHubReleaseClient(UpdateRuntimePolicy.CreateVerifier(), fixture.Clock, fixture.Handler);
+        using var client = new GitHubReleaseClient(new(UpdateRuntimePolicy.TrustedKeys, false), fixture.Clock, fixture.Handler);
         Assert.Equal(UpdateCheckStatus.NotConfigured, (await client.CheckAsync(fixture.Context)).Status);
         Assert.Empty(fixture.Handler.Requests);
     }
@@ -65,13 +65,13 @@ public sealed class UpdateRuntimePolicyTests
     [Fact]
     public async Task PinnedButUnapprovedNativeFactoryDoesNotInspectHistoryRoot()
     {
-        using var client = GitHubReleaseClient.ForManagedApply(UpdateRuntimePolicy.CreateVerifier(), "\0invalid");
+        using var client = GitHubReleaseClient.ForManagedApply(new(UpdateRuntimePolicy.TrustedKeys, false), "\0invalid");
         var context = new UpdateCheckContext("2.0.0-beta.12", UpdateChannel.Preview, "win-x64", 22631, 1, 13, InstallationKind.Managed);
         Assert.Equal(UpdateCheckStatus.NotConfigured, (await client.CheckAsync(context)).Status);
     }
 
     [Fact]
-    public async Task PinnedButUnapprovedStagingCannotSendHttpOrInspectStagingRoot()
+    public async Task ActivatedProductionStagingRejectsForeignSignatureBeforeHttpOrStagingIo()
     {
         using var fixture = new UpdateDiscoveryFixture();
         fixture.Release();

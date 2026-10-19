@@ -22,7 +22,9 @@ internal sealed class RuntimeUpdateDiscovery : IDisposable
         {
             var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ManifestRules.AppId);
             var app = Environment.ProcessPath;
-            if (!OperatingSystem.IsWindows() || RuntimeInformation.ProcessArchitecture != Architecture.X64 || app is null ||
+            if (!OperatingSystem.IsWindows() ||
+                !UpdateRuntimePolicy.SupportsAutomaticUpdates(AboutInformation.FullVersion, Environment.OSVersion.Version.Build) ||
+                RuntimeInformation.ProcessArchitecture != Architecture.X64 || app is null ||
                 !SamePath(app, Path.Combine(root, "app", LauncherBoot.ApplicationFileName)) ||
                 !SamePath(_settingsPath, Path.Combine(root, "settings.v1.json")) || ManagedStartupPath.Resolve(app) is null)
                 return new(UpdateCheckStatus.ManualUpdateRequired);

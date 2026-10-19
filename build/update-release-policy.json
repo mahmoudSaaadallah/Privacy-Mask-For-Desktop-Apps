@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "minimumWindowsBuild": null,
+  "minimumWindowsBuild": 22000,
   "minimumUpdaterProtocol": 1,
   "settingsCompatibility": {
     "minimumReadableSchema": 1,
