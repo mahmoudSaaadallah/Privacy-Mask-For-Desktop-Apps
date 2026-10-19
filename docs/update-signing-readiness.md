@@ -1,12 +1,12 @@
 # Signing readiness and isolated update qualification
 
-Status: protected-environment setup, updated 2026-10-19 (Africa/Cairo), following
-merged PR #58 at `7630369`. The owner separately authorized environment creation
-and protection only, explicitly excluding private-key upload and publication.
-The environment and reviewer/tag restrictions were created and read back through
-GitHub's API. Administrator-bypass verification in the UI is still pending, so
-setup is not fully qualified. This delivery does not access private keys, add
-secrets or variables, enable runtime update operations, push tags or publish.
+Status: signing-secret preparation, updated 2026-10-19 (Africa/Cairo), following
+merged PR #59 at `86b9861`. Owner-authorized environment setup is now verified
+through GitHub's API, including explicit Boolean `can_admins_bypass: false`.
+The public environment variable `PRIVACYMASK_UPDATE_KEY_ID=release-key-1` has been
+set and read back. The environment had zero secret names at inspection; private
+key transfer remains an owner-operated step. This delivery does not access private
+keys, upload secrets, enable runtime update operations, push tags or publish.
 
 ## Actual starting point
 
@@ -25,16 +25,17 @@ secrets or variables, enable runtime update operations, push tags or publish.
   reviewer (`mahmoudSaaadallah`), self-review allowed and exactly one selected
   deployment rule: tag `v*`, with no branch rule. The production GET-only
   `assert-release-environment.ps1` passed against this configuration on 2026-10-19.
+  The strengthened assertion also requires explicit Boolean administrator-bypass
+  denial; missing, null, string, numeric or enabled bypass metadata is rejected.
 - The owner approved **SoloMaintainer**, public-key integration and now the scoped
   environment setup. Private secret transfer, runtime activation and publication
-  remain outside that authorization. Passing the API guard is not proof that
-  administrator bypass is disabled, a release was approved or live updates work.
+  remain separate stages. Passing the API guard proves only the currently
+  returned configuration, not per-run approval, key custody or live updates.
 
 ## Approved review model: SoloMaintainer
 
 `build/update-signing-approval.json` records the reviewed policy. The authorized
-environment setup now matches the following API-verifiable requirements; the
-administrator-bypass row still requires the manual check below:
+environment setup now matches the following API-verifiable requirements:
 
 | Setting | Required value |
 | --- | --- |
@@ -43,7 +44,7 @@ administrator-bypass row still requires the manual check below:
 | Prevent self-review | Off, deliberately: the owner may approve their own run |
 | Deployment restrictions | Selected tags only: exactly one tag rule `v*`; no branch rule |
 | Approval | Owner manually reviews each exact source/tag/workflow before signing |
-| Administrator bypass | Owner disables it where available and verifies in GitHub UI |
+| Administrator bypass | Explicit Boolean `can_admins_bypass: false`; guard rejects unknown/enabled values |
 
 This is human approval by a solo owner, **not independent review or a second
 factor**. Protect the GitHub account and recovery methods separately. Future
@@ -52,39 +53,46 @@ enabled, not silently adding a second person to this policy.
 
 The no-environment `validate-release-environment` job first validates the merged
 tag/source, then performs GET-only environment/reviewer/tag-policy checks. The
-signing job depends on its success. Missing, inaccessible or mismatched settings
-fail closed before signing-job admission; the preflight does not create an
+signing job depends on its success. Reviewer, self-review, administrator-bypass
+and exact tag-policy checks all run before signing admission. Missing,
+inaccessible or mismatched settings fail closed before signing-job admission;
+the preflight does not create an
 environment. This matters because GitHub can otherwise create a referenced missing
 environment without protections. See [GitHub environment behavior and approval
 settings](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments).
 
 The guard checks configuration at that point, not the eventual approval event,
-key custody, administrator-bypass setting or qualification results. The documented
-GET response does not provide a reliable bypass-setting proof; verify it manually.
+key custody or qualification results. The live environment response includes
+`can_admins_bypass`; only explicit Boolean false passes. If an API response stops
+providing this field, admission fails closed instead of assuming bypass is off.
 Restrict who can change environment settings and recheck before approval: no
 read-only preflight prevents an administrator changing them afterwards. See
 [environment metadata](https://docs.github.com/en/rest/deployments/environments),
 [tag-policy metadata](https://docs.github.com/en/rest/deployments/branch-policies)
 and [job prerequisites](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idneeds).
 
-### Remaining manual protection check
+### Protection recheck and owner secret handoff
 
-Browser automation was unavailable during setup; no UI bypass setting was changed
-or verified. Before adding a signing secret or approving a release, the owner must:
+Browser automation was unavailable during initial setup. A subsequent API read
+returned `can_admins_bypass: false`; no further bypass mutation was needed. The
+strengthened GET-only guard now verifies that flag automatically. Before secret
+entry or each release approval, the owner should also inspect the UI:
 
 1. Open [repository environments](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/settings/environments)
    and select `privacy-mask-release`.
-2. Deselect **Allow administrators to bypass configured protection rules**, then
-   choose **Save protection rules**. Reload and confirm it remains deselected.
+2. Confirm **Allow administrators to bypass configured protection rules** is
+   deselected. If it is not, stop and correct it before secret entry or approval.
 3. Keep **Required reviewers** set to the owner only and **Prevent self-review**
    deselected, as explicitly approved for SoloMaintainer. Do not add branch rules
    or loosen the existing tag-only `v*` rule.
-4. Rerun the GET-only assertion below. It checks reviewer/tag policy, not the
-   bypass checkbox; record the separate UI verification without exposing secrets.
+4. Rerun the GET-only assertion below, which now checks the API bypass flag as
+   well as reviewer/tag policy. Do not use a signing run to test configuration.
 
 This manual step follows [GitHub's environment setup instructions](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments).
 No test tag or signing run is needed to verify these settings. Do not add the
 private PEM or its passphrase to chat, this document or a PR.
+For the next owner-operated step, use the [direct secret-input guide](update-signing-secret-setup.md).
+The key-ID variable is public metadata, not a substitute for the private secret.
 
 ## Execution stages and approval boundaries
 
@@ -102,11 +110,12 @@ private PEM or its passphrase to chat, this document or a PR.
    unqualified. A downloaded manifest cannot teach a client a signing key.
    Authenticode is a separate decision; no production private key is needed for
    this integration or its tests.
-3. **Protected GitHub setup — API configuration complete; UI check pending.** The
+3. **Protected GitHub setup — configuration verified; secret entry pending.** The
    separately authorized environment/reviewer/tag configuration passed its live
-   GET-only guard. Complete the administrator-bypass UI check above before any
-   later secret setup. Secret transfer still needs separate authorization. In
-   that later stage, store the private PEM only as environment secret
+   strengthened GET-only guard, including administrator bypass disabled. Only
+   the public key-ID variable has been added. Secret transfer is owner-operated
+   and requires review of the destination and account protection. In that later
+   stage, store the private PEM only as environment secret
    `PRIVACYMASK_UPDATE_PRIVATE_KEY_PEM`, with environment variable
    `PRIVACYMASK_UPDATE_KEY_ID`. Use an approved secret-input mechanism, never
    plaintext terminal arguments. Test the read-only gate afterwards; reject extra
@@ -163,15 +172,15 @@ pwsh -NoProfile -File scripts/test-update-manifest-schema.ps1
 
 The real environment assertion is a separate GET-only diagnostic, not part of
 offline fixtures. It passed after the authorized API setup; rerun it to detect
-configuration drift. It does not verify administrator bypass or secret readiness:
+configuration drift, including bypass. It does not verify secret contents or readiness:
 
 ```powershell
 ./scripts/assert-release-environment.ps1 -Repository mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps
 ```
 
-Next owner actions: complete the administrator-bypass UI check, confirm
-custody/account/recovery protections and disposable Windows targets, then
-separately authorize secret setup and later limited activation/publication.
+Next owner actions: inspect the protected environment, confirm
+custody/account/recovery protections, perform the direct secret-input step if
+approved, and confirm disposable Windows targets for later qualification.
 Environment creation, solo review and the public pin do not need to be approved
 again; no further private-key generation is needed merely to finish this plan.
 Runtime activation and releases still need separate authority.
