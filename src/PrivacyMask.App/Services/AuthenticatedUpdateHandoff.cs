@@ -5,7 +5,7 @@ using PrivacyMask.Updates;
 
 namespace PrivacyMask.App.Services;
 
-/// <summary>Called only with frozen shell writers and explicit restart consent. No default/background invocation.</summary>
+/// <summary>Called only with frozen shell writers and revalidated restart safety under the required update policy.</summary>
 internal static class AuthenticatedUpdateHandoff
 {
     internal static async Task RunAsync(string operationId, UpdateChannel channel, bool minimized,

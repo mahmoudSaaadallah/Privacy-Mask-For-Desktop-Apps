@@ -7,6 +7,8 @@ does not activate network checks, downloads or installation for an end user.
 No signing credentials, key, tag, Release or installed-user mutation is introduced.
 This describes the beta.11 boundary. The subsequent [beta.12 public-key delivery](update-public-trust.md)
 pins the owner's key but keeps a separate compiled runtime activation gate disabled.
+The subsequent [beta.13 required policy](update-mandatory.md) supersedes the manual
+buttons/consent below with automatic download/apply and privacy-safety deferrals.
 
 ## End-user flow after separately approved activation
 

@@ -26,22 +26,33 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
     private bool _startupScheduled;
     private bool _stopped;
     private bool _paused;
+    private readonly bool _mandatory;
+    internal DateTimeOffset? NextAutomaticAttemptUtc { get; private set; }
 
     internal UpdateCheckSession(Func<UpdateReleaseChannel, CancellationToken, Task<UpdateCheckResult>> check,
         TimeProvider? time = null, IUpdateCheckHistoryStore? history = null,
         Func<UpdateReleaseChannel, UpdateCheckResult?>? preflight = null,
-        Func<CancellationToken, Task>? startupDelay = null, UpdateDownloadActions? downloads = null)
+        Func<CancellationToken, Task>? startupDelay = null, UpdateDownloadActions? downloads = null, bool mandatory = false)
     {
         _check = check;
         _time = time ?? TimeProvider.System;
         _history = history;
         _downloads = downloads;
+        _mandatory = mandatory;
+        if (mandatory) Status.RequireAutomaticUpdates();
         _preflight = preflight;
         _startupDelay = startupDelay ?? (token => Task.Delay(TimeSpan.FromSeconds(30), _time, token));
     }
 
     internal UpdateStatusViewModel Status { get; } = new();
     internal Task CheckAsync(UpdateReleaseChannel savedChannel) => StartCheck(savedChannel, automatic: false);
+
+    internal Task CheckMandatoryAsync(Func<UpdateCheckPreferences> preferences)
+    {
+        if (!_mandatory) throw new InvalidOperationException("Required update policy is not active.");
+        _preferences = preferences;
+        return StartCheck(preferences().Channel, automatic: true);
+    }
 
     internal Task DownloadAsync(UpdateReleaseChannel savedChannel)
     {
@@ -60,12 +71,17 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
 
     internal void CancelDownload()
     {
-        if (Status.IsDownloading) _activeCancellation?.Cancel();
+        if (!_mandatory && Status.IsDownloading) _activeCancellation?.Cancel();
     }
 
-    internal Task DiscardDownloadAsync()
+    internal Task DiscardDownloadAsync() => _mandatory ? Task.CompletedTask : DiscardOwnedAsync();
+
+    // Only the controller may retire an unusable owned stage for a fresh retry.
+    internal Task RetireFailedDownloadAsync() => Status.RequiresNewDownload ? DiscardOwnedAsync() : Task.CompletedTask;
+
+    private Task DiscardOwnedAsync()
     {
-        if (_downloads is null || !Status.CanDiscardDownload || _active is { IsCompleted: false }) return Task.CompletedTask;
+        if (_downloads is null || !Status.CanRetireDownload || _active is { IsCompleted: false }) return Task.CompletedTask;
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _active = completion.Task;
         _activeAutomatic = false;
@@ -103,7 +119,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
         {
             var saved = savedPreferences();
             // No trust, opt-out or unsupported root: no delay timer and no history IO.
-            if (!saved.Automatic || _preflight?.Invoke(saved.Channel) is not null) return Task.CompletedTask;
+            if ((!_mandatory && !saved.Automatic) || _preflight?.Invoke(saved.Channel) is not null) return Task.CompletedTask;
         }
         catch (Exception) { return Task.CompletedTask; } // Optional discovery never blocks healthy startup.
         _startupCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
@@ -120,7 +136,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
             await _startupDelay(token);
             token.ThrowIfCancellationRequested();
             var saved = _preferences!();
-            if (!_stopped && !_paused && saved.Automatic) await StartCheck(saved.Channel, automatic: true);
+            if (!_stopped && !_paused && (_mandatory || saved.Automatic)) await StartCheck(saved.Channel, automatic: true);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception) { /* No background modal, noisy retry or polling loop. */ }
@@ -131,8 +147,8 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
     {
         if (_stopped || _preferences is null) return;
         var saved = _preferences();
-        if (!saved.Automatic) _startupCancellation?.Cancel();
-        if (_activeAutomatic && (!saved.Automatic || saved.Channel != _activeChannel)) _activeCancellation?.Cancel();
+        if (!_mandatory && !saved.Automatic) _startupCancellation?.Cancel();
+        if (_activeAutomatic && ((!_mandatory && !saved.Automatic) || saved.Channel != _activeChannel)) _activeCancellation?.Cancel();
     }
 
     private Task StartCheck(UpdateReleaseChannel channel, bool automatic)
@@ -176,6 +192,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
             historyIo = _history is not null;
             historyLease = _history?.Acquire();
             var history = _history is null ? new UpdateCheckHistory() : await _history.ReadAsync(token);
+            NextAutomaticAttemptUtc = history.MandatoryDueAt(_time.GetUtcNow());
             if (history.RequestPending) throw new InvalidOperationException("Previous request outcome requires inspection.");
             historyIo = false;
             var now = _time.GetUtcNow();
@@ -186,8 +203,9 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
                 if (download is not null) Status.FinishDownload("Download did not start. Wait until the retry time above.");
                 return;
             }
-            if (automatic && (!AutomaticAllowed(channel) || !history.StartupDue(now))) return;
+            if (automatic && (!AutomaticAllowed(channel) || (_mandatory ? history.MandatoryDueAt(now) > now : !history.StartupDue(now)))) return;
             history = history.Attempt(now);
+            NextAutomaticAttemptUtc = history.MandatoryDueAt(now);
             // Persist admission BEFORE HTTP; interrupted failures still count toward the 24-hour limit.
             historyIo = _history is not null;
             if (_history is not null) await _history.WriteAsync(history, token);
@@ -210,6 +228,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
                     // Even download responses share the durable repository-wide server retry gate.
                     history = history.Complete((UpdateChannel)channel, new(UpdateCheckStatus.UnableToCheck, RetryAt: failure.RetryAt), _time.GetUtcNow());
                     admittedHistory = history;
+                    NextAutomaticAttemptUtc = history.MandatoryDueAt(_time.GetUtcNow());
                     historyIo = _history is not null;
                     using var failureDeadline = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                     if (_history is not null) await _history.WriteAsync(history, failureDeadline.Token);
@@ -225,6 +244,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
                 result = new(UpdateCheckStatus.Available, download);
             }
             history = download is null ? history.Complete((UpdateChannel)channel, result, _time.GetUtcNow()) : history with { RequestPending = false };
+            NextAutomaticAttemptUtc = history.MandatoryDueAt(_time.GetUtcNow());
             admittedHistory = history;
             historyIo = _history is not null;
             // Once a response exists, persist its retry information even if opt-out/shutdown raced it.
@@ -277,7 +297,7 @@ internal sealed class UpdateCheckSession : IAsyncDisposable
     }
 
     private bool AutomaticAllowed(UpdateReleaseChannel channel) => !_stopped && !_paused
-        && _preferences?.Invoke() is { Automatic: true } saved && saved.Channel == channel;
+        && _preferences?.Invoke() is { } saved && (_mandatory || saved.Automatic) && saved.Channel == channel;
 
     internal async Task SuspendAsync()
     {

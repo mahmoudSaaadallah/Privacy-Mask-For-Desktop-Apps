@@ -106,12 +106,53 @@ public sealed class UpdateRestartCoordinatorTests
         Assert.DoesNotContain("shutdown", fixture.Events);
     }
 
+    [Theory]
+    [InlineData("panic", (int)UpdateRestartResult.PanicLocked)]
+    [InlineData("edits", (int)UpdateRestartResult.SettingsChanged)]
+    [InlineData("visible", (int)UpdateRestartResult.ProtectedWindowsVisible)]
+    public async Task Required_restart_defers_without_any_user_dialog(string reason, int expected)
+    {
+        var fixture = new Host { Panic = reason == "panic", Edits = reason == "edits", Visible = reason == "visible" };
+        Assert.Equal((UpdateRestartResult)expected, await fixture.Coordinator.RunAsync((_, _) => throw new Exception("Unsafe worker"), automatic: true));
+        Assert.Empty(fixture.Events);
+    }
+
+    [Fact]
+    public async Task Required_restart_skips_consent_and_checks_window_visibility_after_drain()
+    {
+        var fixture = new Host();
+        Assert.Equal(UpdateRestartResult.HandedOff, await fixture.Coordinator.RunAsync((check, _) => { check(); return Task.CompletedTask; }, automatic: true));
+        Assert.Equal(new[] { "freeze", "shutdown" }, fixture.Events);
+        fixture = new Host();
+        var drain = Signal();
+        fixture.UiDrain = drain.Task;
+        var pending = fixture.Coordinator.RunAsync((_, _) => throw new Exception("Unsafe worker"), automatic: true);
+        fixture.Visible = true;
+        drain.SetResult();
+        Assert.Equal(UpdateRestartResult.ProtectedWindowsVisible, await pending);
+        Assert.False(fixture.Frozen);
+    }
+
+    [Fact]
+    public async Task Required_final_assertion_rejects_a_new_visible_window()
+    {
+        var fixture = new Host();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Coordinator.RunAsync((check, _) =>
+        {
+            fixture.Visible = true;
+            check();
+            return Task.CompletedTask;
+        }, automatic: true));
+        Assert.DoesNotContain("shutdown", fixture.Events);
+        Assert.False(fixture.Queue.IsStopping);
+    }
+
     private static TaskCompletionSource Signal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
     private sealed class Host
     {
         internal ShellOperationQueue Queue { get; } = new();
         internal List<string> Events { get; } = [];
-        internal bool Panic, Edits, Closing, Frozen;
+        internal bool Panic, Edits, Closing, Frozen, Visible;
         internal bool Resolve = true, Consent = true;
         internal Task UiDrain = Task.CompletedTask;
         internal UpdateRestartCoordinator Coordinator { get; }
@@ -120,6 +161,6 @@ public sealed class UpdateRestartCoordinatorTests
             () => { Events.Add("consent"); return Consent; },
             () => { Frozen = true; Events.Add("freeze"); return UiDrain; },
             () => { Frozen = false; Events.Add("thaw"); },
-            () => { Events.Add("shutdown"); return Task.CompletedTask; }));
+            () => { Events.Add("shutdown"); return Task.CompletedTask; }, () => Visible));
     }
 }

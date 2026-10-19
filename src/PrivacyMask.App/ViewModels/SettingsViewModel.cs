@@ -373,18 +373,21 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     public static Array UpdateChannels { get; } = Enum.GetValues<UpdateReleaseChannel>();
     public bool AutomaticUpdateChecks
     {
-        get => _automaticUpdateChecks;
-        set => SetProperty(ref _automaticUpdateChecks, value);
+        get => Updates.IsMandatory || _automaticUpdateChecks;
+        set { if (!Updates.IsMandatory) SetProperty(ref _automaticUpdateChecks, value); }
     }
     public UpdateReleaseChannel UpdateChannel
     {
-        get => _updateChannel;
+        get => Updates.IsMandatory ? Updates.RequiredChannel : _updateChannel;
         set
         {
+            if (Updates.IsMandatory) return;
             if (SetProperty(ref _updateChannel, value)) RaisePropertyChanged(nameof(UpdateChannelExplanation));
         }
     }
-    public string UpdateChannelExplanation => UpdateChannel == UpdateReleaseChannel.Preview
+    public string UpdateChannelExplanation => Updates.IsMandatory
+        ? $"Required updates follow the installed build's {UpdateChannel} channel. This policy cannot be disabled; versions never downgrade."
+        : UpdateChannel == UpdateReleaseChannel.Preview
         ? "Preview includes beta, release-candidate and stable releases."
         : "Stable excludes prereleases. Switching channels never downgrades your installed version.";
 

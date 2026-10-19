@@ -450,7 +450,41 @@ internal static class Program
         session.Updates.Complete(new(UpdateCheckStatus.NotConfigured), session.UpdateChannel, DateTimeOffset.UtcNow);
         Check(before == System.Text.Json.JsonSerializer.Serialize(session.ToModel()) && !session.HasPendingChanges,
             "Manual discovery changed the settings edit session.");
+        CheckMandatoryUpdatePolicy(candidate);
         Console.WriteLine("Update card passed: connected check/download/cancel/discard/install, no self-drain and bounded ready/restart/cancel/repair layouts with unchanged settings.");
+    }
+
+    private static void CheckMandatoryUpdatePolicy(UpdateCandidate candidate)
+    {
+        var status = new UpdateStatusViewModel();
+        status.RequireAutomaticUpdates();
+        var settings = new DefaultSettingsFactory().Create();
+        settings.AutomaticUpdateChecks = false;
+        using var model = SettingsViewModel.FromModel(settings, RuntimeMode.Standard, "C:\\Synthetic\\settings.v1.json", new HashSet<HotkeyAction>(), status);
+        var window = new MainWindow(model, new DesktopApplicationCatalog(new DesktopWindowInspector()));
+        var root = (FrameworkElement)window.Content;
+        model.SelectedPage = DesktopPage.Settings;
+        status.Complete(new(UpdateCheckStatus.Available, candidate), status.RequiredChannel, DateTimeOffset.UtcNow);
+        status.BeginDownload();
+        Layout(root, new Size(1000, 780));
+        var channel = Find<ComboBox>(root).Single(control => AutomationProperties.GetName(control) == "Update release channel");
+        var automatic = Find<CheckBox>(root).Single(control => AutomationProperties.GetName(control) == "Automatically check for updates");
+        Check(!channel.IsEnabled && !automatic.IsEnabled && automatic.IsChecked == true, "Required policy can be disabled or changed through settings.");
+        Check(Find<Button>(root).Single(control => AutomationProperties.GetName(control) == "Download update").Visibility == Visibility.Collapsed,
+            "Required update unexpectedly requires a Download click.");
+        Check(Find<AdaptivePairPanel>(root).Any(panel => panel.Visibility == Visibility.Collapsed &&
+            Find<Button>(panel).Any(button => AutomationProperties.GetName(button) == "Cancel update download")),
+            "Required update cancellation/actions remain visible.");
+        var controller = new MandatoryUpdateController(status, new(() => false, () => throw new Exception("No connectivity inspection"),
+            _ => throw new Exception("No check"), () => Task.CompletedTask, () => Task.CompletedTask, () => Task.CompletedTask, () => null, () => null));
+        using var monitor = new MandatoryUpdateMonitor(Dispatcher.CurrentDispatcher, controller);
+        monitor.Start();
+        Check(!monitor.IsRunning, "Activation-disabled build started an automatic monitor.");
+        monitor.Dispose();
+        monitor.Pulse();
+        window.AllowClose();
+        window.Close();
+        Console.WriteLine("Required update policy passed: locked preferences, hidden cancel/discard actions and no activation-disabled monitor.");
     }
 
     private static void CheckAboutReference(MainWindow window, FrameworkElement root, SettingsViewModel session, string? screenshots)

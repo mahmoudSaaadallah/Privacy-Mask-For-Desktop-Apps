@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0-beta.13 - Source delivery (not published)
+
+- Add required automatic discovery at startup/reconnect and daily after successful checks, with durable 15-minute failure cooldown and server retry deadlines
+- Automatically download newer compatible signed releases and install without confirmation when Panic, unsaved/invalid edits and visible protected windows are clear
+- Lock automatic-check/channel preferences and remove download/cancel/discard/install choices in required runtime mode; old opt-out settings cannot disable policy
+- Revalidate restart safety during draining, authenticated handoff and immediately before shutdown; preserve normal PIN, settings and recovery protections
+- Coalesce reconnect notifications, use one adaptive dispatcher timer and stop without awaiting the install task's own shutdown
+- Keep compiled activation disabled, production Windows baseline unqualified and live qualification pending; no signing secret/environment/tag/Release is created
+
 ## 2.0.0-beta.12 - Source delivery (not published)
 
 - Pin the owner's P-256 public key `release-key-1` in the shared App/launcher trust policy and publisher policy

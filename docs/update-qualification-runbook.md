@@ -40,9 +40,12 @@ App/launcher/settings outcome. A result applies only to that OS/build and exact
 source/artifact pair. Record the tester/approver outside public evidence where
 personal details are not necessary. Do not bulk change pending results to Pass.
 
-For normal A-to-B: open Settings > Updates, select and save the intended channel,
-check, download and verify, choose Update now, resolve edits, then confirm the
-restart warning after closing/minimizing synthetic sensitive windows. Confirm B's
+For normal required A-to-B: use separately authorized activation-enabled builds
+and observe startup/reconnect discovery on the build's fixed channel, automatic
+verified download and no cancel/discard/confirmation. Keep synthetic protected
+windows visible or Panic/edits active to verify deferral, then resolve them using
+normal controls and close/minimize synthetic protected windows. Observe automatic
+restart without a prompt. Confirm B's
 exact identity, readiness/commit, saved preferences, profile behavior and normal
 PIN operation. "Ready", a closed old window or a version label alone is not proof.
 
@@ -50,7 +53,8 @@ Failure cases must confirm A stayed alive or the exact previous App/settings wer
 recovered, not merely that an error appeared. Never delete unknown pending history,
 staging or recovery backups to force a pass. Stop and preserve sanitized evidence
 on a repair-required state. An abandoned prepared identity requires a new download;
-cancelled consent before preparation can reuse its verified stage.
+safe privacy deferral before preparation can reuse its verified stage. In required
+mode an ordinary Exit still drains safely; it is not a permanent in-app opt-out.
 
 Actual disk-full, VM crash and physical power-loss are different tests. Do not fill
 the host's real system drive or interrupt personal workloads. Physical fault tests

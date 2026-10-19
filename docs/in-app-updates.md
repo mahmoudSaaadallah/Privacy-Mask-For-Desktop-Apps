@@ -35,6 +35,10 @@ owner's approved P-256 public key in App/launcher and publisher policy. A separa
 compiled activation gate stays false; no network/install operation is enabled and
 the Windows baseline remains unqualified. Secret/environment setup and live
 qualification are still separate owner-authorized steps.
+The [beta.13 required-update policy](update-mandatory.md) supersedes optional
+checks/manual consent with automatic startup/reconnect/daily discovery, required
+download and safe automatic apply. It retains the disabled activation gate and
+all trust/recovery/qualification requirements.
 
 ## Current implementation and gaps
 
