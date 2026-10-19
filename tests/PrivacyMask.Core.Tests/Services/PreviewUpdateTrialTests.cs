@@ -7,6 +7,24 @@ namespace PrivacyMask.Core.Tests.Services;
 
 public sealed class PreviewUpdateTrialTests
 {
+    [Fact]
+    public void CompiledBAndItsUiUseDailyCadenceWithRetainedAHistory()
+    {
+        Assert.True(SemanticVersion.TryParse(UpdateRuntimePolicy.ProductVersion, out var current));
+        Assert.True(SemanticVersion.TryParse("2.0.0-beta.15", out var firstB));
+        Assert.True(current.CompareTo(firstB) >= 0);
+        Assert.Equal(AboutInformation.FullVersion, UpdateRuntimePolicy.ProductVersion);
+        Assert.Equal(TimeSpan.FromHours(24), UpdateRuntimePolicy.SuccessfulCheckInterval);
+        Assert.Equal("24 hours", AboutInformation.UpdateCheckCadence);
+        Assert.Contains("every 24 hours after success", AboutInformation.UpdateScheduleSummary);
+
+        var now = DateTimeOffset.UtcNow;
+        var historyFromA = new UpdateCheckHistory(LastAttemptUtc: now, PreviewSuccessUtc: now);
+        Assert.Equal(now.AddHours(24), historyFromA.MandatoryDueAt(now));
+        Assert.Equal(now.AddHours(2), (historyFromA with { LastAttemptUtc = now.AddHours(-1), RetryAfterUtc = now.AddHours(2),
+            PreviewSuccessUtc = null }).MandatoryDueAt(now));
+    }
+
     [Theory]
     [InlineData("2.0.0-beta.14", 10)]
     [InlineData("2.0.0-beta.14+abc123", 10)]
