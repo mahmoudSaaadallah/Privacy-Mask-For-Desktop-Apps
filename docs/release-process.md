@@ -5,7 +5,7 @@ not committed to the source repository.
 
 ## Version policy
 
-The source currently prepares `2.0.0-beta.13`. This is a testing delivery, not a
+The source currently prepares `2.0.0-beta.14`. This is a testing delivery, not a
 stable release announcement. Publishing/tagging remains a separate authorized
 action after merge and qualification. A commit or PR is not itself a release.
 Earlier source builds displayed 2.0.0 while still unreleased; the beta suffix
@@ -35,10 +35,10 @@ on merge or by a Git hook.
 
 | Identity | Current value | Purpose |
 | --- | --- | --- |
-| Version | `2.0.0-beta.13` | UI label, archive filename and exact `v2.0.0-beta.13` tag |
+| Version | `2.0.0-beta.14` | UI label, archive filename and exact `v2.0.0-beta.14` tag |
 | InformationalVersion | `$(Version)` plus SDK Git metadata when available | Full build provenance; About shows the product before `+` and exposes the full value in its tooltip/help |
 | AssemblyVersion | `2.0.0.0` | Numeric assembly identity, stable throughout this prerelease cycle |
-| FileVersion | `2.0.0.13` | Numeric Windows file/build revision |
+| FileVersion | `2.0.0.14` | Numeric Windows file/build revision |
 
 Windows numeric fields cannot contain `beta` or `rc`. Increase FileVersion's
 fourth component for the next delivered beta/candidate/stable build of the same
@@ -80,9 +80,10 @@ the finished ZIP does not.
 ## Publish a GitHub release
 
 First complete [protected signing setup](update-signing-operations.md). The
-committed production policy pins the owner's public key but intentionally has no
-qualified OS baseline, so the publisher currently fails closed. This is not an automatic
-environment/secret setup or permission to publish an existing version again.
+committed policy pins the owner's public key and uses a Windows 11 technical
+build filter for the owner-approved [Preview A/B trial](update-preview-trial.md).
+Stable runtime and stable signing-job admission remain disabled; the trial is
+not full OS qualification. This is not permission to reuse an existing version.
 The [signing readiness plan](update-signing-readiness.md) records the owner's
 SoloMaintainer choice, separate setup approvals and real-App lab gates. A
 GET-only no-environment preflight now blocks signing-job admission if the existing
@@ -90,7 +91,7 @@ reviewer/tag configuration is missing or mismatched; naming an environment alone
 is insufficient. The plan does not create it or authorize a tag push.
 
 1. Merge the fully verified release changes into `main`.
-2. Create an annotated version tag matching the source, such as `v2.0.0-beta.13`, on the release commit.
+2. After exact source/tag approval, create an annotated version tag matching the source, such as `v2.0.0-beta.14`, on the release commit.
 3. Push the tag to GitHub.
 4. The `release` workflow requires the named protected environment and a clean
    merged exact version tag, builds/tests the project and normal Windows ZIP,
@@ -98,7 +99,9 @@ is insufficient. The plan does not create it or authorize a tag push.
    and independently verifies them. It creates a Draft containing all five
    assets, checks the uploaded sizes/SHA-256 digests/identities and source tag,
    then publishes. Beta/rc remains **Pre-release** with `--latest=false`;
-   stable is explicitly Latest. `--verify-tag` prevents inventing a missing tag.
+   stable publishing is blocked by the source gate during this Preview trial.
+   General stable/Latest classification is retained for a future qualified rollout.
+   `--verify-tag` prevents inventing a missing tag.
    Missing signing configuration or any failed gate stops publication; upload
    failure may leave an unpublished draft for explicit operator inspection.
 5. Download the published ZIP and perform the install/uninstall smoke test.
@@ -106,8 +109,8 @@ is insufficient. The plan does not create it or authorize a tag push.
 Example tag commands:
 
 ```powershell
-git tag -a v2.0.0-beta.13 -m "PrivacyMask v2.0.0-beta.13"
-git push origin v2.0.0-beta.13
+git tag -a v2.0.0-beta.14 -m "PrivacyMask v2.0.0-beta.14"
+git push origin v2.0.0-beta.14
 ```
 
 These commands are a release procedure, not commands run by the current PR.
@@ -216,3 +219,11 @@ downloads without a cancellation choice and applies without confirmation when
 Panic, edits and visible protected windows permit a safe restart. Daily successes,
 bounded failure retries and shared server deadlines survive restarts. Runtime
 activation and signed-publication/OS/bootstrap qualification remain separate gates.
+
+The [beta.14 Preview experiment](update-preview-trial.md) separately enables
+managed Windows 11 x64 prerelease operations and a beta.14-only 10-minute
+successful-check cadence. Beta.15+ defaults to daily; failure/server retry and
+privacy/recovery gates remain. Protected source admission blocks stable tags.
+The Windows build floor is a technical Preview filter, not completed qualification;
+exact tag approval, real signing/publication and consenting-device A/B evidence
+remain separate from source delivery. The beta.12/.13 statements above are history.

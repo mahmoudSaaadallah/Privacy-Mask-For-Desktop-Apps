@@ -1,5 +1,12 @@
 # In-app updates: delivery plan and architecture
 
+Current beta.14 scope is the owner-approved [Preview A/B trial](update-preview-trial.md):
+managed Windows 11 x64 automatic updates, a beta.14-only 10-minute successful-check
+cadence and daily checks in beta.15+. Protected setup and owner-operated secret
+input exist; actual signed publication/live A-to-B evidence remain pending.
+Stable activation/admission stay disabled. The phase history below describes
+earlier delivery boundaries, not the current activation state.
+
 Status: phase 1 specifications, phase 2 signing/packaging tooling, phase 3
 [read-only discovery](update-discovery.md), phase 4 [verified staging](update-download.md),
 and internal phase-5a/b/c.1/c.2 recovery/prototype/[preparation](update-preparation.md)/

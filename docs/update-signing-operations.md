@@ -3,23 +3,27 @@
 Status: phase 2 originally supplied developer packaging/verification and a draft
 publisher. Subsequent deliveries through beta.11 implement discovery, download,
 App install UI, authenticated handoff, launcher and recovery. Beta.12 now
-[pins the owner's public key](update-public-trust.md), but runtime activation and
-live OS qualification remain unconfigured. The current
+[pins the owner's public key](update-public-trust.md). Beta.14 now enables the
+owner-approved [Windows 11 Preview A/B experiment](update-preview-trial.md),
+not stable activation or full OS qualification. The current
 [signing readiness plan](update-signing-readiness.md) records the separately
 authorized protected environment and public key-ID variable. Private secret
-entry, live qualification, runtime activation and publication remain pending.
+entry was reported complete by the owner and its name metadata was verified;
+actual signing, live A/B results and publication remain pending.
 
 ## Deliberate setup gate
 
 `build/update-release-policy.json` pins the approved public key `release-key-1`
-and intentionally retains `minimumWindowsBuild: null`. Production signed packaging
-fails closed until the Windows baseline is qualified and configured. App/launcher
-also retain a separate disabled compiled activation gate. This blocks live runtime
-updates independently of the tag-driven release publisher's environment guard.
+and uses `minimumWindowsBuild: 22000` as a Windows 11 technical filter for this
+Preview trial, not evidence of qualification on that minimum build. App/launcher
+enable operations only in prerelease binaries; stable activation remains off.
+Protected tag-source admission rejects stable releases during the trial.
 The publisher never silently falls back to an unsigned installer-only release.
 Normal local installer packaging remains available without a signing key.
 
-An owner must approve the following before an authorized release:
+The scoped Preview exception follows the [A/B runbook](update-preview-trial.md).
+The following full-qualification/custody requirements still apply to stable
+approval; they are not a claim that the trial completed those tests:
 
 1. Qualify the supported Windows baseline, schema compatibility and source
    migrations. Put the actual minimum build into the policy, not the smoke
