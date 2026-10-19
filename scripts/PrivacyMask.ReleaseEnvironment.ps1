@@ -23,6 +23,11 @@ function Assert-PrivacyMaskReleaseEnvironment {
   try {
     $environment = Invoke-PrivacyMaskEnvironmentRead $route
     if ($environment.name -cne 'privacy-mask-release') { throw 'identity' }
+    # Require an explicit Boolean false from the current API response. Missing or
+    # differently typed metadata must not silently permit administrator bypass.
+    if ($environment.can_admins_bypass -isnot [bool] -or $environment.can_admins_bypass) {
+      throw 'administrator bypass'
+    }
     $review = @($environment.protection_rules | Where-Object { $_.type -ceq 'required_reviewers' })
     $preventSelfReview = $ReviewPolicy -ceq 'IndependentReview'
     if ($review.Count -ne 1 -or $review[0].prevent_self_review -isnot [bool] -or
@@ -52,15 +57,16 @@ function Assert-PrivacyMaskReleaseEnvironment {
   }
   catch {
     # Never echo remote bodies, reviewer identities, tokens or raw command exceptions.
-    throw 'Release environment is missing, inaccessible or lacks required review/self-review/tag protections. Signing remains blocked.'
+    throw 'Release environment is missing, inaccessible or lacks required review/self-review/admin-bypass/tag protections. Signing remains blocked.'
   }
   [pscustomobject]@{
     Environment = 'privacy-mask-release'
     RequiredReviewers = $reviewers.Count
     ReviewPolicy = $ReviewPolicy
     PreventSelfReview = $preventSelfReview
+    CanAdminsBypass = $false
     AllowedRefType = 'tag'
     AllowedRefPattern = 'v*'
-    Scope = 'Configuration only, not per-run approval, key custody, admin-bypass proof or qualification. SoloMaintainer is not independent review.'
+    Scope = 'Current API configuration only, not per-run approval, key custody or qualification. SoloMaintainer is not independent review.'
   }
 }

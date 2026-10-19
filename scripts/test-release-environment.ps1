@@ -21,18 +21,25 @@ function Invoke-PrivacyMaskEnvironmentRead {
 
 $repository = 'mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps'
 foreach ($fault in @('none', 'unavailable', 'wrong-name', 'no-review', 'self-review', 'string-boolean',
+    'admin-bypass', 'missing-admin-bypass', 'null-admin-bypass', 'string-admin-bypass', 'numeric-admin-bypass',
     'no-reviewers', 'bad-reviewer', 'boolean-reviewer', 'string-count', 'no-branch-policy', 'protected-branches', 'all-branches',
     'broad-tag', 'branch-not-tag', 'missing-type', 'extra-rule', 'incomplete-page', 'duplicate-review')) {
   $script:fault = $fault
   $script:routes.Clear()
   $script:environment = @{
     name = 'privacy-mask-release'
+    can_admins_bypass = $false
     protection_rules = @(@{ type = 'required_reviewers'; prevent_self_review = $true;
       reviewers = @(@{ type = 'User'; reviewer = @{ id = 123 } }) })
     deployment_branch_policy = @{ protected_branches = $false; custom_branch_policies = $true }
   }
   $script:policies = @{ total_count = 1; branch_policies = @(@{ name = 'v*'; type = 'tag' }) }
   switch ($fault) {
+    'admin-bypass' { $script:environment.can_admins_bypass = $true }
+    'missing-admin-bypass' { $script:environment.Remove('can_admins_bypass') }
+    'null-admin-bypass' { $script:environment.can_admins_bypass = $null }
+    'string-admin-bypass' { $script:environment.can_admins_bypass = 'false' }
+    'numeric-admin-bypass' { $script:environment.can_admins_bypass = 0 }
     'wrong-name' { $script:environment.name = 'other' }
     'no-review' { $script:environment.protection_rules = @() }
     'self-review' { $script:environment.protection_rules[0].prevent_self_review = $false }
@@ -51,10 +58,13 @@ foreach ($fault in @('none', 'unavailable', 'wrong-name', 'no-review', 'self-rev
     'incomplete-page' { $script:policies.total_count = 101 }
     'duplicate-review' { $script:environment.protection_rules += $script:environment.protection_rules[0] }
   }
+  # Exercise the same PSCustomObject shape that ConvertFrom-Json produces live.
+  $script:environment = $script:environment | ConvertTo-Json -Depth 10 | ConvertFrom-Json
   $failed = $false
   try {
     $result = Assert-PrivacyMaskReleaseEnvironment $repository -ReviewPolicy IndependentReview
-    Assert-EnvironmentCheck ($fault -eq 'none' -and $result.PreventSelfReview -eq $true)
+    Assert-EnvironmentCheck ($fault -eq 'none' -and $result.PreventSelfReview -eq $true -and
+      $result.CanAdminsBypass -is [bool] -and -not $result.CanAdminsBypass)
   }
   catch {
     $failed = $true
@@ -70,25 +80,34 @@ Assert-EnvironmentCheck ($script:routes.Count -eq $before)
 try { Assert-PrivacyMaskReleaseEnvironment $repository; throw 'Expected rejection.' }
 catch { Assert-EnvironmentCheck ($_.Exception.Message -like 'Release review policy is not approved*') }
 Assert-EnvironmentCheck ($script:routes.Count -eq $before)
-foreach ($soloFault in @('none', 'wrong-owner', 'team', 'multiple', 'self-review-blocked')) {
+foreach ($soloFault in @('none', 'wrong-owner', 'team', 'multiple', 'self-review-blocked',
+    'admin-bypass', 'missing-admin-bypass', 'null-admin-bypass', 'string-admin-bypass', 'numeric-admin-bypass')) {
   $script:fault = 'none'
   $script:environment = @{
     name = 'privacy-mask-release'
+    can_admins_bypass = $false
     protection_rules = @(@{ type = 'required_reviewers'; prevent_self_review = $false;
       reviewers = @(@{ type = 'User'; reviewer = @{ id = 123; login = 'mahmoudSaaadallah' } }) })
     deployment_branch_policy = @{ protected_branches = $false; custom_branch_policies = $true }
   }
   $script:policies = @{ total_count = 1; branch_policies = @(@{ name = 'v*'; type = 'tag' }) }
   switch ($soloFault) {
+    'admin-bypass' { $script:environment.can_admins_bypass = $true }
+    'missing-admin-bypass' { $script:environment.Remove('can_admins_bypass') }
+    'null-admin-bypass' { $script:environment.can_admins_bypass = $null }
+    'string-admin-bypass' { $script:environment.can_admins_bypass = 'false' }
+    'numeric-admin-bypass' { $script:environment.can_admins_bypass = 0 }
     'wrong-owner' { $script:environment.protection_rules[0].reviewers[0].reviewer.login = 'another-user' }
     'team' { $script:environment.protection_rules[0].reviewers[0].type = 'Team' }
     'multiple' { $script:environment.protection_rules[0].reviewers += $script:environment.protection_rules[0].reviewers[0] }
     'self-review-blocked' { $script:environment.protection_rules[0].prevent_self_review = $true }
   }
+  $script:environment = $script:environment | ConvertTo-Json -Depth 10 | ConvertFrom-Json
   $failed = $false
   try {
     $result = Assert-PrivacyMaskReleaseEnvironment $repository -ReviewPolicy SoloMaintainer
-    Assert-EnvironmentCheck ($soloFault -eq 'none' -and -not $result.PreventSelfReview -and $result.RequiredReviewers -eq 1)
+    Assert-EnvironmentCheck ($soloFault -eq 'none' -and -not $result.PreventSelfReview -and
+      $result.RequiredReviewers -eq 1 -and $result.CanAdminsBypass -is [bool] -and -not $result.CanAdminsBypass)
   }
   catch { $failed = $true }
   Assert-EnvironmentCheck ($failed -eq ($soloFault -ne 'none'))

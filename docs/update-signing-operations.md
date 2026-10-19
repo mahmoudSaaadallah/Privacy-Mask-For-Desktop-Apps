@@ -5,9 +5,9 @@ publisher. Subsequent deliveries through beta.11 implement discovery, download,
 App install UI, authenticated handoff, launcher and recovery. Beta.12 now
 [pins the owner's public key](update-public-trust.md), but runtime activation and
 live OS qualification remain unconfigured. The current
-[signing readiness plan](update-signing-readiness.md) prepares protected admission
-and isolated lab packets; it creates no production key, GitHub environment,
-repository setting, tag or release.
+[signing readiness plan](update-signing-readiness.md) records the separately
+authorized protected environment and public key-ID variable. Private secret
+entry, live qualification, runtime activation and publication remain pending.
 
 ## Deliberate setup gate
 
@@ -15,7 +15,7 @@ repository setting, tag or release.
 and intentionally retains `minimumWindowsBuild: null`. Production signed packaging
 fails closed until the Windows baseline is qualified and configured. App/launcher
 also retain a separate disabled compiled activation gate. This blocks live runtime
-updates independently of the tag-driven release publisher's missing environment.
+updates independently of the tag-driven release publisher's environment guard.
 The publisher never silently falls back to an unsigned installer-only release.
 Normal local installer packaging remains available without a signing key.
 
@@ -50,7 +50,8 @@ An owner must approve the following before an authorized release:
    exactly one reviewer, repository owner `mahmoudSaaadallah`; allow self-review
    deliberately so the owner can approve their own runs. This is not independent
    review. Restrict deployments to exactly one tag rule `v*`, with no branch rule;
-   disable administrator bypass where available and verify it in the UI. Check
+   require explicit Boolean `can_admins_bypass: false` in the API guard and
+   inspect the corresponding UI setting. Check
    the exact merged commit/tag/workflow before each manual deployment approval.
    A job's environment name alone does not prove protection. Future independent
    review requires a reviewed policy change and self-review prevention enabled.
@@ -58,6 +59,8 @@ An owner must approve the following before an authorized release:
    a repository-wide secret; set environment variable `PRIVACYMASK_UPDATE_KEY_ID`
    to the matching reviewed ID. Never paste the secret into a command argument
    or stdout. Use the organization's approved secret/vault input mechanism.
+   The [owner-operated direct input guide](update-signing-secret-setup.md) handles
+   an encrypted backup without writing an unencrypted key file.
 6. Complete key custody, incident and normal bridge-rotation procedures in
    [the manifest contract](update-manifest.md). Consider Authenticode separately;
    this manifest signature does not remove Windows reputation warnings.
@@ -105,13 +108,14 @@ managed-string copy or defend against a compromised runner/administrator.
 1. Human approval/version qualification and merge happen first. An explicitly
    authorized exact product tag is pushed on the merged commit.
 2. `release.yml` uses full Git history and per-tag serialization. A separate
-   no-environment preflight checks source/tag and GET-only environment/reviewer/tag
+   no-environment preflight checks source/tag and GET-only environment/reviewer/bypass/tag
    configuration. The protected signing job `needs` that preflight. Missing or
    mismatched environment configuration blocks admission rather than allowing
    GitHub to create an unprotected environment implicitly. The protected job
    repeats the source gate before its signing step receives the secret. Approval
    remains GitHub's manual deployment gate; the diagnostic does not prove approval,
-   bypass settings, immutable settings or key custody.
+   immutable settings or key custody. Bypass metadata is checked only at admission;
+   an administrator can still change the environment afterwards.
 3. Build/test normal application and installer ZIP. Run update schema, signature,
    archive, source-gate, publisher and ephemeral real-EXE checks.
 4. Expose the private secret only to the signed-package step. Missing/invalid
