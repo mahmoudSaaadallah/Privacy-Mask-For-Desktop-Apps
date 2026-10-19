@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0-beta.14 - Preview activation trial (not published)
+
+- Enable the owner's pinned signed-update verifier for Preview binaries, with a managed Windows 11 x64 runtime preflight; stable activation stays disabled
+- Check every 10 minutes after success in exactly beta.14, including build metadata; beta.15 and later return to 24 hours automatically without a preference or history-schema change
+- Preserve the 15-minute failure cooldown, server retry deadlines, unknown-history rejection, mandatory verified download and privacy-aware automatic restart
+- Set Windows build 22000 as the Preview compatibility filter, not a claim of completed OS qualification; block stable release admission during this experiment
+- Show the actual build-specific schedule in Settings and privacy help; cover active monitor startup and signed A-to-B discovery with synthetic download/apply actions
+- Advance file revision to 2.0.0.14; settings/history/updater schemas remain 13/1/1, and no private key is read, tag pushed or release published by this source delivery
+
 ## 2.0.0-beta.13 - Source delivery (not published)
 
 - Add required automatic discovery at startup/reconnect and daily after successful checks, with durable 15-minute failure cooldown and server retry deadlines
