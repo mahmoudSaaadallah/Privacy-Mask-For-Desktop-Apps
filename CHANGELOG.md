@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased - Publisher tooling fix (no App version change)
+
+- Resolve newly created drafts through authenticated paginated release listings, match the CLI-created URL and validate the numeric release ID; do not use GitHub's published-only tag endpoint for drafts
+- Publish and confirm the exact validated release ID, retaining tag, signature-asset metadata, digest/size and prerelease/Latest gates
+- Refuse existing releases/drafts before creation and stop on ambiguous results; never resume, delete or select an existing draft automatically
+- Cover published-only endpoint 404 behavior, pagination/PowerShell array shapes, duplicate drafts and identity failures with offline publisher regressions; existing beta.14 drafts/tag are unchanged by this source fix
+
 ## 2.0.0-beta.14 - Preview activation trial (not published)
 
 - Enable the owner's pinned signed-update verifier for Preview binaries, with a managed Windows 11 x64 runtime preflight; stable activation stays disabled

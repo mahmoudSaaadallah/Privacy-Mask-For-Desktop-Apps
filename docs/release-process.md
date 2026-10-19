@@ -97,8 +97,12 @@ is insufficient. The plan does not create it or authorize a tag push.
    merged exact version tag, builds/tests the project and normal Windows ZIP,
    creates an app-only update ZIP plus signed manifest with the approved key,
    and independently verifies them. It creates a Draft containing all five
-   assets, checks the uploaded sizes/SHA-256 digests/identities and source tag,
-   then publishes. Beta/rc remains **Pre-release** with `--latest=false`;
+   assets only if no release/draft already exists for the tag. It resolves the
+   created URL to exactly one numeric release ID across authenticated API pages,
+   checks uploaded sizes/SHA-256 digests/identities and source tag, then publishes
+   and confirms that exact ID. Draft reads never use the published-only tag
+   endpoint, and publication never uses an ambiguous tag-based edit. Beta/rc
+   remains **Pre-release** with `make_latest=false`;
    stable publishing is blocked by the source gate during this Preview trial.
    General stable/Latest classification is retained for a future qualified rollout.
    `--verify-tag` prevents inventing a missing tag.
@@ -117,6 +121,11 @@ These commands are a release procedure, not commands run by the current PR.
 Tagging/publishing a beta does not qualify the stable release. Complete the
 remaining live keyboard/PIN/DPI/resource/stability gates in
 [gui-qualification.md](gui-qualification.md) before declaring 2.0.0 stable.
+
+If publication fails after draft creation, inspect remote state rather than
+rerunning the workflow. A tooling fix merged after a tag does not change that
+tag's workflow. Never move the tag to pick up the fix or blindly publish by tag.
+See the [beta.14 publication incident](release-publication-incident.md).
 
 ## Future improvements
 
