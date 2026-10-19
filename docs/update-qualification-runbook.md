@@ -1,11 +1,17 @@
 # Update lab runbook — preparation, not a pass report
 
+This is the full stable/fault qualification matrix. The owner separately approved
+the simpler [beta.14/beta.15 Preview experiment](update-preview-trial.md) directly
+on a consenting friend's Windows 11 device, without a mandatory VM/test account
+for ordinary use or the basic non-destructive upgrade. That limited experiment
+does not mark the matrix below Pass. Fault injection stays off personal devices.
+
 Use only disposable Windows 10 x64 and Windows 11 x64 VMs or separately approved
 test machines, with a standard non-admin test account and synthetic app content.
 Do not test on the developer's installed PrivacyMask, real protected content or
 personal settings/PIN. This packet does not provision a VM or install anything.
 
-## Before any live A-to-B execution
+## Before full-qualification live A-to-B execution
 
 1. Record exact OS edition/build, architecture, actual DPI/monitor arrangement,
    VM/snapshot identity and standard-user status in that environment's evidence.
@@ -13,8 +19,8 @@ personal settings/PIN. This packet does not provision a VM or install anything.
    from a CI runner or set the policy's minimum build from a fixture example.
 2. Obtain separate owner approval for signing custody, public fingerprints,
    compiled App/launcher roots, bootstrap eligibility and publishing the exact
-   A/B test releases. Beta.12 pins the owner's public root but retains a disabled
-   runtime activation gate; current production runtime cannot perform live A-to-B.
+   A/B test releases. Beta.12 originally kept activation disabled; beta.14 enables
+   the separately approved managed Windows 11 Preview trial, never stable activation.
    Offline fixture signing tests are not a bypass and do not qualify the real App.
    The planned SoloMaintainer policy requires the owner's manual release approval;
    it deliberately allows self-review and must not be described as independent
