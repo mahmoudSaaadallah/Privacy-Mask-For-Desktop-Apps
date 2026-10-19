@@ -2,6 +2,12 @@
 # intercepted. No real encrypted file, key, network call or secret upload is used.
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+# GitHub's -Command wrapper forwards LASTEXITCODE after a successful script.
+# Mocked native failures must not escape into that caller-owned exit status.
+$entryNativeExitVariable = Get-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue
+$entryNativeExitPresent = $null -ne $entryNativeExitVariable
+$entryNativeExitCode = if ($entryNativeExitPresent) { $entryNativeExitVariable.Value } else { $null }
+$completedGuideChecks = 0
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $guide = Get-Content -LiteralPath (Join-Path $repoRoot 'docs/update-signing-secret-setup.md') -Raw
 $match = [regex]::Match($guide, '(?s)```powershell\s*\r?\n(.*?)\r?\n```')
@@ -130,9 +136,18 @@ try {
         Assert-SecretGuide ($global:privacyMaskGuideFixture.UploadAttempts -eq $expectedAttempts) "upload admission: $case"
         Assert-SecretGuide (($captured -join "`n") -notmatch 'BEGIN PRIVATE KEY|VEVTVA==') "no private output: $case"
     }
-    Write-Host "Passed $($global:privacyMaskGuideFixture.Checks) owner secret-input guide checks; synthetic text only, no key, network or secret writes."
+    $completedGuideChecks = $global:privacyMaskGuideFixture.Checks
 }
 finally {
     Pop-Location
     Remove-Variable -Name privacyMaskGuideFixture -Scope Global
+    if ($entryNativeExitPresent) { $global:LASTEXITCODE = $entryNativeExitCode }
+    else { Remove-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue }
 }
+$restoredNativeExitVariable = Get-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue
+if (($null -ne $restoredNativeExitVariable) -ne $entryNativeExitPresent -or
+    ($entryNativeExitPresent -and $restoredNativeExitVariable.Value -ne $entryNativeExitCode)) {
+    throw 'Secret guide fixture changed the caller native exit status.'
+}
+$completedGuideChecks++
+Write-Host "Passed $completedGuideChecks owner secret-input guide checks; synthetic text only, no key, network or secret writes."
