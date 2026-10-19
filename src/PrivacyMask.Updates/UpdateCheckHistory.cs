@@ -4,13 +4,16 @@ internal sealed record UpdateCheckHistory(int SchemaVersion = 1, DateTimeOffset?
     DateTimeOffset? RetryAfterUtc = null, DateTimeOffset? StableSuccessUtc = null, DateTimeOffset? PreviewSuccessUtc = null,
     bool RequestPending = false)
 {
-    // Required updates use daily successful checks and bounded retries after
-    // failure. A reconnect never bypasses a persisted server Retry-After.
-    internal DateTimeOffset MandatoryDueAt(DateTimeOffset now)
+    // Successful cadence comes from this binary, not from saved preferences.
+    // Failure cooldown and persisted server Retry-After are never shortened.
+    internal DateTimeOffset MandatoryDueAt(DateTimeOffset now, TimeSpan? successfulCheckInterval = null)
     {
+        var successInterval = successfulCheckInterval ?? UpdateRuntimePolicy.SuccessfulCheckInterval;
+        if (successInterval <= TimeSpan.Zero || successInterval > TimeSpan.FromHours(24))
+            throw new ArgumentOutOfRangeException(nameof(successfulCheckInterval));
         if (RequestPending) return DateTimeOffset.MaxValue;
         var success = StableSuccessUtc > PreviewSuccessUtc || PreviewSuccessUtc is null ? StableSuccessUtc : PreviewSuccessUtc;
-        var delay = success is not null && success >= LastAttemptUtc ? TimeSpan.FromHours(24) : TimeSpan.FromMinutes(15);
+        var delay = success is not null && success >= LastAttemptUtc ? successInterval : TimeSpan.FromMinutes(15);
         var due = LastAttemptUtc is { } attempt ? attempt + delay : now;
         return RetryAfterUtc > due ? RetryAfterUtc.Value : due;
     }
