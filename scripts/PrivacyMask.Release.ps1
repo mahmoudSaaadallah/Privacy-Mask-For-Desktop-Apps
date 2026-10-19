@@ -23,6 +23,23 @@ function Assert-PrivacyMaskRemoteTag {
   if ($object.type -ne 'commit' -or $object.sha -cne $ExpectedCommit) { throw 'GitHub tag does not point to the verified source commit.' }
 }
 
+function Get-PrivacyMaskTagReleases {
+  param([string]$Repository, [string]$Tag)
+  # The tag-name endpoint returns published releases, not drafts. Include all
+  # authenticated pages so an earlier draft cannot be hidden past page one.
+  $json = (Invoke-PrivacyMaskGh @('api', "repos/$Repository/releases?per_page=100", '--paginate', '--slurp')) -join "`n"
+  # A property envelope preserves single/empty nested arrays on PS 5.1 and 7;
+  # top-level ConvertFrom-Json pipeline enumeration otherwise flattens one page.
+  $envelope = ('{"pages":' + $json + '}') | ConvertFrom-Json
+  if ($envelope.pages -isnot [Array]) { throw 'Invalid release-list metadata.' }
+  foreach ($page in $envelope.pages) {
+    if ($page -isnot [Array]) { throw 'Invalid paginated release metadata.' }
+    foreach ($release in $page) {
+      if ($release.tag_name -ceq $Tag) { $release }
+    }
+  }
+}
+
 function Publish-PrivacyMaskRelease {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -51,11 +68,23 @@ function Publish-PrivacyMaskRelease {
     }
   }
   Assert-PrivacyMaskRemoteTag $Repository $Tag $ExpectedCommit
-  Invoke-PrivacyMaskGh (@('release', 'create', $Tag) + $paths + @('--repo', $Repository, '--draft',
-    '--generate-notes', '--title', "PrivacyMask $Tag") + $flags) | Out-Null
-  $releaseRoute = "repos/$Repository/releases/tags/$([Uri]::EscapeDataString($Tag))"
+  if (@(Get-PrivacyMaskTagReleases $Repository $Tag).Count -ne 0) {
+    throw 'A release or draft already exists for this tag. Inspect it explicitly; automatic retry/resume is refused.'
+  }
+  $createdUrl = Invoke-PrivacyMaskGh (@('release', 'create', $Tag) + $paths + @('--repo', $Repository, '--draft',
+    '--generate-notes', '--title', "PrivacyMask $Tag") + $flags)
+  if ($createdUrl -isnot [string] -or -not $createdUrl.StartsWith("https://github.com/$Repository/releases/tag/", [StringComparison]::Ordinal) -or
+      $createdUrl -match '\s') { throw 'Missing or invalid created draft URL. Inspect remote state; do not retry blindly.' }
+  $matchingReleases = @(Get-PrivacyMaskTagReleases $Repository $Tag)
+  if ($matchingReleases.Count -ne 1 -or $matchingReleases[0].html_url -cne $createdUrl -or
+      ($matchingReleases[0].id -isnot [int] -and $matchingReleases[0].id -isnot [long]) -or $matchingReleases[0].id -le 0) {
+    throw 'Created draft identity is missing or ambiguous. No draft was published.'
+  }
+  $releaseId = $matchingReleases[0].id
+  $releaseRoute = "repos/$Repository/releases/$releaseId"
   $release = (Invoke-PrivacyMaskGh @('api', $releaseRoute)) | ConvertFrom-Json
-  if ($release.draft -isnot [bool] -or -not $release.draft -or $release.tag_name -cne $Tag -or
+  if ($release.id -ne $releaseId -or $release.html_url -cne $createdUrl -or
+      $release.draft -isnot [bool] -or -not $release.draft -or $release.tag_name -cne $Tag -or
       $release.prerelease -isnot [bool] -or $release.prerelease -ne $identity.IsPrerelease -or @($release.assets).Count -ne $names.Count) {
     throw 'Draft release identity/classification/asset set is inconsistent. It was not published.'
   }
@@ -68,10 +97,11 @@ function Publish-PrivacyMaskRelease {
     $seen[$asset.name] = $true
   }
   Assert-PrivacyMaskRemoteTag $Repository $Tag $ExpectedCommit
-  $latest = if ($identity.IsPrerelease) { '--latest=false' } else { '--latest=true' }
-  Invoke-PrivacyMaskGh @('release', 'edit', $Tag, '--repo', $Repository, '--draft=false', $latest) | Out-Null
+  $latest = if ($identity.IsPrerelease) { 'false' } else { 'true' }
+  # Never resolve an edit by tag: duplicate drafts could select another object.
+  Invoke-PrivacyMaskGh @('api', '--method', 'PATCH', $releaseRoute, '-F', 'draft=false', '-f', "make_latest=$latest") | Out-Null
   $published = (Invoke-PrivacyMaskGh @('api', $releaseRoute)) | ConvertFrom-Json
-  if ($published.draft -isnot [bool] -or $published.draft -or $published.tag_name -cne $Tag -or
+  if ($published.id -ne $releaseId -or $published.draft -isnot [bool] -or $published.draft -or $published.tag_name -cne $Tag -or
       $published.prerelease -ne $identity.IsPrerelease) {
     throw 'GitHub did not confirm the expected published release. Inspect remote state; do not retry blindly.'
   }
