@@ -82,6 +82,10 @@ jobs:
         shell: powershell
         run: .\scripts\test-update-qualification.ps1
 
+      - name: Test owner secret-input guide without keys or external writes
+        shell: powershell
+        run: .\scripts\test-signing-secret-guide.ps1
+
       - name: Test proposed update manifest schemas
         shell: pwsh
         run: .\scripts\test-update-manifest-schema.ps1
