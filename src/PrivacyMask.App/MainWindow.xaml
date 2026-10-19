@@ -387,7 +387,7 @@
                                         <CheckBox DockPanel.Dock="Right" IsEnabled="{Binding Updates.UserActionsAllowed}" Style="{StaticResource Switch}" IsChecked="{Binding AutomaticUpdateChecks,Mode=TwoWay}" AutomationProperties.Name="Automatically check for updates" AutomationProperties.HelpText="Required automatic updates cannot be disabled. Signature and activation requirements still apply."/>
                                         <TextBlock Text="Required automatic updates" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,12,0"/>
                                     </DockPanel>
-                                    <TextBlock Text="Checks run at startup, reconnect and every 24 hours after success. Updates download automatically and install without confirmation when Panic, edits and visible protected windows are clear. Activation-disabled builds do not connect." Foreground="{StaticResource MutedInkBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,14"/>
+                                    <TextBlock Text="{x:Static services:AboutInformation.UpdateScheduleSummary}" Foreground="{StaticResource MutedInkBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,14"/>
                                     <Border Background="#F0F7F8" CornerRadius="6" Padding="12">
                                         <StackPanel>
                                             <TextBlock Text="{Binding Updates.StatusText}" TextWrapping="Wrap" AutomationProperties.Name="Update check status"/>
