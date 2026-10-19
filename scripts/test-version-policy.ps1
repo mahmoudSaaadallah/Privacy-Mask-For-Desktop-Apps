@@ -43,6 +43,11 @@ try {
       Assert-Policy (-not $identity.IsPrerelease -and $flags.Count -eq 1) 'Stable version incorrectly classified.'
     }
   }
+  Write-VersionFixture -Version '2.0.0'
+  Assert-Rejected { Get-PrivacyMaskReleaseFlags -RepoRoot $fixtureRoot -Tag 'v2.0.0' -PreviewOnly } 'stable during Preview-only rollout'
+  Write-VersionFixture -Version '2.0.0-beta.14'
+  $trialFlags = @(Get-PrivacyMaskReleaseFlags -RepoRoot $fixtureRoot -Tag 'v2.0.0-beta.14' -PreviewOnly)
+  Assert-Policy ($trialFlags -contains '--prerelease' -and $trialFlags -contains '--latest=false') 'Preview admission lost prerelease flags.'
   foreach ($version in @('02.0.0', '2.00.0', '2.0', '2.0.0-', '2.0.0-beta..1', '2.0.0-beta.01', '2.0.0-beta_1', '2.0.0+manual-build', '2.0.0 beta.1')) {
     Write-VersionFixture -Version $version
     Assert-Rejected { Get-PrivacyMaskVersionIdentity -RepoRoot $fixtureRoot } "invalid product $version"

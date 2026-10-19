@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repoRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'PrivacyMask.Build.ps1')
-Get-PrivacyMaskReleaseFlags -RepoRoot $repoRoot -Tag $ExpectedTag | Out-Null
+Get-PrivacyMaskReleaseFlags -RepoRoot $repoRoot -Tag $ExpectedTag -PreviewOnly | Out-Null
 Push-Location $repoRoot
 try {
   $commit = git rev-parse HEAD
