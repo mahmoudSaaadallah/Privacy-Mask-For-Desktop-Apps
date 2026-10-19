@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0-beta.15 - Preview B preparation (not published)
+
+- Prepare the newer B version for the consenting Windows 11 A-to-B automatic-update trial; the existing exact-version rule makes beta.15 use 24 hours after successful checks while installed beta.14 keeps its 10-minute discovery cadence
+- Reuse schema-13 settings, schema-1 check history and updater protocol 1; retain failure/server cooldowns, pinned trust, privacy deferrals and the App-only update boundary
+- Include the reviewed release-ID publisher fix for B's future protected release, without moving/rebuilding the published beta.14 tag or changing its assets
+- Clarify that launching from the extracted folder is portable use without automatic updates; use the installed Desktop/Start Menu shortcut instead
+- Advance file version to 2.0.0.15; this source delivery does not publish B or claim a completed real-device A-to-B update
+
 ## Unreleased - Publisher tooling fix (no App version change)
 
 - Resolve newly created drafts through authenticated paginated release listings, match the CLI-created URL and validate the numeric release ID; do not use GitHub's published-only tag endpoint for drafts
@@ -7,14 +15,14 @@
 - Refuse existing releases/drafts before creation and stop on ambiguous results; never resume, delete or select an existing draft automatically
 - Cover published-only endpoint 404 behavior, pagination/PowerShell array shapes, duplicate drafts and identity failures with offline publisher regressions; existing beta.14 drafts/tag are unchanged by this source fix
 
-## 2.0.0-beta.14 - Preview activation trial (not published)
+## 2.0.0-beta.14 - Preview activation trial (published 2026-10-19)
 
 - Enable the owner's pinned signed-update verifier for Preview binaries, with a managed Windows 11 x64 runtime preflight; stable activation stays disabled
 - Check every 10 minutes after success in exactly beta.14, including build metadata; beta.15 and later return to 24 hours automatically without a preference or history-schema change
 - Preserve the 15-minute failure cooldown, server retry deadlines, unknown-history rejection, mandatory verified download and privacy-aware automatic restart
 - Set Windows build 22000 as the Preview compatibility filter, not a claim of completed OS qualification; block stable release admission during this experiment
 - Show the actual build-specific schedule in Settings and privacy help; cover active monitor startup and signed A-to-B discovery with synthetic download/apply actions
-- Advance file revision to 2.0.0.14; settings/history/updater schemas remain 13/1/1, and no private key is read, tag pushed or release published by this source delivery
+- Advance file revision to 2.0.0.14; settings/history/updater schemas remain 13/1/1. The initial source delivery did not publish; later owner-authorized explicit-ID recovery published the original tagged assets without local private-key access or rebuilding the App
 
 ## 2.0.0-beta.13 - Source delivery (not published)
 
