@@ -6,7 +6,7 @@ application files are intentionally not stored in Git.
 ## Install a GitHub release
 
 1. Open [PrivacyMask releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). **Pre-release** builds are for testing; `latest` selects stable releases.
-2. Download the archive matching your chosen release, for example `PrivacyMask-2.0.0-beta.14-win-x64.zip` if that release has been published.
+2. Download the archive matching your chosen release, for example `PrivacyMask-2.0.0-beta.15-win-x64.zip` once published. Beta.14 remains the A baseline until B is published.
 3. Extract the whole ZIP; do not run the installer from inside the archive.
 4. Double-click `Install-PrivacyMask.cmd`.
 5. Start PrivacyMask from the Desktop or Start Menu shortcut.
@@ -25,9 +25,14 @@ After extracting the release ZIP, open `single-file` and double-click
 `PrivacyMask.App.exe`. Keep the executable in a permanent location if you enable
 launch at sign in.
 
+This extracted-folder launch is portable use and has **no automatic updates**.
+For the automatic-update trial, install first, exit any portable copy from its
+tray, then launch the installed Desktop or Start Menu shortcut. Running the same
+version from the extracted folder is not equivalent to running the installed copy.
+
 ## Update or uninstall
 
-- **Current beta.14 Preview trial:** the complete managed installer enables signed
+- **Current beta.15 source prepares Preview B:** the complete managed installer enables signed
   automatic updates on Windows 11 x64. Checks repeat every 10 minutes after
   success in beta.14 only; beta.15 and later default back to 24 hours. Newer
   compatible signed updates download and install automatically, waiting while
@@ -37,7 +42,7 @@ launch at sign in.
   tools, GitHub login or private key are needed on the receiving device. This is
   an experimental Preview, not a stable compatibility certification.
 - The following beta.8–beta.13 notes describe older, activation-disabled builds;
-  they do not describe beta.14. See the source's `docs/update-preview-trial.md`
+  they do not describe beta.14 or beta.15. See the source's `docs/update-preview-trial.md`
   for the A/B test and publication boundaries.
 - To update, extract the newer release and run `Install-PrivacyMask.cmd` again.
   The installer preserves settings and the installation identity, removes stale
