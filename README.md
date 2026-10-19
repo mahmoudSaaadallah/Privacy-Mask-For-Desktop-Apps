@@ -2,7 +2,7 @@
 
 PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
-The current source targets `2.0.0-beta.13`, a testing build, not a declaration
+The current source targets `2.0.0-beta.14`, a testing build, not a declaration
 that a stable 2.0.0 release has been published. Check the releases page for
 available downloads. About and Settings show the product version; hover the
 About version for full build/source metadata and the numeric Windows file version.
@@ -25,12 +25,13 @@ About version for full build/source metadata and the numeric Windows file versio
 - PrivacyMask does not read message content.
 - PrivacyMask does not inject into protected applications.
 - Profiles, PINs, executable paths, window titles and captures are never sent to a server.
-- Settings > Updates and the tray offer signed-release checks. Beta.13 prepares
-  required automatic updates with the owner's pinned public key, but runtime
-  activation remains disabled. Checks report "not configured" without a request.
-  Once enabled, required checks contact GitHub and expose
-  normal connection metadata such as your IP address. View releases opens your
-  browser only when requested. No background checks run in this build.
+- Beta.14 enables required signed automatic updates for managed Windows 11 x64
+  Preview installations. Successful checks repeat every **10 minutes in beta.14
+  only**; beta.15 and later default back to 24 hours. These requests contact
+  GitHub and expose normal connection metadata such as your IP address, never
+  profiles, PINs, paths, window titles or captures. Stable activation remains
+  disabled; source/portable launches and unsupported installations do not start
+  automatic checks. View releases opens your browser only when requested.
 - Live blur and wet glass capture only the selected application window into a bounded
   in-memory frame. Frames are never written to disk or sent anywhere, and are
   released when the mask is hidden or the application exits.
@@ -51,7 +52,7 @@ Minimum requirements:
 You do not need the source code or the .NET SDK to install a published release.
 
 1. Open [GitHub releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). Releases marked **Pre-release** are testing builds; the `latest` link is for stable releases.
-2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.13-win-x64.zip` if beta.13 has been published, and extract the whole archive.
+2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.14-win-x64.zip` if beta.14 has been published, and extract the whole archive.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
 5. Complete onboarding. Use **Add application** to select a running program or browse to its `.exe` file.
@@ -63,14 +64,16 @@ target the launcher. To update, download the newer release and run
 `Install-PrivacyMask.cmd` again. If PrivacyMask is running, the installer closes
 it, preserves the settings, replaces the application transactionally, and
 restarts it minimized. A failed update restores the previous installation.
-Settings > Updates and the tray now include **Check for updates**. The button
-reports that signed updates are not configured until runtime activation is separately approved.
-**View releases** opens the public downloads page for manual installation.
-Automatic operations remain disabled by the compiled activation gate in beta.13;
-use manual installation until signed runtime activation and qualification are
-approved. The implemented [required-update policy](docs/update-mandatory.md) then
-checks at startup/reconnect and every 24 hours after a successful check, downloads
-newer compatible signed releases automatically and installs without confirmation.
+Settings > Updates and the tray include **Check for updates** and **View releases**.
+Beta.14 is the owner-approved [Preview A-to-B trial](docs/update-preview-trial.md),
+not stable qualification. Install the complete A installer once; older disabled
+builds such as beta.13 cannot activate themselves remotely. No signing key, Git,
+.NET SDK or PowerShell 7 is needed on the end user's device.
+The [required-update policy](docs/update-mandatory.md) checks at startup/reconnect
+and every **10 minutes after a successful check in beta.14**, downloads newer
+compatible signed releases automatically and installs without confirmation.
+The exact-version trial exception expires automatically in beta.15 and later,
+which use 24 hours after success with the same saved history and settings.
 There is no in-app opt-out, download cancellation or discard. Stable builds follow
 Stable; testing builds follow Preview. Existing saved opt-out/channel choices
 cannot disable this required policy. Failed checks retry no sooner than 15 minutes;
@@ -95,10 +98,10 @@ installation in `%LocalAppData%\PrivacyMask.Desktop`.
 The matching `.sha256` release asset can be used to verify the downloaded ZIP:
 
 ```powershell
-(Get-FileHash .\PrivacyMask-2.0.0-beta.13-win-x64.zip -Algorithm SHA256).Hash
+(Get-FileHash .\PrivacyMask-2.0.0-beta.14-win-x64.zip -Algorithm SHA256).Hash
 ```
 
-Compare the output with the hash in `PrivacyMask-2.0.0-beta.13-win-x64.zip.sha256`.
+Compare the output with the hash in `PrivacyMask-2.0.0-beta.14-win-x64.zip.sha256`.
 Use the actual versioned filenames if you downloaded another release.
 
 ## One-click install from source
@@ -186,8 +189,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-win-x64-release.ps1
 
 Release package output:
 
-- `artifacts/release/PrivacyMask-2.0.0-beta.13-win-x64.zip`
-- `artifacts/release/PrivacyMask-2.0.0-beta.13-win-x64.zip.sha256`
+- `artifacts/release/PrivacyMask-2.0.0-beta.14-win-x64.zip`
+- `artifacts/release/PrivacyMask-2.0.0-beta.14-win-x64.zip.sha256`
 
 ## Repository layout
 
