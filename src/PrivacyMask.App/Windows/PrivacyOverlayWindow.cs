@@ -259,7 +259,7 @@ public sealed class PrivacyOverlayWindow : Window
 
         var request = new BlurCaptureRequest(
             trackedWindow.Snapshot.Handle,
-            trackedWindow.Snapshot.Bounds,
+            WindowCaptureBounds.FromScreen(trackedWindow.Snapshot.Bounds),
             appearance.BlurDownsampleFactor,
             captureStyle);
         if (_captureRequest != request)
