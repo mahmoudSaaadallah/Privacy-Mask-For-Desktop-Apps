@@ -225,6 +225,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
         RefreshOverlays(_startupContext?.RequireSuccessfulInitialRefresh == true);
         _refreshTimer.Start();
 
+        if (_updateDiscovery.Preflight(RequiredUpdateChannel) is { } unavailable)
+            _updateChecks.Status.Complete(unavailable, RequiredUpdateChannel, DateTimeOffset.UtcNow);
+
         if (_startupContext?.DeferInteractiveUi == true) return;
         await StartInteractiveUiCoreAsync();
     }

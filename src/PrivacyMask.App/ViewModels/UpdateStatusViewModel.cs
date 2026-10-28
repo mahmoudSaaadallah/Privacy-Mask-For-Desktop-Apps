@@ -92,7 +92,14 @@ public sealed class UpdateStatusViewModel : ObservableObject
         UpdateCheckStatus.UpToDate => "You are up to date on the checked channel.",
         UpdateCheckStatus.NoCompatibleUpdate => "No compatible update is available for this installation.",
         UpdateCheckStatus.NotConfigured => "Signed updates are not configured in this testing build. Use View releases to update manually.",
-        UpdateCheckStatus.ManualUpdateRequired => "Use a release installer to update this source, portable, or unsupported installation.",
+        UpdateCheckStatus.ManualUpdateRequired => _result.Reason switch
+        {
+            RuntimeUpdatePreflight.UnsupportedSystem => "Automatic updates require a supported Windows 11 system. Use View releases to review installation requirements.",
+            RuntimeUpdatePreflight.UnsupportedArchitecture => "Automatic updates require the Windows x64 application. This process architecture is unsupported.",
+            RuntimeUpdatePreflight.OutsideManagedPath => "This copy is running outside the supported installed location. Exit it from the tray, then open the installed Desktop or Start Menu shortcut. If not installed, extract a release ZIP and run Install-PrivacyMask.cmd first.",
+            RuntimeUpdatePreflight.InstallationUnverified => "The managed installation could not be verified safely. Use the complete release installer to repair it; do not change permissions or update files manually.",
+            _ => "Use a release installer to update this source, portable, or unsupported installation.",
+        },
         UpdateCheckStatus.RateLimited => "GitHub asked us to wait. Try again after the retry time below.",
         UpdateCheckStatus.Incomplete => "The release check was incomplete. Your update status could not be confirmed.",
         UpdateCheckStatus.InProgress => "An update check is already running.",
