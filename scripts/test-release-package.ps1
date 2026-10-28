@@ -1,10 +1,14 @@
 param(
   [string]$ArchivePath = '',
-  [string]$ExpectedTag = ''
+  [string]$ExpectedTag = '',
+  [string]$MeasurementOutputPath = ''
 )
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+if (-not [string]::IsNullOrWhiteSpace($MeasurementOutputPath) -and (Test-Path -LiteralPath $MeasurementOutputPath)) {
+  throw 'Use a new package measurement output file; previous evidence is not overwritten.'
+}
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'PrivacyMask.Build.ps1')
@@ -124,6 +128,26 @@ try {
     throw 'A packaged installer shortcut does not target the installed executable.'
   }
 
+  $installedFiles = @(Get-ChildItem -LiteralPath $installPath -Recurse -File -Force)
+  $footprint = [pscustomobject]@{
+    CapturedAtUtc = [datetime]::UtcNow.ToString('o')
+    AppProductVersion = $versionInfo.ProductVersion
+    FileVersion = $versionInfo.FileVersion
+    AppSha256 = $packagedExeHash.ToLowerInvariant()
+    ArchiveSha256 = $actualArchiveHash.ToLowerInvariant()
+    ArchiveBytes = (Get-Item -LiteralPath $resolvedArchivePath).Length
+    ExtractedPackageBytes = [long]((Get-ChildItem -LiteralPath $extractPath -Recurse -File | Measure-Object Length -Sum).Sum)
+    AppBytes = (Get-Item -LiteralPath $packagedExePath).Length
+    LauncherBytes = (Get-Item -LiteralPath $packagedLauncherPath).Length
+    FreshInstalledFileCount = $installedFiles.Count
+    FreshInstalledLogicalBytes = [long](($installedFiles | Measure-Object Length -Sum).Sum)
+    ShortcutLogicalBytes = [long]((Get-Item -LiteralPath $desktopShortcutPath).Length +
+      (Get-Item -LiteralPath (Join-Path $startMenuFolder 'PrivacyMask.lnk')).Length)
+    Scope = 'Owned temporary fresh install before first App launch; logical bytes, not filesystem allocation'
+    Excludes = 'Runtime extraction caches, personal settings, update staging, rollback history, shared runtime and filesystem allocation overhead'
+    AppExecuted = $false
+  }
+
   & $uninstallerPath `
     -InstallPath $installPath `
     -DesktopShortcutPath $desktopShortcutPath `
@@ -136,6 +160,12 @@ try {
   }
 
   Write-Host "Release package smoke test passed for PrivacyMask $productVersion."
+  if (-not [string]::IsNullOrWhiteSpace($MeasurementOutputPath)) {
+    $measurementPath = [IO.Path]::GetFullPath($MeasurementOutputPath)
+    $null = New-Item -ItemType Directory -Path (Split-Path -Parent $measurementPath) -Force
+    $footprint | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $measurementPath -Encoding UTF8
+    Write-Host "Saved fresh-install logical footprint to $measurementPath"
+  }
 }
 finally {
   $resolvedSmokeRoot = [System.IO.Path]::GetFullPath($smokeRoot)

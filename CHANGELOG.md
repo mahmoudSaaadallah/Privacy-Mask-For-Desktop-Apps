@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased - Performance baseline tooling (no App version change)
+
+- Add optional strict process-bound measurements with separate warm-up, complete-duration/sampling-coverage checks and explicit MiB/whole-machine CPU units
+- Run Overview/Applications/Settings with 42 synthetic profiles in isolated hidden WPF processes, using the 30-second warm-up and three 60-second/500 ms passes; preserve exact source/binary identities and refuse overwriting baseline sessions
+- Extend isolated package smoke checks with separate EXE/launcher/ZIP/extracted/fresh-install logical-byte measurements; explicitly exclude first-run caches, personal state and update/rollback storage
+- Add short owned-process/GUI tool regressions to CI; no changes to production capture, polling, cache limits, protection defaults or release behavior
+- Live blur/resource-stability qualification remains pending the owner's later agreed device session; synthetic GUI numbers are not full-App resource budgets or an optimization claim
+
 ## 2.0.0-beta.16 - Usability Preview (not published)
 
 - Explain Panic, pending/invalid edits, visible matching windows and uncertain window inspection as separate safe restart blockers; show up to three profile names and a remaining count with a non-mutating Applications shortcut

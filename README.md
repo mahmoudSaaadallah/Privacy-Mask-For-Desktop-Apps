@@ -428,6 +428,9 @@ Press `Esc` or close the window to discard the preview and return to the tray.
   end users do not need it. CI and release verification also run this check.
 - Review [docs/troubleshooting.md](docs/troubleshooting.md) if builds or overlays are not behaving as expected.
 - Review [docs/performance-baseline.md](docs/performance-baseline.md) before and after performance-sensitive changes.
+- Use the [beta.16 baseline tools and evidence](docs/performance-baseline-beta16.md)
+  for repeatable full-duration GUI samples and separate ZIP/EXE/fresh-install
+  measurements. Synthetic hidden-GUI results are not live blur or tray budgets.
 - Review [docs/runtime-protection.md](docs/runtime-protection.md) for pause, panic-mask, and startup behavior.
 - Review [docs/mask-rendering.md](docs/mask-rendering.md) for rendering guarantees, intensity behavior, and performance boundaries.
 - Keep tests updated whenever profile matching, settings migration, or overlay behavior changes.

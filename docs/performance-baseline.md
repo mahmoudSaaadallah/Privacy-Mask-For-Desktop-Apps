@@ -4,6 +4,11 @@ This document records the repeatable performance measurements used to evaluate
 PrivacyMask changes. Measurements must be compared on the same machine and with
 the same scenario; a single sample is not a release guarantee.
 
+For the new beta.16 developer probes, measurement completeness checks and clearly
+scoped synthetic GUI baseline, see [the 2026-10-28 follow-up](performance-baseline-beta16.md).
+The measurements below remain historical; do not substitute them for a fresh
+same-machine/runtime/scenario comparison or silently revise their budgets.
+
 ## Reference environment
 
 - Captured: 2026-10-07
