@@ -14,6 +14,13 @@ param(
   [ValidateRange(100, 10000)]
   [int]$SampleIntervalMilliseconds = 1000,
 
+  [ValidateRange(0, 600)]
+  [int]$WarmupSeconds = 0,
+
+  [switch]$RequireFullDuration,
+
+  [Nullable[datetime]]$ExpectedStartTimeUtc = $null,
+
   [string]$OutputPath = ''
 )
 
@@ -87,6 +94,10 @@ function Resolve-TargetProcess {
 
 $target = Resolve-TargetProcess
 $target.Refresh()
+$startTimeUtc = $target.StartTime.ToUniversalTime()
+if ($null -ne $ExpectedStartTimeUtc -and $startTimeUtc -ne $ExpectedStartTimeUtc.ToUniversalTime()) {
+  throw 'Target process identity changed before measurement.'
+}
 
 $fileVersion = ''
 $productVersion = ''
@@ -102,6 +113,11 @@ catch {
 }
 
 $logicalProcessorCount = [Math]::Max(1, [Environment]::ProcessorCount)
+if ($WarmupSeconds -gt 0) {
+  Start-Sleep -Seconds $WarmupSeconds
+  $target.Refresh()
+  if ($target.HasExited) { throw 'Target process exited during warm-up.' }
+}
 $samples = New-Object System.Collections.Generic.List[object]
 $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $previousSampleTimeMilliseconds = 0d
@@ -145,6 +161,10 @@ while ($stopwatch.Elapsed.TotalSeconds -lt $DurationSeconds) {
 }
 
 $stopwatch.Stop()
+$completed = $stopwatch.Elapsed.TotalSeconds -ge $DurationSeconds -and -not $target.HasExited
+if ($RequireFullDuration -and -not $completed) {
+  throw 'Incomplete measurement: the original process did not remain alive for the full requested duration.'
+}
 if ($samples.Count -eq 0) {
   throw 'The target process exited or could not be sampled.'
 }
@@ -159,9 +179,16 @@ $result = [PSCustomObject]@{
   CapturedAtUtc = [DateTime]::UtcNow.ToString('o')
   ProcessName = $target.ProcessName
   ProcessId = $target.Id
+  ProcessStartTimeUtc = $startTimeUtc.ToString('o')
   FileVersion = $fileVersion
   ProductVersion = $productVersion
   DurationSeconds = [Math]::Round($stopwatch.Elapsed.TotalSeconds, 3)
+  RequestedDurationSeconds = $DurationSeconds
+  Completed = $completed
+  WarmupSeconds = $WarmupSeconds
+  MemoryUnit = 'MiB (1,048,576 bytes); legacy property names retain Mb'
+  CpuNormalization = 'Percent of total logical-processor capacity, not one core'
+  WindowsVersion = [Environment]::OSVersion.Version.ToString()
   SampleIntervalMilliseconds = $SampleIntervalMilliseconds
   SampleCount = $samples.Count
   LogicalProcessorCount = $logicalProcessorCount
