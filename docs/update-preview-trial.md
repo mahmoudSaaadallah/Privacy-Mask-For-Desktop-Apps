@@ -4,9 +4,9 @@ The owner approved this smaller experiment after choosing normal use on a
 friend's Windows 11 device instead of a VM. A is **2.0.0-beta.14**, with successful
 automatic discovery every **10 minutes**. A was published after the reviewed
 explicit-ID recovery described in [the publication incident](release-publication-incident.md).
-B source now prepares **2.0.0-beta.15**, with the normal **24-hour** cadence.
-This delivery does not publish B, execute production signing or claim a completed
-real-device A-to-B pass.
+B **2.0.0-beta.15** was separately approved and published on 2026-10-19 through
+the protected workflow. It uses the normal **24-hour** cadence. Current source
+prepares the beta.16 usability follow-up, not another publication.
 
 ## Current baseline evidence
 
@@ -17,11 +17,18 @@ the installed shortcut, a screenshot showed beta.14, Preview, UpToDate and a
 successful check timestamp. This supports a working managed-install check, not
 proof that that check was automatic or that an upgrade transaction has passed.
 
-Keep A installed/running/online while preparing B in its separate PR. After
-separate publication approval, do not manually install B or press Check for
-updates during the polling test. Resolve ordinary privacy deferrals and observe
-the next admitted automatic check, download, apply and restart. B uses daily
-successful checks; it never overwrites A's required history/settings schemas.
+Subsequent owner-provided screenshots showed A discovering beta.15 and waiting
+for visible protected windows. Paused Chrome/Codex/Cockpit profiles still had to
+be closed/minimized. The owner then confirmed that Updates displayed beta.15
+after the normal automatic flow. Record this as a **user-reported single-device
+A-to-B transition**: no transaction receipt, post-update settings/PIN audit or
+full OS/fault matrix was collected. It is not independent live qualification.
+
+The sequence below is the original repeatable A/B protocol, not an instruction
+to downgrade the friend's installed B or republish/reuse either tag. Future live
+upgrade tests need a separately approved newer release. B and later use daily
+successful checks with the same history/settings schemas. Beta.16 source does
+not repeat the ten-minute exception.
 
 ## Scope and unchanged safeguards
 

@@ -1,12 +1,22 @@
 # Changelog
 
-## 2.0.0-beta.15 - Preview B preparation (not published)
+## 2.0.0-beta.16 - Usability Preview (not published)
+
+- Explain Panic, pending/invalid edits, visible matching windows and uncertain window inspection as separate safe restart blockers; show up to three profile names and a remaining count with a non-mutating Applications shortcut
+- Keep paused/focus-aware visible windows blocking and revalidate live safety at handoff; no PIN bypass, automatic minimization or settings save/discard
+- Present one primary update stage with real transfer progress, package/application verification, safe waiting, restart and repair states; preserve known server retry deadlines and plain-text notes without claiming installation success
+- Distinguish unsupported system/architecture, outside-install execution and unverified installation, with installed-shortcut guidance; retain all managed-path, ownership and trust gates
+- Clarify Protection paused and restore explicitly requested keyboard help on Overview/Security without popups on page focus
+- Advance file revision to 2.0.0.16 with unchanged settings/history/updater schemas 13/1/1, mandatory daily cadence, trust pins and release repository
+- This delivery is a source PR, not a release, live fault qualification or completion of the subsequent performance/stability stages
+
+## 2.0.0-beta.15 - Preview B (published 2026-10-19)
 
 - Prepare the newer B version for the consenting Windows 11 A-to-B automatic-update trial; the existing exact-version rule makes beta.15 use 24 hours after successful checks while installed beta.14 keeps its 10-minute discovery cadence
 - Reuse schema-13 settings, schema-1 check history and updater protocol 1; retain failure/server cooldowns, pinned trust, privacy deferrals and the App-only update boundary
 - Include the reviewed release-ID publisher fix for B's future protected release, without moving/rebuilding the published beta.14 tag or changing its assets
 - Clarify that launching from the extracted folder is portable use without automatic updates; use the installed Desktop/Start Menu shortcut instead
-- Advance file version to 2.0.0.15; this source delivery does not publish B or claim a completed real-device A-to-B update
+- Advance file version to 2.0.0.15; the initial source delivery did not publish B. A later separately approved protected workflow published B; the owner subsequently reported automatic transition from installed beta.14 to beta.15. This is reported single-device evidence, not receipt-audited stable qualification
 
 ## Unreleased - Publisher tooling fix (no App version change)
 

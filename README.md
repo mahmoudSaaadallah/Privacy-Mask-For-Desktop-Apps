@@ -2,7 +2,7 @@
 
 PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
-The current source targets `2.0.0-beta.15`, Preview B preparation, not a declaration
+The current source targets `2.0.0-beta.16`, the usability Preview, not a declaration
 that a stable 2.0.0 release has been published. Check the releases page for
 available downloads. About and Settings show the product version; hover the
 About version for full build/source metadata and the numeric Windows file version.
@@ -52,7 +52,7 @@ Minimum requirements:
 You do not need the source code or the .NET SDK to install a published release.
 
 1. Open [GitHub releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). Releases marked **Pre-release** are testing builds; the `latest` link is for stable releases.
-2. Download the archive matching the release you selected, for example `PrivacyMask-2.0.0-beta.15-win-x64.zip` once beta.15 is published, and extract the whole archive. Use beta.14 for the A baseline until then.
+2. Download the archive matching the release you selected, for example the published `PrivacyMask-2.0.0-beta.15-win-x64.zip`, and extract the whole archive. A newer source version does not mean a corresponding release is already published.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
 5. Complete onboarding. Use **Add application** to select a running program or browse to its `.exe` file.
@@ -87,6 +87,17 @@ protected windows to allow the automatic restart. Desktop checks are best effort
 not an OS lock against another program restoring a window during restart. The
 policy cannot prevent terminating/blocking/uninstalling PrivacyMask in Windows,
 and cannot retroactively update older binaries that lack an active updater.
+
+Beta.16 source makes this wait explicit: Settings > Updates lists up to three
+blocking profile names plus a remaining count. **Review applications** opens
+Applications; it never closes windows or changes protection. **Protection paused**
+does not mean the application's windows are closed: minimize or close every
+matching window, including paused and focus-aware profiles. Window-inspection
+failure has its own safe-wait message. Names stay in memory and are not sent or
+saved. Download, verification, waiting and restart have separate stage headings;
+download completion is not installation success. Hover information icons or
+focus one and press F1; page navigation/focus alone never opens help.
+See [beta.16 delivery and remaining gates](docs/beta16-usability.md).
 
 To run the release without installing it, open `single-file` in the extracted
 archive and double-click `PrivacyMask.App.exe`. That is **portable use** and does

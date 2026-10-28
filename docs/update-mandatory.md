@@ -1,10 +1,10 @@
-# Required automatic updates — beta.15 Preview B preparation
+# Required automatic updates — beta.16 usability Preview
 
-Source: `2.0.0-beta.15`, FileVersion `2.0.0.15`. Settings/history schemas remain
+Source: `2.0.0-beta.16`, FileVersion `2.0.0.16`. Settings/history schemas remain
 13/1 and updater protocol remains 1. This implements the owner's required-update
 policy with the explicitly agreed privacy deferrals. Preview activation is now
 enabled for managed Windows 11 x64 installations; stable stays disabled. This
-source delivery does not publish B or claim a completed live A-to-B update. See the
+source delivery does not publish beta.16 or claim complete live qualification. See the
 owner-approved [simple A/B experiment](update-preview-trial.md).
 
 ## End-user policy after separate signed activation
@@ -33,6 +33,16 @@ owner-approved [simple A/B experiment](update-preview-trial.md).
   minimized. Users resolve those states through the normal controls; no data is
   silently saved/discarded and no PIN is bypassed. All matching enabled-profile
   windows are checked conservatively, including paused/focus-aware profiles.
+- Beta.16 shows the blocker type and up to three deduplicated profile display
+  names (plus remaining count), never window titles or executable paths. Review
+  applications only navigates. This in-memory snapshot is not restart authority:
+  apply still inspects fresh desktop state. Inspection failure is a separate wait,
+  not evidence that all windows are closed. Existing ten-second stage pulses
+  refresh this information; no new timer, persistence or telemetry is added.
+- The UI separates discovery, download, verification, readiness, waiting and
+  restart. A progress callback/100% transfer is not a verified stage or successful
+  installation. Known server retry deadlines survive the failed-download display;
+  unknown retry times are not invented. Repair warnings take precedence.
 
 ## Safe handoff and recovery
 
@@ -75,9 +85,10 @@ technical filter, not a claim that all such OS builds are qualified. Public
 `release-key-1` trust remains pinned. A's protected signing and independent
 verification passed, and beta.14 was published through approved explicit-ID
 recovery after the draft-lookup incident. The owner reports a successful check
-from the friend's installed A copy. B's separate exact-tag publication approval
-and the actual Windows 11 A-to-B transition remain pending; full Windows 10/11
-stable/fault qualification remains separate. This source-delivery PR does not read
+from the friend's installed A copy. B was subsequently approved/published through
+the protected workflow, and the owner reported the automatic transition to B.
+No receipt/settings/PIN audit was collected; full Windows 10/11 stable/fault
+qualification remains separate. This source-delivery PR does not read
 the owner's private key, mutate GitHub configuration or publish a release.
 
 ## Evidence
