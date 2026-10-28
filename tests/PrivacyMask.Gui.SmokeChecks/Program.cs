@@ -186,24 +186,21 @@ internal static class Program
                 Check(AutomationProperties.GetHelpText(control) == InformationHelp.GetText(control), "Help lost accessible text.");
                 Check(ToolTipService.GetIsEnabled(control) && ReferenceEquals(ToolTipService.GetToolTip(control), tip)
                     && ReferenceEquals(tip.PlacementTarget, control), "Native hover help registration lost.");
-                var hoverOnly = page is DesktopPage.Overview or DesktopPage.Security;
-                Check(InformationHelp.GetHoverOnly(control) == hoverOnly, $"Wrong help policy on {page}.");
-                if (hoverOnly)
-                {
-                    foreach (var key in new[] { Key.F1, Key.Enter, Key.Space })
-                    {
-                        control.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, new TestInputSource(), Environment.TickCount, key)
-                            { RoutedEvent = Keyboard.PreviewKeyDownEvent });
-                        Check(!tip.IsOpen, $"{page} hover-only help opened from {key}.");
-                    }
-                }
+                Check(!InformationHelp.GetHoverOnly(control) && InformationHelp.OpensFromKeyboard(false, Key.F1),
+                    $"{page} help cannot be explicitly requested by keyboard.");
+                control.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, new TestInputSource(), Environment.TickCount, Key.F1)
+                    { RoutedEvent = Keyboard.PreviewKeyDownEvent });
+                Check(tip.IsOpen, $"{page} help did not open on explicit F1.");
+                control.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice, Environment.TickCount, control, null)
+                    { RoutedEvent = Keyboard.LostKeyboardFocusEvent });
+                Check(!tip.IsOpen, $"{page} help did not close on focus loss.");
             }
             if (page is DesktopPage.Overview or DesktopPage.Security)
                 Check(helpControls.Length > 0, "Target page has no information controls to verify.");
         }
         Check(System.Text.Json.JsonSerializer.Serialize(session.ToModel()) == before && !session.HasPendingChanges,
             "Help/sidebar navigation changed settings.");
-        Console.WriteLine("Help/sidebar passed: focus never opens help, privacy pages are hover-only, native hover/accessible text remain and shield identity is constant.");
+        Console.WriteLine("Help/sidebar passed: focus never opens help, explicit F1 opens help on every page, focus loss closes it, native hover/accessible text remain and shield identity is constant.");
     }
 
     private static void CheckAwaitedWindowShutdown()
