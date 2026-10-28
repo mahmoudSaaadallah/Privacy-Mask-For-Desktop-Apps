@@ -48,6 +48,10 @@ try {
     try { & $probe -TargetProcessId $process.Id -ExpectedStartTimeUtc ([datetime]::UtcNow.AddYears(-1)) -DurationSeconds 2 | Out-Null }
     catch { $rejected = $true }
     Assert-Probe $rejected 'Changed process start identity was accepted.'
+    $rejected = $false
+    try { & $probe -TargetProcessId $process.Id -DurationSeconds 2 -SampleIntervalMilliseconds 5000 -RequireFullDuration | Out-Null }
+    catch { $rejected = $true }
+    Assert-Probe $rejected 'A strict sampling interval longer than the pass was accepted.'
   }
   finally { Stop-Fixture $process }
 
