@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0-beta.17 - Live-renderer movement fix (not published)
+
+- Fix continuous movement discarding valid blur frames: capture identity now uses window-local width/height instead of screen origin, matching PrintWindow's existing window-relative source capture
+- Keep actual screen placement, occlusion, minimization, size/style/handle/strength invalidation, capture limits/timeouts, privacy modes and reveal policy unchanged
+- Add opt-in visible synthetic native targets with real production overlays, frame freshness/color-variation checks, and strict resource samples; source windows and renderer share a process, so this is not full-App CPU/RAM
+- Separate continuous translation from resize-and-settle tests, preserve admission/partial evidence, and reject fallback-only or interrupted runs rather than calling them passes
+- Advance FileVersion to 2.0.0.17. No release/tag/installation or signing/configuration change is performed by this source delivery
+
 ## Unreleased - Performance baseline tooling (no App version change)
 
 - Add optional strict process-bound measurements with separate warm-up, complete-duration/sampling-coverage checks and explicit MiB/whole-machine CPU units

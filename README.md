@@ -2,7 +2,7 @@
 
 PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
-The current source targets `2.0.0-beta.16`, the usability Preview, not a declaration
+The current source targets `2.0.0-beta.17`, the live-renderer movement fix, not a declaration
 that a stable 2.0.0 release has been published. Check the releases page for
 available downloads. About and Settings show the product version; hover the
 About version for full build/source metadata and the numeric Windows file version.
@@ -433,6 +433,9 @@ Press `Esc` or close the window to discard the preview and return to the tray.
   measurements. Synthetic hidden-GUI results are not live blur or tray budgets.
 - Review [docs/runtime-protection.md](docs/runtime-protection.md) for pause, panic-mask, and startup behavior.
 - Review [docs/mask-rendering.md](docs/mask-rendering.md) for rendering guarantees, intensity behavior, and performance boundaries.
+- The [beta.17 live-renderer experiment](docs/live-renderer-beta17.md) documents
+  owned synthetic-window measurements and the capture-identity movement fix;
+  these are not full-App or third-party compatibility certification.
 - Keep tests updated whenever profile matching, settings migration, or overlay behavior changes.
 
 ## Known limitations

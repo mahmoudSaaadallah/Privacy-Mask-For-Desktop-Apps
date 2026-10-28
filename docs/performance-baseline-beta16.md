@@ -154,3 +154,8 @@ Live tray/one/two-window blur, movement/resize, Hover/Alt, 25 real Settings cycl
 25 pause/resume cycles, real monitor/Sleep/PIN paths and eight-hour stability
 remain **NotRun**. The owner chose to schedule the live device session later.
 Do not relax the existing resource budgets or qualify Stable from this PR.
+
+Follow-up: the owner's later synthetic-window session and bounded movement fix
+are recorded in [the beta.17 experiment](live-renderer-beta17.md). It exercises
+real capture/overlays on owned test windows; it does not retrospectively turn
+this hidden-GUI baseline into full-App or third-party qualification.
