@@ -17,22 +17,17 @@ internal sealed class RuntimeUpdateDiscovery : IDisposable
     {
         if (!Enum.IsDefined(channel)) return new(UpdateCheckStatus.InvalidContext);
         // Before even inspecting the installation or creating an HTTP client.
-        if (!_verifier.IsConfigured) return new(UpdateCheckStatus.NotConfigured);
+        if (!_verifier.IsConfigured) return new(UpdateCheckStatus.NotConfigured, Reason: RuntimeUpdatePreflight.DisabledBuild);
         try
         {
             var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ManifestRules.AppId);
-            var app = Environment.ProcessPath;
-            if (!OperatingSystem.IsWindows() ||
-                !UpdateRuntimePolicy.SupportsAutomaticUpdates(AboutInformation.FullVersion, Environment.OSVersion.Version.Build) ||
-                RuntimeInformation.ProcessArchitecture != Architecture.X64 || app is null ||
-                !SamePath(app, Path.Combine(root, "app", LauncherBoot.ApplicationFileName)) ||
-                !SamePath(_settingsPath, Path.Combine(root, "settings.v1.json")) || ManagedStartupPath.Resolve(app) is null)
-                return new(UpdateCheckStatus.ManualUpdateRequired);
-            return null;
+            return RuntimeUpdatePreflight.Evaluate(_verifier.IsConfigured, OperatingSystem.IsWindows(),
+                Environment.OSVersion.Version.Build, RuntimeInformation.ProcessArchitecture,
+                Environment.ProcessPath, _settingsPath, root, ManagedStartupPath.Resolve);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or ReleaseValidationException)
         {
-            return new(UpdateCheckStatus.ManualUpdateRequired);
+            return new(UpdateCheckStatus.ManualUpdateRequired, Reason: RuntimeUpdatePreflight.InstallationUnverified);
         }
     }
 
@@ -47,9 +42,6 @@ internal sealed class RuntimeUpdateDiscovery : IDisposable
     internal static UpdateCheckContext Context(UpdateReleaseChannel channel) => new(AboutInformation.FullVersion,
             channel == UpdateReleaseChannel.Preview ? UpdateChannel.Preview : UpdateChannel.Stable,
             "win-x64", Environment.OSVersion.Version.Build, 1, AppSettings.CurrentVersion, InstallationKind.Managed);
-
-    private static bool SamePath(string left, string right) =>
-        string.Equals(Path.GetFullPath(left), Path.GetFullPath(right), StringComparison.OrdinalIgnoreCase);
 
     public void Dispose() => _client?.Dispose();
 }

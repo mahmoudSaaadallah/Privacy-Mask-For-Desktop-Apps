@@ -6,7 +6,7 @@ application files are intentionally not stored in Git.
 ## Install a GitHub release
 
 1. Open [PrivacyMask releases](https://github.com/mahmoudSaaadallah/Privacy-Mask-For-Desktop-Apps/releases). **Pre-release** builds are for testing; `latest` selects stable releases.
-2. Download the archive matching your chosen release, for example `PrivacyMask-2.0.0-beta.15-win-x64.zip` once published. Beta.14 remains the A baseline until B is published.
+2. Download the archive matching your chosen release, for example the published `PrivacyMask-2.0.0-beta.15-win-x64.zip`. The beta.16 source version does not itself publish a release.
 3. Extract the whole ZIP; do not run the installer from inside the archive.
 4. Double-click `Install-PrivacyMask.cmd`.
 5. Start PrivacyMask from the Desktop or Start Menu shortcut.
@@ -32,7 +32,7 @@ version from the extracted folder is not equivalent to running the installed cop
 
 ## Update or uninstall
 
-- **Current beta.15 source prepares Preview B:** the complete managed installer enables signed
+- **Managed Preview builds (beta.14 onward):** the complete managed installer enables signed
   automatic updates on Windows 11 x64. Checks repeat every 10 minutes after
   success in beta.14 only; beta.15 and later default back to 24 hours. Newer
   compatible signed updates download and install automatically, waiting while
@@ -41,6 +41,14 @@ version from the extracted folder is not equivalent to running the installed cop
   installer manually. Source/portable launches do not auto-update. No developer
   tools, GitHub login or private key are needed on the receiving device. This is
   an experimental Preview, not a stable compatibility certification.
+- **Beta.16 usability:** update stages distinguish download, verification, waiting
+  and restart. A visible-window wait names up to three blocking profiles and a
+  remaining count; Review applications opens the list without changing protection.
+  Protection paused is not window minimization. Close/minimize every matching
+  window, resolve edits and unlock Panic normally; installation then continues.
+  Outside-install and unverified-install messages explain the appropriate next
+  step without bypassing path/ownership checks. Information icons support hover
+  and explicit F1 without automatic popups on page focus.
 - The following beta.8–beta.13 notes describe older, activation-disabled builds;
   they do not describe beta.14 or beta.15. See the source's `docs/update-preview-trial.md`
   for the A/B test and publication boundaries.

@@ -186,24 +186,21 @@ internal static class Program
                 Check(AutomationProperties.GetHelpText(control) == InformationHelp.GetText(control), "Help lost accessible text.");
                 Check(ToolTipService.GetIsEnabled(control) && ReferenceEquals(ToolTipService.GetToolTip(control), tip)
                     && ReferenceEquals(tip.PlacementTarget, control), "Native hover help registration lost.");
-                var hoverOnly = page is DesktopPage.Overview or DesktopPage.Security;
-                Check(InformationHelp.GetHoverOnly(control) == hoverOnly, $"Wrong help policy on {page}.");
-                if (hoverOnly)
-                {
-                    foreach (var key in new[] { Key.F1, Key.Enter, Key.Space })
-                    {
-                        control.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, new TestInputSource(), Environment.TickCount, key)
-                            { RoutedEvent = Keyboard.PreviewKeyDownEvent });
-                        Check(!tip.IsOpen, $"{page} hover-only help opened from {key}.");
-                    }
-                }
+                Check(!InformationHelp.GetHoverOnly(control) && InformationHelp.OpensFromKeyboard(false, Key.F1),
+                    $"{page} help cannot be explicitly requested by keyboard.");
+                control.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, new TestInputSource(), Environment.TickCount, Key.F1)
+                    { RoutedEvent = Keyboard.PreviewKeyDownEvent });
+                Check(tip.IsOpen, $"{page} help did not open on explicit F1.");
+                control.RaiseEvent(new KeyboardFocusChangedEventArgs(Keyboard.PrimaryDevice, Environment.TickCount, control, null)
+                    { RoutedEvent = Keyboard.LostKeyboardFocusEvent });
+                Check(!tip.IsOpen, $"{page} help did not close on focus loss.");
             }
             if (page is DesktopPage.Overview or DesktopPage.Security)
                 Check(helpControls.Length > 0, "Target page has no information controls to verify.");
         }
         Check(System.Text.Json.JsonSerializer.Serialize(session.ToModel()) == before && !session.HasPendingChanges,
             "Help/sidebar navigation changed settings.");
-        Console.WriteLine("Help/sidebar passed: focus never opens help, privacy pages are hover-only, native hover/accessible text remain and shield identity is constant.");
+        Console.WriteLine("Help/sidebar passed: focus never opens help, explicit F1 opens help on every page, focus loss closes it, native hover/accessible text remain and shield identity is constant.");
     }
 
     private static void CheckAwaitedWindowShutdown()
@@ -451,7 +448,77 @@ internal static class Program
         Check(before == System.Text.Json.JsonSerializer.Serialize(session.ToModel()) && !session.HasPendingChanges,
             "Manual discovery changed the settings edit session.");
         CheckMandatoryUpdatePolicy(candidate);
+        CheckUpdatePresentation(candidate, screenshots);
         Console.WriteLine("Update card passed: connected check/download/cancel/discard/install, no self-drain and bounded ready/restart/cancel/repair layouts with unchanged settings.");
+    }
+
+    private static void CheckUpdatePresentation(UpdateCandidate candidate, string? screenshots)
+    {
+        var blockers = new UpdateRestartBlock(UpdateRestartBlockKind.VisibleWindows,
+            [new("a", new string('L', 180)), new("b", "Same name"), new("c", "Same name"), new("d", "Fourth app")]);
+        var states = new (string Name, Action<UpdateStatusViewModel> Arrange)[]
+        {
+            ("checking", status => status.Begin()),
+            ("download", status => { status.BeginDownload(); status.DownloadProgress(new(UpdateDownloadPhase.Downloading, 35 * 1048576, 70 * 1048576)); }),
+            ("verify-package", status => { status.BeginDownload(); status.DownloadProgress(new(UpdateDownloadPhase.Verifying, 70 * 1048576, 70 * 1048576)); }),
+            ("verify-app", status => { status.BeginDownload(); status.DownloadProgress(new(UpdateDownloadPhase.Extracting, 70 * 1048576, 70 * 1048576)); }),
+            ("visible-windows", status => { status.FinishDownload("ready", ready: true); status.ShowRestartBlock(blockers); }),
+            ("panic", status => { status.FinishDownload("ready", ready: true); status.ShowRestartBlock(new(UpdateRestartBlockKind.Panic, [])); }),
+            ("edits", status => { status.FinishDownload("ready", ready: true); status.ShowRestartBlock(new(UpdateRestartBlockKind.SettingsEdits, [])); }),
+            ("unknown-windows", status => { status.FinishDownload("ready", ready: true); status.ShowRestartBlock(new(UpdateRestartBlockKind.InspectionUnavailable, [])); }),
+            ("outside-installed-path", status => status.Complete(new(UpdateCheckStatus.ManualUpdateRequired, Reason: RuntimeUpdatePreflight.OutsideManagedPath), status.RequiredChannel, DateTimeOffset.UtcNow)),
+            ("restarting", status => { status.BeginInstall(); status.ShowRestarting(); }),
+            ("failure", status => status.FinishDownload("Download failed. Your installed application is unchanged.")),
+            ("repair", status => status.FinishInstall("Recovery needs attention. Do not remove recovery files manually.", repairRequired: true)),
+        };
+        foreach (var state in states)
+        {
+            var status = new UpdateStatusViewModel();
+            status.RequireAutomaticUpdates();
+            status.Complete(new(UpdateCheckStatus.Available, candidate with { ReleaseNotes = "<script>not executable</script> https://example.invalid/" }), status.RequiredChannel, DateTimeOffset.UtcNow);
+            state.Arrange(status);
+            using var model = SettingsViewModel.FromModel(new DefaultSettingsFactory().Create(), RuntimeMode.Standard,
+                "C:\\Synthetic\\settings.v1.json", new HashSet<HotkeyAction>(), status);
+            var before = System.Text.Json.JsonSerializer.Serialize(model.ToModel());
+            var window = new MainWindow(model, new DesktopApplicationCatalog(new DesktopWindowInspector()));
+            var root = (FrameworkElement)window.Content;
+            model.SelectedPage = DesktopPage.Settings;
+            var card = (Border)window.FindName("UpdatesCard");
+            var review = Find<Button>(card).Single(button => AutomationProperties.GetName(button) == "Review applications blocking update");
+            foreach (var width in new[] { 860d, 1000d, 1400d })
+            {
+                var size = new Size(width, 780);
+                Layout(root, size);
+                var heading = (TextBlock)window.FindName("UpdateStatusHeading");
+                var detail = (TextBlock)window.FindName("UpdateStatusDetail");
+                Check(heading.Text == status.StatusHeading && detail.Text == status.StatusDetail, $"Stale update presentation in {state.Name}.");
+                if (status.HasCandidate) Check(status.CandidateDetail.Contains($"Version {candidate.Manifest.Version}"),
+                    $"Target version was hidden in {state.Name}.");
+                Check(heading.TextWrapping == TextWrapping.Wrap && detail.TextWrapping == TextWrapping.Wrap, "Update explanations do not wrap.");
+                Check(AutomationProperties.GetLiveSetting(heading) == AutomationLiveSetting.Polite, "Update stage is not accessible.");
+                Check((review.Visibility == Visibility.Visible) == (state.Name == "visible-windows"), $"Wrong review action in {state.Name}.");
+                foreach (var element in Find<FrameworkElement>(card).Where(element => element.ActualWidth > 0))
+                {
+                    var bounds = element.TransformToAncestor(card).TransformBounds(new Rect(new Point(), element.RenderSize));
+                    Check(bounds.Left >= -1 && bounds.Right <= card.ActualWidth + 1, $"Update presentation clipped at {width} in {state.Name}.");
+                }
+                var notes = Find<TextBox>(card).Single(box => AutomationProperties.GetName(box) == "Release notes");
+                Check(notes.IsReadOnly && notes.HorizontalScrollBarVisibility == ScrollBarVisibility.Disabled
+                    && notes.Text == status.ReleaseNotes, "Release notes are not bounded plain text.");
+                if (screenshots is not null && width == 860)
+                    Render(root, size, 1, System.IO.Path.Combine(screenshots, $"Beta16-{state.Name}-860.png"));
+            }
+            if (state.Name == "visible-windows")
+            {
+                review.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(model.IsApplicationListPage, "Review applications does not navigate to the list.");
+            }
+            Check(before == System.Text.Json.JsonSerializer.Serialize(model.ToModel()) && !model.HasPendingChanges,
+                "Update presentation or navigation changed settings.");
+            window.AllowClose();
+            window.Close();
+        }
+        Console.WriteLine("Beta.16 presentation passed: 12 truthful stages at three widths, bounded names, review navigation, plain-text notes and unchanged settings.");
     }
 
     private static void CheckMandatoryUpdatePolicy(UpdateCandidate candidate)

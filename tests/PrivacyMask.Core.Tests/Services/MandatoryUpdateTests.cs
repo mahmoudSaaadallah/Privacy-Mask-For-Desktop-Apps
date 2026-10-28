@@ -9,6 +9,39 @@ namespace PrivacyMask.Core.Tests.Services;
 public sealed class MandatoryUpdateTests
 {
     [Fact]
+    public async Task ExistingWaitPulsesRefreshNamesAndInspectionFailureNeverAllowsInstall()
+    {
+        var status = new UpdateStatusViewModel();
+        status.RequireAutomaticUpdates();
+        status.FinishDownload("verified fixture", ready: true);
+        var app = new UpdateBlockingApplication("a", "First app");
+        var windows = new[] { new UpdateBlockingWindow(true, false, app) };
+        var inspectionFails = false;
+        var installs = 0;
+        var controller = new MandatoryUpdateController(status, new(() => true, () => true,
+            _ => throw new Exception("Verified stage must not be checked again"),
+            () => throw new Exception("Verified stage must not be downloaded again"),
+            () => throw new Exception("Safe deferral must retain its stage"),
+            () => { installs++; return Task.CompletedTask; }, () => null,
+            () => UpdateRestartBlock.Assess(false, false, () => inspectionFails ? throw new InvalidOperationException("fixture") : windows)));
+        await controller.PulseAsync();
+        Assert.Contains("First app", status.StatusDetail);
+        windows = [new(true, false, app with { DisplayName = "Second app" })];
+        await controller.PulseAsync();
+        Assert.Contains("Second app", status.StatusDetail);
+        Assert.DoesNotContain("First app", status.StatusDetail);
+        inspectionFails = true;
+        await controller.PulseAsync();
+        Assert.Contains("could not be checked", status.StatusDetail);
+        Assert.False(status.CanReviewBlockingApplications);
+        Assert.Equal(0, installs);
+        inspectionFails = false;
+        windows = [windows[0] with { IsMinimized = true }];
+        await controller.PulseAsync();
+        Assert.Equal(1, installs);
+    }
+
+    [Fact]
     public async Task StartupDownloadsAndInstallsWithoutAUserAction()
     {
         var host = new Host();
@@ -32,8 +65,8 @@ public sealed class MandatoryUpdateTests
 
     [Theory]
     [InlineData("Panic")]
-    [InlineData("Unsaved settings")]
-    [InlineData("Visible protected windows")]
+    [InlineData("unsaved or invalid settings")]
+    [InlineData("Close or minimize")]
     public async Task SafetyDeferralKeepsTheStageAndResumesWithoutAnotherPrompt(string reason)
     {
         var host = new Host { Block = reason };
@@ -269,7 +302,10 @@ public sealed class MandatoryUpdateTests
                     Status.FinishDownload("verified", ready: true);
                     return Task.CompletedTask;
                 }, () => { Events.Add("retire"); Status.FinishDiscard(true); return Task.CompletedTask; },
-                () => { Events.Add("install"); OnInstall?.Invoke(); return Task.CompletedTask; }, () => _next, () => Block), Clock);
+                () => { Events.Add("install"); OnInstall?.Invoke(); return Task.CompletedTask; }, () => _next,
+                () => Block is null ? null : new UpdateRestartBlock(Block == "Panic" ? UpdateRestartBlockKind.Panic
+                    : Block == "unsaved or invalid settings" ? UpdateRestartBlockKind.SettingsEdits : UpdateRestartBlockKind.VisibleWindows,
+                    [new("fixture", "Example app")])), Clock);
         }
     }
 

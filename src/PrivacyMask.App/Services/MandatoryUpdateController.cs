@@ -4,7 +4,7 @@ namespace PrivacyMask.App.Services;
 
 internal sealed record MandatoryUpdateActions(Func<bool> Enabled, Func<bool> Online,
     Func<bool, Task> Check, Func<Task> Download, Func<Task> RetireFailedStage, Func<Task> Install,
-    Func<DateTimeOffset?> NextCheckUtc, Func<string?> RestartBlockReason);
+    Func<DateTimeOffset?> NextCheckUtc, Func<UpdateRestartBlock?> RestartBlockReason);
 
 /// <summary>Dispatcher-owned required update pipeline; lifecycle stop is not a user opt-out.</summary>
 internal sealed class MandatoryUpdateController(UpdateStatusViewModel status, MandatoryUpdateActions host, TimeProvider? clock = null)
@@ -42,7 +42,9 @@ internal sealed class MandatoryUpdateController(UpdateStatusViewModel status, Ma
             if (!Enabled || status.IsChecking || status.IsInstalling || status.NeedsRepair) return;
             if (!host.Online())
             {
-                status.ShowAutomaticWait("Required update retained. Waiting for network connectivity; it cannot be cancelled.");
+                status.ShowAutomaticWait(status.HasVerifiedDownload
+                    ? "Verified update retained. Waiting for network connectivity; it will continue automatically."
+                    : "Waiting for network connectivity. PrivacyMask will check automatically when a request is allowed; protection remains active.");
                 return;
             }
             if (status.HasVerifiedDownload && !status.RequiresNewDownload) { await TryInstallAsync(); return; }
@@ -69,7 +71,7 @@ internal sealed class MandatoryUpdateController(UpdateStatusViewModel status, Ma
         catch (Exception)
         {
             _nextNetworkAttempt = _time.GetUtcNow().AddMinutes(15);
-            status.ShowAutomaticWait("Required update could not finish safely. It will retry automatically; the current application is unchanged.");
+            status.ShowAutomaticWait("Required update could not finish safely. It will retry automatically; the current application is unchanged.", failed: true);
         }
         finally { completion.TrySetResult(); }
     }
@@ -77,7 +79,7 @@ internal sealed class MandatoryUpdateController(UpdateStatusViewModel status, Ma
     private async Task TryInstallAsync()
     {
         if (_stopped || !Enabled || !status.CanInstall) return;
-        if (host.RestartBlockReason() is { } reason) { status.ShowAutomaticWait(reason); return; }
+        if (host.RestartBlockReason() is { } reason) { status.ShowRestartBlock(reason); return; }
         await host.Install();
         if (status.RequiresNewDownload) _nextNetworkAttempt = _time.GetUtcNow().AddMinutes(15);
     }
