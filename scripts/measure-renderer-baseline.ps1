@@ -3,8 +3,8 @@
 param(
   [Parameter(Mandatory = $true)][string]$OutputDirectory,
   [switch]$AllowVisibleFixtures,
-  [ValidateSet('IdleFixture','OneWindow','TwoWindows','MoveResize','RevealInputs')]
-  [string[]]$Scenarios = @('IdleFixture','OneWindow','TwoWindows','MoveResize','RevealInputs'),
+  [ValidateSet('IdleFixture','OneWindow','TwoWindows','MoveOnly','MoveResize','RevealInputs')]
+  [string[]]$Scenarios = @('IdleFixture','OneWindow','TwoWindows','MoveOnly','MoveResize','RevealInputs'),
   [ValidateRange(0,600)][int]$WarmupSeconds = 30,
   [ValidateRange(2,600)][int]$DurationSeconds = 60,
   [ValidateRange(1,5)][int]$Passes = 3
@@ -45,6 +45,7 @@ foreach ($scenario in $Scenarios) {
   $process = [Diagnostics.Process]::Start($info)
   try {
     $identity = Read-Fixture $process
+    $identity | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $output "$scenario-admission.json") -Encoding utf8
     if ($identity.State -cne 'READY' -or $identity.EvidenceKind -cne 'LiveRendererWithOwnedSyntheticTargets' -or
         $identity.Scenario -cne $scenario -or $identity.Aborted -or $identity.FullProductionShellStarted) { throw 'Fixture is not capture-ready.' }
     $previous = @($identity.FrameCounts)
@@ -72,7 +73,7 @@ foreach ($scenario in $Scenarios) {
       if ($measurement.ProductVersion -cne $identity.ProductVersion) { throw 'Measured product identity mismatch.' }
       $results.Add($measurement)
     }
-    $all.Add([pscustomobject]@{
+    $scenarioReport = [pscustomobject]@{
       Scenario = $scenario; Identity = $identity; Passes = $results.ToArray(); CaptureChecks = $checks.ToArray()
       MeanPassAverage = [pscustomobject]@{
         WorkingSetMiB = [math]::Round(($results | ForEach-Object { $_.WorkingSetMb.Average } | Measure-Object -Average).Average, 2)
@@ -80,7 +81,9 @@ foreach ($scenario in $Scenarios) {
         MachineCpuPercent = [math]::Round(($results | ForEach-Object { $_.MachineCpuPercent.Average } | Measure-Object -Average).Average, 3)
         Handles = [math]::Round(($results | ForEach-Object { $_.HandleCount.Average } | Measure-Object -Average).Average, 1)
       }
-    })
+    }
+    $scenarioReport | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $output "$scenario-summary.json") -Encoding utf8
+    $all.Add($scenarioReport)
   }
   finally {
     if (-not $process.HasExited) {

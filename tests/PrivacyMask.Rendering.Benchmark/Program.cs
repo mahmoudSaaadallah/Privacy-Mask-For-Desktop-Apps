@@ -29,7 +29,7 @@ internal static class Program
         for (var i = 0; i < args.Length; i += 2)
         {
             if (i + 1 >= args.Length) return 2;
-            if (args[i] == "--scenario" && args[i + 1] is "IdleFixture" or "OneWindow" or "TwoWindows" or "MoveResize" or "RevealInputs") scenario = args[i + 1];
+            if (args[i] == "--scenario" && args[i + 1] is "IdleFixture" or "OneWindow" or "TwoWindows" or "MoveOnly" or "MoveResize" or "RevealInputs") scenario = args[i + 1];
             else if (args[i] == "--duration-seconds" && int.TryParse(args[i + 1], out var duration) && duration is >= 5 and <= 3600) seconds = duration;
             else if (args[i] == "--allow-visible-fixtures" && args[i + 1] == "true") admitted = true;
             else return 2;
@@ -103,7 +103,9 @@ internal static class Program
                     {
                         var form = forms[i];
                         if (form.IsDisposed) { Stop(true); return; }
-                        if (scenario == "MoveResize")
+                        if (scenario == "MoveOnly")
+                            form.SetBounds(area.Left + 80 + (int)(40 * Math.Sin(t)), area.Top + 80 + (int)(25 * Math.Cos(t)), width, height);
+                        if (scenario == "MoveResize" && (int)t % 4 < 2)
                             form.SetBounds(area.Left + 80 + (int)(40 * Math.Sin(t)), area.Top + 80 + (int)(25 * Math.Cos(t)),
                                 width - 50 + (int)(30 * Math.Sin(t)), height - 40 + (int)(20 * Math.Cos(t)));
                         GetWindowThreadProcessId(form.Handle, out var owner);

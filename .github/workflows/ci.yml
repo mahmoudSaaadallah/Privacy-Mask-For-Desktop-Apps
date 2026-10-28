@@ -58,6 +58,10 @@ jobs:
         shell: pwsh
         run: .\scripts\test-gui-benchmark.ps1
 
+      - name: Test live renderer opt-in gates without opening windows
+        shell: pwsh
+        run: .\scripts\test-renderer-benchmark-arguments.ps1
+
       - name: Restore
         run: dotnet restore PrivacyMask.Desktop.slnx
 
