@@ -44,6 +44,11 @@ try {
     Assert-Probe ($result.MemoryUnit.Contains('MiB') -and $result.CpuNormalization.Contains('total')) 'Metric units are ambiguous.'
     Assert-Probe ($result.ProcessId -eq $process.Id -and $result.WindowsVersion) 'Process/OS identity is missing.'
     Assert-Probe ($result.ProductVersion -ne '' -and $result.FileVersion -ne '') 'Binary metadata was not collected.'
+    $evidenceHash = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash
+    $rejected = $false
+    try { & (Join-Path $PSScriptRoot 'test-release-package.ps1') -MeasurementOutputPath $output | Out-Null }
+    catch { $rejected = $true }
+    Assert-Probe ($rejected -and (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash -ceq $evidenceHash) 'Existing footprint evidence could be overwritten.'
     $rejected = $false
     try { & $probe -TargetProcessId $process.Id -ExpectedStartTimeUtc ([datetime]::UtcNow.AddYears(-1)) -DurationSeconds 2 | Out-Null }
     catch { $rejected = $true }
