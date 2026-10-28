@@ -9,7 +9,7 @@ public sealed class UpdateRestartBlockTests
     {
         var block = UpdateRestartBlock.Assess(false, false, () => new[]
         {
-            Window("a", "Same name"), Window("a", "Same name"), Window("b", "Same name"),
+            Window("a", "Same name"), Window("A", "Same name"), Window("b", "Same name"),
             Window("c", "Third"), Window("d", "Fourth"), Window("e", "Fifth"),
         });
         Assert.Equal(UpdateRestartBlockKind.VisibleWindows, block!.Kind);

@@ -35,8 +35,8 @@ internal sealed record UpdateRestartBlock(UpdateRestartBlockKind Kind, IReadOnly
         try
         {
             var applications = inspect().Where(window => window.IsVisible && !window.IsMinimized && window.Application is not null)
-                .Select(window => window.Application!).DistinctBy(app => app.ProfileId, StringComparer.Ordinal)
-                .OrderBy(app => app.ProfileId, StringComparer.Ordinal).ToArray();
+                .Select(window => window.Application!).DistinctBy(app => app.ProfileId, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(app => app.ProfileId, StringComparer.OrdinalIgnoreCase).ToArray();
             return applications.Length == 0 ? null : new(UpdateRestartBlockKind.VisibleWindows, applications);
         }
         catch { return new(UpdateRestartBlockKind.InspectionUnavailable, []); }

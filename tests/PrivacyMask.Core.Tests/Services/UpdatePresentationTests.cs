@@ -67,6 +67,24 @@ public sealed class UpdatePresentationTests
     }
 
     [Fact]
+    public void RequiredDownloadFailureRetainsKnownServerDeadlineAndRepairDoesNotClaimUpToDate()
+    {
+        var status = new UpdateStatusViewModel();
+        status.RequireAutomaticUpdates();
+        var now = DateTimeOffset.UtcNow;
+        var retry = now.AddHours(2);
+        status.Complete(new(UpdateCheckStatus.RateLimited, RetryAt: retry), status.RequiredChannel, now);
+        status.FinishDownload("Download failed; no application was installed.");
+        Assert.Contains(retry.ToLocalTime().ToString("g"), status.RetryText);
+        Assert.Equal("Update attempt did not finish", status.StatusHeading);
+        status.FinishDownload("Cleanup requires attention", cleanupIncomplete: true);
+        status.Begin();
+        status.Complete(new(UpdateCheckStatus.UpToDate), status.RequiredChannel, now);
+        Assert.Equal("Update recovery needs attention", status.StatusHeading);
+        Assert.Equal("Cleanup requires attention Some staging files could not be removed. Use View releases; no installed files were changed.", status.StatusDetail);
+    }
+
+    [Fact]
     public void BlockingApplicationActionRequiresAVerifiedStageAndClearsOnPhaseChanges()
     {
         var status = new UpdateStatusViewModel();

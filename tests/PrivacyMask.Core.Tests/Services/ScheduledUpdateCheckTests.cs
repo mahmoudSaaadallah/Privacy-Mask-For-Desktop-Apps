@@ -52,7 +52,8 @@ public sealed class ScheduledUpdateCheckTests
         Assert.Equal(0, delays);
         Assert.Equal(0, store.Reads);
         Assert.Equal(0, store.Writes);
-        Assert.Contains("release installer", session.Status.StatusText);
+        Assert.Equal("Automatic updates unavailable", session.Status.StatusHeading);
+        Assert.False(string.IsNullOrWhiteSpace(session.Status.StatusDetail));
     }
 
     [Fact]
