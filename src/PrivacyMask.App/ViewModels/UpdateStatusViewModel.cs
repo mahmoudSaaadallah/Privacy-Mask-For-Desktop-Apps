@@ -7,6 +7,8 @@ namespace PrivacyMask.App.ViewModels;
 /// <summary>Discovery status/history, deliberately outside the settings edit session.</summary>
 public sealed class UpdateStatusViewModel : ObservableObject
 {
+    private enum DisplayPhase { Idle, Checking, Downloading, VerifyingPackage, VerifyingApplication, Ready, Waiting, PreparingInstall, Restarting, Failed, Discarding, Discarded }
+    private DisplayPhase _phase;
     private UpdateCheckResult? _result;
     private bool _isChecking;
     private bool _isStopped;
@@ -23,6 +25,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     private UpdateRestartBlock? _restartBlock;
     private double _downloadPercent;
     private DateTimeOffset? _candidateCheckedUtc;
+    private DateTimeOffset? _retryAt;
     private UpdateReleaseChannel? _checkedChannel;
     private readonly Dictionary<UpdateReleaseChannel, DateTimeOffset> _successfulChecks = [];
     public bool IsMandatory { get; private set; }
@@ -52,6 +55,33 @@ public sealed class UpdateStatusViewModel : ObservableObject
     public double DownloadPercent => _downloadPercent;
     public string DownloadText => _downloadText;
     public bool CanReviewBlockingApplications => _downloadReady && !_isInstalling && _restartBlock?.CanReviewApplications == true;
+    public string StatusHeading => NeedsRepair ? "Update recovery needs attention" : _phase switch
+    {
+        DisplayPhase.Checking => "Checking for updates",
+        DisplayPhase.Downloading => "Downloading update",
+        DisplayPhase.VerifyingPackage => "Verifying update package",
+        DisplayPhase.VerifyingApplication => "Verifying application",
+        DisplayPhase.Ready => "Verified update ready",
+        DisplayPhase.Waiting => "Update waiting",
+        DisplayPhase.PreparingInstall => "Preparing installation",
+        DisplayPhase.Restarting => "Restarting to apply update",
+        DisplayPhase.Failed => "Update attempt did not finish",
+        DisplayPhase.Discarding => "Removing verified download",
+        DisplayPhase.Discarded => "Verified download removed",
+        _ => _result?.Status switch
+        {
+            UpdateCheckStatus.Available => "New version available",
+            UpdateCheckStatus.UpToDate => "Up to date",
+            UpdateCheckStatus.NoCompatibleUpdate => "No compatible update",
+            UpdateCheckStatus.ManualUpdateRequired or UpdateCheckStatus.NotConfigured => "Automatic updates unavailable",
+            UpdateCheckStatus.RateLimited => "Waiting to retry",
+            UpdateCheckStatus.UnableToCheck or UpdateCheckStatus.Incomplete or UpdateCheckStatus.InvalidContext => "Unable to confirm update status",
+            _ => "Update status",
+        },
+    };
+    public string StatusDetail => NeedsRepair
+        ? (_downloadText.Length == 0 ? "Local update state needs attention. Do not remove update or recovery files manually. Use View releases for help." : _downloadText)
+        : _phase is DisplayPhase.Idle or DisplayPhase.Checking ? StatusText : _downloadText;
     internal UpdateCandidate? Candidate => HasCandidate ? _result?.Candidate : null;
     internal UpdateReleaseChannel? CandidateChannel => _checkedChannel;
     internal DateTimeOffset? CandidateCheckedUtc => _candidateCheckedUtc;
@@ -73,7 +103,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     };
     public string LastCheckText => _checkedChannel is null ? "Last successful check: never"
         : $"Checked channel: {_checkedChannel}. Last successful check: {(_successfulChecks.TryGetValue(_checkedChannel.Value, out var last) ? last.ToLocalTime().ToString("g") : "never")}";
-    public string RetryText => _result?.RetryAt is { } retry ? $"Retry after {retry.ToLocalTime():g}" : "";
+    public string RetryText => _retryAt is { } retry ? $"Retry after {retry.ToLocalTime():g}" : "";
     public string ReleaseNotes => _result?.Candidate?.ReleaseNotes is { } notes ? notes[..Math.Min(notes.Length, 4096)] : "";
     public bool HasCandidate => _result?.Status == UpdateCheckStatus.Available && _result.Candidate is not null;
     public string CandidateDetail => HasCandidate
@@ -84,6 +114,9 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void Begin()
     {
+        _phase = DisplayPhase.Checking;
+        if (!NeedsRepair) _downloadText = "";
+        _retryAt = null;
         _restartBlock = null;
         _isChecking = true;
         _isCancelled = false;
@@ -94,6 +127,10 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void Complete(UpdateCheckResult result, UpdateReleaseChannel channel, DateTimeOffset now)
     {
+        _phase = DisplayPhase.Idle;
+        _restartBlock = null;
+        if (!NeedsRepair) _downloadText = "";
+        _retryAt = result.RetryAt;
         _isChecking = false;
         _isCancelled = false;
         _checkedChannel = channel;
@@ -125,6 +162,8 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void Cancel()
     {
+        _phase = DisplayPhase.Idle;
+        _downloadText = "";
         _restartBlock = null;
         _isChecking = false;
         _isCancelled = true;
@@ -142,6 +181,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void BeginDownload()
     {
+        _phase = DisplayPhase.Downloading;
         _restartBlock = null;
         _isChecking = true;
         _isDownloading = true;
@@ -152,6 +192,8 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void BeginDiscard()
     {
+        _phase = DisplayPhase.Discarding;
+        _restartBlock = null;
         _isChecking = true;
         _isDiscarding = true;
         _downloadText = "Removing this verified download…";
@@ -162,6 +204,8 @@ public sealed class UpdateStatusViewModel : ObservableObject
     {
         if (!_isDownloading || _isStopped || progress.TotalBytes <= 0 || progress.Bytes < 0) return;
         _downloadPercent = Math.Clamp(100d * progress.Bytes / progress.TotalBytes, 0, 100);
+        _phase = progress.Phase == UpdateDownloadPhase.Downloading ? DisplayPhase.Downloading
+            : progress.Phase == UpdateDownloadPhase.Verifying ? DisplayPhase.VerifyingPackage : DisplayPhase.VerifyingApplication;
         _downloadText = progress.Phase switch
         {
             UpdateDownloadPhase.Downloading => $"Downloading: {progress.Bytes / 1048576d:0.0} / {progress.TotalBytes / 1048576d:0.0} MiB",
@@ -174,6 +218,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void FinishDownload(string message, bool ready = false, bool cleanupIncomplete = false)
     {
+        _phase = ready ? DisplayPhase.Ready : DisplayPhase.Failed;
         _restartBlock = null;
         _isChecking = false;
         _isDownloading = false;
@@ -193,10 +238,12 @@ public sealed class UpdateStatusViewModel : ObservableObject
         if (removed) { _cleanupBlocked = false; _installRetryBlocked = false; }
         FinishDownload(removed ? "Download discarded. Your installed application is unchanged."
             : "The verified download remains on disk.", ready: !removed, cleanupIncomplete: !removed);
+        if (removed) { _phase = DisplayPhase.Discarded; Notify(); }
     }
 
     internal void BeginInstall()
     {
+        _phase = DisplayPhase.PreparingInstall;
         _restartBlock = null;
         _isInstalling = true;
         _downloadText = IsMandatory ? "Preparing required update. Protection remains active until a safe automatic restart."
@@ -206,6 +253,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void FinishInstall(string message, bool repairRequired = false, bool requiresNewDownload = false)
     {
+        _phase = repairRequired || requiresNewDownload ? DisplayPhase.Failed : DisplayPhase.Waiting;
         _restartBlock = null;
         _isInstalling = false;
         _repairRequired |= repairRequired;
@@ -216,14 +264,16 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void ShowRestarting()
     {
+        _phase = DisplayPhase.Restarting;
         _restartBlock = null;
         _downloadText = "Restarting to apply the verified update. Masks disappear during restart; installation success is not yet confirmed.";
         Notify();
     }
 
-    internal void ShowAutomaticWait(string reason)
+    internal void ShowAutomaticWait(string reason, bool failed = false)
     {
-        if (_isStopped || !_downloadReady || _isInstalling || (_downloadText == reason && _restartBlock is null)) return;
+        if (_isStopped || _isInstalling || (_downloadText == reason && _restartBlock is null)) return;
+        _phase = failed ? DisplayPhase.Failed : DisplayPhase.Waiting;
         _restartBlock = null;
         _downloadText = reason;
         Notify();
@@ -233,6 +283,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     {
         if (_isStopped || !_downloadReady || _isInstalling) return;
         if (_restartBlock?.Kind == block.Kind && _downloadText == block.Message) return;
+        _phase = DisplayPhase.Waiting;
         _restartBlock = block;
         _downloadText = block.Message;
         Notify();
@@ -244,7 +295,8 @@ public sealed class UpdateStatusViewModel : ObservableObject
             nameof(LastCheckText), nameof(RetryText), nameof(ReleaseNotes), nameof(HasCandidate), nameof(CandidateDetail),
             nameof(CanDownload), nameof(CanCancelDownload), nameof(CanDiscardDownload), nameof(HasDownloadStatus),
             nameof(IsDownloading), nameof(DownloadPercent), nameof(DownloadText), nameof(CanInstall), nameof(IsInstalling),
-            nameof(IsMandatory), nameof(UserActionsAllowed), nameof(RequiredChannel), nameof(CanReviewBlockingApplications) })
+            nameof(IsMandatory), nameof(UserActionsAllowed), nameof(RequiredChannel), nameof(CanReviewBlockingApplications),
+            nameof(StatusHeading), nameof(StatusDetail) })
             RaisePropertyChanged(property);
     }
 }

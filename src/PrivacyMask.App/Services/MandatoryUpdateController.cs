@@ -42,7 +42,9 @@ internal sealed class MandatoryUpdateController(UpdateStatusViewModel status, Ma
             if (!Enabled || status.IsChecking || status.IsInstalling || status.NeedsRepair) return;
             if (!host.Online())
             {
-                status.ShowAutomaticWait("Required update retained. Waiting for network connectivity; it cannot be cancelled.");
+                status.ShowAutomaticWait(status.HasVerifiedDownload
+                    ? "Verified update retained. Waiting for network connectivity; it will continue automatically."
+                    : "Waiting for network connectivity. PrivacyMask will check automatically when a request is allowed; protection remains active.");
                 return;
             }
             if (status.HasVerifiedDownload && !status.RequiresNewDownload) { await TryInstallAsync(); return; }
@@ -69,7 +71,7 @@ internal sealed class MandatoryUpdateController(UpdateStatusViewModel status, Ma
         catch (Exception)
         {
             _nextNetworkAttempt = _time.GetUtcNow().AddMinutes(15);
-            status.ShowAutomaticWait("Required update could not finish safely. It will retry automatically; the current application is unchanged.");
+            status.ShowAutomaticWait("Required update could not finish safely. It will retry automatically; the current application is unchanged.", failed: true);
         }
         finally { completion.TrySetResult(); }
     }
