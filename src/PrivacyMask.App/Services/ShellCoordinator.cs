@@ -264,26 +264,23 @@ public sealed class ShellCoordinator : IAsyncDisposable
         catch (System.Net.NetworkInformation.NetworkInformationException) { return true; }
     }
 
-    private string? AutomaticRestartBlockReason()
-    {
-        if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic || _profileProtectionState.HasAnyPanic)
-            return "Required update is waiting for Panic to be unlocked normally. It will continue automatically.";
-        if (_mainWindow?.HasUpdateBlockingEdits == true)
-            return "Required update is waiting for unsaved or invalid settings edits. It will continue automatically after they are resolved.";
-        return HasVisibleProtectedWindows()
-            ? "Required update is waiting for protected windows to be closed or minimized. It will continue automatically."
-            : null;
-    }
+    private UpdateRestartBlock? AutomaticRestartBlockReason() => UpdateRestartBlock.Assess(
+        _protectionStateMachine.CurrentMode == RuntimeMode.Panic || _profileProtectionState.HasAnyPanic,
+        _mainWindow?.HasUpdateBlockingEdits == true, CaptureUpdateWindows);
 
     private bool HasVisibleProtectedWindows()
     {
-        try
-        {
-            return _windowInspector.Capture(_windowProcessFilter, requireCompleteEnumeration: true).CandidateWindows.Any(window =>
-                window.IsVisible && !window.IsMinimized && _windowProfileResolver.Resolve(window, _savedSettings.AppProfiles) is not null);
-        }
-        catch { return true; } // Uncertain desktop state is never permission to remove masks.
+        return UpdateRestartBlock.Assess(false, false, CaptureUpdateWindows) is not null;
     }
+
+    private IEnumerable<UpdateBlockingWindow> CaptureUpdateWindows() =>
+        _windowInspector.Capture(_windowProcessFilter, requireCompleteEnumeration: true).CandidateWindows.Select(window =>
+        {
+            var profile = window.IsVisible && !window.IsMinimized
+                ? _windowProfileResolver.Resolve(window, _savedSettings.AppProfiles) : null;
+            return new UpdateBlockingWindow(window.IsVisible, window.IsMinimized,
+                profile is null ? null : new(profile.Profile.ProfileId, profile.Profile.DisplayName));
+        });
 
     public void HandleExternalActivation()
     {

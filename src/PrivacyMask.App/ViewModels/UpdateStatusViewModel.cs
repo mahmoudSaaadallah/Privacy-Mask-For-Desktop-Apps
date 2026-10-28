@@ -20,6 +20,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     private bool _repairRequired;
     private bool _installRetryBlocked;
     private string _downloadText = "";
+    private UpdateRestartBlock? _restartBlock;
     private double _downloadPercent;
     private DateTimeOffset? _candidateCheckedUtc;
     private UpdateReleaseChannel? _checkedChannel;
@@ -50,6 +51,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     public bool IsDownloading => _isDownloading;
     public double DownloadPercent => _downloadPercent;
     public string DownloadText => _downloadText;
+    public bool CanReviewBlockingApplications => _downloadReady && !_isInstalling && _restartBlock?.CanReviewApplications == true;
     internal UpdateCandidate? Candidate => HasCandidate ? _result?.Candidate : null;
     internal UpdateReleaseChannel? CandidateChannel => _checkedChannel;
     internal DateTimeOffset? CandidateCheckedUtc => _candidateCheckedUtc;
@@ -82,6 +84,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void Begin()
     {
+        _restartBlock = null;
         _isChecking = true;
         _isCancelled = false;
         _result = null;
@@ -105,6 +108,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void Stop()
     {
+        _restartBlock = null;
         _isStopped = true;
         _isChecking = false;
         _isDownloading = false;
@@ -121,6 +125,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void Cancel()
     {
+        _restartBlock = null;
         _isChecking = false;
         _isCancelled = true;
         _result = null;
@@ -137,6 +142,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void BeginDownload()
     {
+        _restartBlock = null;
         _isChecking = true;
         _isDownloading = true;
         _downloadPercent = 0;
@@ -168,6 +174,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void FinishDownload(string message, bool ready = false, bool cleanupIncomplete = false)
     {
+        _restartBlock = null;
         _isChecking = false;
         _isDownloading = false;
         _isDiscarding = false;
@@ -190,6 +197,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void BeginInstall()
     {
+        _restartBlock = null;
         _isInstalling = true;
         _downloadText = IsMandatory ? "Preparing required update. Protection remains active until a safe automatic restart."
             : "Preparing to install. Resolve unsaved edits and confirm restart; protection remains active until exit.";
@@ -198,6 +206,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void FinishInstall(string message, bool repairRequired = false, bool requiresNewDownload = false)
     {
+        _restartBlock = null;
         _isInstalling = false;
         _repairRequired |= repairRequired;
         _installRetryBlocked |= requiresNewDownload;
@@ -207,14 +216,25 @@ public sealed class UpdateStatusViewModel : ObservableObject
 
     internal void ShowRestarting()
     {
+        _restartBlock = null;
         _downloadText = "Restarting to apply the verified update. Masks disappear during restart; installation success is not yet confirmed.";
         Notify();
     }
 
     internal void ShowAutomaticWait(string reason)
     {
-        if (_isStopped || !_downloadReady || _isInstalling || _downloadText == reason) return;
+        if (_isStopped || !_downloadReady || _isInstalling || (_downloadText == reason && _restartBlock is null)) return;
+        _restartBlock = null;
         _downloadText = reason;
+        Notify();
+    }
+
+    internal void ShowRestartBlock(UpdateRestartBlock block)
+    {
+        if (_isStopped || !_downloadReady || _isInstalling) return;
+        if (_restartBlock?.Kind == block.Kind && _downloadText == block.Message) return;
+        _restartBlock = block;
+        _downloadText = block.Message;
         Notify();
     }
 
@@ -224,7 +244,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
             nameof(LastCheckText), nameof(RetryText), nameof(ReleaseNotes), nameof(HasCandidate), nameof(CandidateDetail),
             nameof(CanDownload), nameof(CanCancelDownload), nameof(CanDiscardDownload), nameof(HasDownloadStatus),
             nameof(IsDownloading), nameof(DownloadPercent), nameof(DownloadText), nameof(CanInstall), nameof(IsInstalling),
-            nameof(IsMandatory), nameof(UserActionsAllowed), nameof(RequiredChannel) })
+            nameof(IsMandatory), nameof(UserActionsAllowed), nameof(RequiredChannel), nameof(CanReviewBlockingApplications) })
             RaisePropertyChanged(property);
     }
 }

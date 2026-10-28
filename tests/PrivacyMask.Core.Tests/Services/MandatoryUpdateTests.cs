@@ -32,8 +32,8 @@ public sealed class MandatoryUpdateTests
 
     [Theory]
     [InlineData("Panic")]
-    [InlineData("Unsaved settings")]
-    [InlineData("Visible protected windows")]
+    [InlineData("unsaved or invalid settings")]
+    [InlineData("Close or minimize")]
     public async Task SafetyDeferralKeepsTheStageAndResumesWithoutAnotherPrompt(string reason)
     {
         var host = new Host { Block = reason };
@@ -269,7 +269,10 @@ public sealed class MandatoryUpdateTests
                     Status.FinishDownload("verified", ready: true);
                     return Task.CompletedTask;
                 }, () => { Events.Add("retire"); Status.FinishDiscard(true); return Task.CompletedTask; },
-                () => { Events.Add("install"); OnInstall?.Invoke(); return Task.CompletedTask; }, () => _next, () => Block), Clock);
+                () => { Events.Add("install"); OnInstall?.Invoke(); return Task.CompletedTask; }, () => _next,
+                () => Block is null ? null : new UpdateRestartBlock(Block == "Panic" ? UpdateRestartBlockKind.Panic
+                    : Block == "unsaved or invalid settings" ? UpdateRestartBlockKind.SettingsEdits : UpdateRestartBlockKind.VisibleWindows,
+                    [new("fixture", "Example app")])), Clock);
         }
     }
 
