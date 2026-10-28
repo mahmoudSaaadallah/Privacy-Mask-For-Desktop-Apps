@@ -1,10 +1,10 @@
-# Required automatic updates — beta.16 usability Preview
+# Required automatic updates — beta.17 renderer Preview
 
-Source: `2.0.0-beta.16`, FileVersion `2.0.0.16`. Settings/history schemas remain
+Source: `2.0.0-beta.17`, FileVersion `2.0.0.17`. Settings/history schemas remain
 13/1 and updater protocol remains 1. This implements the owner's required-update
 policy with the explicitly agreed privacy deferrals. Preview activation is now
 enabled for managed Windows 11 x64 installations; stable stays disabled. This
-source delivery does not publish beta.16 or claim complete live qualification. See the
+source delivery does not publish beta.17 or claim complete live qualification. See the
 owner-approved [simple A/B experiment](update-preview-trial.md).
 
 ## End-user policy after separate signed activation

@@ -15,6 +15,7 @@
     <Project Path="tests/PrivacyMask.Core.Tests/PrivacyMask.Core.Tests.csproj" />
     <Project Path="tests/PrivacyMask.Gui.SmokeChecks/PrivacyMask.Gui.SmokeChecks.csproj" />
     <Project Path="tests/PrivacyMask.Gui.Benchmark/PrivacyMask.Gui.Benchmark.csproj" />
+    <Project Path="tests/PrivacyMask.Rendering.Benchmark/PrivacyMask.Rendering.Benchmark.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/PrivacyMask.Bootstrap.Prototype/PrivacyMask.Bootstrap.Prototype.csproj" />
