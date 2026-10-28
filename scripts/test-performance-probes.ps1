@@ -40,6 +40,7 @@ try {
     Assert-Probe ($result.Completed -and $result.SampleCount -ge 3) 'Complete measurement did not cover the requested interval.'
     Assert-Probe ($result.RequestedDurationSeconds -eq 2 -and $result.WarmupSeconds -eq 1) 'Warm-up was not separated from samples.'
     Assert-Probe ($result.DurationSeconds -ge 2 -and $result.DurationSeconds -lt 5) 'Warm-up leaked into the sampling duration.'
+    Assert-Probe ($result.SamplingCoverage -ge 0.8 -and $result.MaximumSampleGapMilliseconds -le 2500) 'Sparse samples were accepted as complete.'
     Assert-Probe ($result.MemoryUnit.Contains('MiB') -and $result.CpuNormalization.Contains('total')) 'Metric units are ambiguous.'
     Assert-Probe ($result.ProcessId -eq $process.Id -and $result.WindowsVersion) 'Process/OS identity is missing.'
     Assert-Probe ($result.ProductVersion -ne '' -and $result.FileVersion -ne '') 'Binary metadata was not collected.'
