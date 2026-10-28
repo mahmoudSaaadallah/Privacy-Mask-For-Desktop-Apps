@@ -15,8 +15,15 @@ function Start-Fixture([int]$Milliseconds) {
   $info = [Diagnostics.ProcessStartInfo]::new($shell)
   $info.UseShellExecute = $false
   $info.CreateNoWindow = $true
-  foreach ($argument in @('-NoProfile','-Command',"[Threading.Thread]::Sleep($Milliseconds)")) { $info.ArgumentList.Add($argument) }
-  return [Diagnostics.Process]::Start($info)
+  $info.RedirectStandardOutput = $true
+  foreach ($argument in @('-NoProfile','-Command',"[Console]::WriteLine('READY'); [Threading.Thread]::Sleep($Milliseconds)")) { $info.ArgumentList.Add($argument) }
+  $process = [Diagnostics.Process]::Start($info)
+  $ready = $process.StandardOutput.ReadLineAsync()
+  if (-not $ready.Wait(10000) -or $ready.Result -cne 'READY') {
+    Stop-Fixture $process
+    throw 'Owned performance fixture did not become ready.'
+  }
+  return $process
 }
 function Stop-Fixture([Diagnostics.Process]$Process) {
   if (-not $Process.HasExited) { $Process.Kill(); $Process.WaitForExit() }

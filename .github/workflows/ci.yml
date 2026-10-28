@@ -50,6 +50,14 @@ jobs:
         shell: pwsh
         run: .\scripts\test-update-manifest-schema.ps1
 
+      - name: Test runtime measurement identity and completeness
+        shell: pwsh
+        run: .\scripts\test-performance-probes.ps1
+
+      - name: Test isolated synthetic GUI benchmark sessions
+        shell: pwsh
+        run: .\scripts\test-gui-benchmark.ps1
+
       - name: Restore
         run: dotnet restore PrivacyMask.Desktop.slnx
 
@@ -77,7 +85,7 @@ jobs:
 
       - name: Smoke test release package
         shell: powershell
-        run: .\scripts\test-release-package.ps1
+        run: .\scripts\test-release-package.ps1 -MeasurementOutputPath artifacts/release-footprint.json
 
       - name: Test real signed update package with memory-only test keys
         shell: pwsh
