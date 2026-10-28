@@ -115,7 +115,7 @@ public sealed class AppProfileViewModel : ObservableObject
     {
         ProfileRuntimeStatus.TargetMissing => "Needs relink",
         ProfileRuntimeStatus.PanicProtected => "Panic mask active",
-        ProfileRuntimeStatus.ProtectionPaused => "Paused",
+        ProfileRuntimeStatus.ProtectionPaused => "Protection paused",
         ProfileRuntimeStatus.WaitingForFocus => "Waiting for focus",
         ProfileRuntimeStatus.Checking => "Checking…",
         _ => RuntimeStatusSummary,
@@ -136,7 +136,7 @@ public sealed class AppProfileViewModel : ObservableObject
     {
         ProfileRuntimeStatus.TargetMissing => "The saved executable is missing. Use Relink to select its new location; your mask settings will be preserved.",
         ProfileRuntimeStatus.NotRunning => "No matching desktop window is detected. Open the application to activate its configured protection.",
-        ProfileRuntimeStatus.ProtectionPaused => "Protection is paused for this application. Use Ctrl + Shift + P on it, or resume global protection from the tray.",
+        ProfileRuntimeStatus.ProtectionPaused => "Only protection is paused; the application's windows may still be open. Close or minimize all its windows to allow an automatic update. Use Ctrl + Shift + P on it, or resume global protection from the tray, to restore its mask.",
         ProfileRuntimeStatus.PanicProtected => "An opaque panic mask is active. A correct PIN is required to disable it; reveal gestures are blocked.",
         ProfileRuntimeStatus.Disabled => "This profile is disabled. Enable it to restore protection.",
         _ => Summary,
