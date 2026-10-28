@@ -114,7 +114,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     public string ReleaseNotes => _result?.Candidate?.ReleaseNotes is { } notes ? notes[..Math.Min(notes.Length, 4096)] : "";
     public bool HasCandidate => _result?.Status == UpdateCheckStatus.Available && _result.Candidate is not null;
     public string CandidateDetail => HasCandidate
-        ? $"{_result!.Candidate!.Manifest.Package.Size / 1048576d:0.0} MiB. " + (IsMandatory
+        ? $"Version {_result!.Candidate!.Manifest.Version} · {_result.Candidate.Manifest.Package.Size / 1048576d:0.0} MiB. " + (IsMandatory
             ? "Required update: downloads automatically and installs when Panic, unsaved edits and visible protected windows are clear."
             : "Download verifies a separate package. Update now asks before restarting; masks disappear during restart.")
         : "";

@@ -492,6 +492,8 @@ internal static class Program
                 var heading = (TextBlock)window.FindName("UpdateStatusHeading");
                 var detail = (TextBlock)window.FindName("UpdateStatusDetail");
                 Check(heading.Text == status.StatusHeading && detail.Text == status.StatusDetail, $"Stale update presentation in {state.Name}.");
+                if (status.HasCandidate) Check(status.CandidateDetail.Contains($"Version {candidate.Manifest.Version}"),
+                    $"Target version was hidden in {state.Name}.");
                 Check(heading.TextWrapping == TextWrapping.Wrap && detail.TextWrapping == TextWrapping.Wrap, "Update explanations do not wrap.");
                 Check(AutomationProperties.GetLiveSetting(heading) == AutomationLiveSetting.Polite, "Update stage is not accessible.");
                 Check((review.Visibility == Visibility.Visible) == (state.Name == "visible-windows"), $"Wrong review action in {state.Name}.");
