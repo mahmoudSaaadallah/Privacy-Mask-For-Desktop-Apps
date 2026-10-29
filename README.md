@@ -436,6 +436,9 @@ Press `Esc` or close the window to discard the preview and return to the tray.
 - The [beta.17 live-renderer experiment](docs/live-renderer-beta17.md) documents
   owned synthetic-window measurements and the capture-identity movement fix;
   these are not full-App or third-party compatibility certification.
+- Use the [full-App observation/eight-hour runbook](docs/full-app-soak.md) for
+  exact-binary admission, streamed resource counters, manual checkpoints and
+  offline charts. Short tool checks never qualify an eight-hour run or Stable.
 - Keep tests updated whenever profile matching, settings migration, or overlay behavior changes.
 
 ## Known limitations
