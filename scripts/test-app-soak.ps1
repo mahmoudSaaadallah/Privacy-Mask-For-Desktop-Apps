@@ -47,18 +47,20 @@ try {
   }
   $process = Start-SoakFixture
   try {
-    $arguments = @{TargetProcessId=$process.Id; ExpectedStartTimeUtc=$process.StartTime.ToUniversalTime(); ExpectedProductVersion=$version; ExpectedBinarySha256=$shellHash; DurationSeconds=2; SampleIntervalMilliseconds=100; WarmupSeconds=0; EndpointWindowSeconds=1; AllowSyntheticProcess=$true}
+    $arguments = @{TargetProcessId=$process.Id; ExpectedStartTimeUtc=$process.StartTime.ToUniversalTime(); ExpectedProductVersion=$version; ExpectedBinarySha256=$shellHash; DurationSeconds=3; SampleIntervalMilliseconds=500; WarmupSeconds=0; EndpointWindowSeconds=1; AllowSyntheticProcess=$true}
     $output = Join-Path $root 'complete'
     try { & $probe @arguments -OutputDirectory $output }
     catch { Get-Content -LiteralPath (Join-Path $output 'summary.json'); throw }
     $report = Get-Content -LiteralPath (Join-Path $output 'summary.json') -Raw | ConvertFrom-Json
     $admission = Get-Content -LiteralPath (Join-Path $output 'admission.json') -Raw | ConvertFrom-Json
     $samples = @(Import-Csv -LiteralPath (Join-Path $output 'samples.csv'))
-    Assert-Soak ($report.MeasurementStatus -ceq 'Completed' -and $report.SampleCount -ge 15) 'Short observation failed.'
+    Assert-Soak ($report.MeasurementStatus -ceq 'Completed' -and $report.SampleCount -ge 5) 'Short observation failed.'
     Assert-Soak (-not $report.EightHourObservationCompleted -and $report.QualificationStatus -ceq 'NotEvaluated') 'Short/synthetic observation became qualification.'
     Assert-Soak ($admission.Scope -ceq 'SyntheticProcessObserverTest' -and $admission.BinarySha256.Length -eq 64) 'Binary identity or scope missing.'
-    Assert-Soak ($samples.Count -eq $report.SampleCount -and [double]$samples[-1].ElapsedSeconds -ge 2) 'Streaming CSV lost samples.'
+    Assert-Soak ($samples.Count -eq $report.SampleCount -and [double]$samples[-1].ElapsedSeconds -ge 3) 'Streaming CSV lost samples.'
     Assert-Soak ($report.EndpointWindowsAvailable -and $null -ne $report.HandleEndpointGrowthPercent) 'Endpoint windows missing.'
+    & (Join-Path $PSScriptRoot 'export-soak-report.ps1') -SessionDirectory $output
+    Assert-Soak ((Get-Content -LiteralPath (Join-Path $output 'report.html') -Raw).Contains('Completed: RequestedObservationCompleted')) 'Real collector output could not be reported.'
     $hash = (Get-FileHash -LiteralPath (Join-Path $output 'summary.json')).Hash
     Assert-Rejected { & $probe @arguments -OutputDirectory $output } 'Existing evidence was overwritten.'
     Assert-Soak ((Get-FileHash -LiteralPath (Join-Path $output 'summary.json')).Hash -ceq $hash) 'Rejected invocation changed evidence.'
@@ -82,6 +84,8 @@ try {
     Assert-Rejected { & $probe -TargetProcessId $process.Id -ExpectedStartTimeUtc $process.StartTime.ToUniversalTime() -ExpectedProductVersion $version -ExpectedBinarySha256 $shellHash -AllowSyntheticProcess -OutputDirectory $output -WarmupSeconds 3 -DurationSeconds 2 -SampleIntervalMilliseconds 100 } 'Warm-up exit passed.'
     $report = Get-Content -LiteralPath (Join-Path $output 'summary.json') -Raw | ConvertFrom-Json
     Assert-Soak ($report.MeasurementStatus -ceq 'Interrupted' -and $report.Reason -ceq 'TargetExitedDuringWarmup' -and $report.SampleCount -eq 0) 'Warm-up exit evidence was lost.'
+    & (Join-Path $PSScriptRoot 'export-soak-report.ps1') -SessionDirectory $output
+    Assert-Soak ((Get-Content -LiteralPath (Join-Path $output 'report.html') -Raw).Contains('No samples.')) 'Interrupted zero-sample evidence could not be reported.'
   }
   finally { Stop-SoakFixture $process }
 

@@ -35,3 +35,15 @@ function Get-SoakCompleteness {
       $coverage -ge 0.8 -and $MaximumGapMilliseconds -le [math]::Max(1000, 5 * $IntervalMilliseconds)
   }
 }
+
+function Read-SoakAdmission([string]$Directory) {
+  $path = Join-Path $Directory 'admission.json'
+  if ((Get-Item -LiteralPath $path).Length -gt 65536) { throw 'Oversized admission metadata.' }
+  $value = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+  if ($value.SchemaVersion -ne 1 -or $value.EvidenceKind -cne 'PrivacyMaskProcessSoak' -or
+      $value.SessionId -cnotmatch '^[a-f0-9]{32}$' -or $value.BinarySha256 -cnotmatch '^[a-f0-9]{64}$' -or
+      $value.Scope -cnotin @('SyntheticProcessObserverTest','FullAppResourceObservation') -or
+      $value.RequestedDurationSeconds -lt 2 -or $value.RequestedDurationSeconds -gt 28800 -or
+      $value.SampleIntervalMilliseconds -lt 100 -or $value.SampleIntervalMilliseconds -gt 60000) { throw 'Unsupported soak admission.' }
+  return $value
+}
