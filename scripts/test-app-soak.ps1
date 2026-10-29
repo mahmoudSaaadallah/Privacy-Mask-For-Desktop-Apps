@@ -38,9 +38,9 @@ try {
   Assert-Soak ($null -eq (Get-SoakMetric (New-SoakAccumulator))) 'No samples were represented as zero usage.'
   Assert-Soak ((Get-SoakGrowth 100 103) -eq 3 -and $null -eq (Get-SoakGrowth 0 1)) 'Endpoint growth is incorrect.'
   Assert-Rejected { Add-SoakValue $acc ([double]::NaN) } 'Non-finite metric was accepted.'
-  $complete = @{ElapsedSeconds=28800; RequestedSeconds=28800; Samples=5760; IntervalMilliseconds=5000; MaximumGapMilliseconds=5000; TargetAlive=$true; ReachedEnd=$true; ClockContinuous=$true}
+  $complete = @{ElapsedSeconds=28800; LastSampleSeconds=28800; RequestedSeconds=28800; Samples=5760; IntervalMilliseconds=5000; MaximumGapMilliseconds=5000; TargetAlive=$true; ReachedEnd=$true; ClockContinuous=$true}
   Assert-Soak (Get-SoakCompleteness @complete).Completed 'Complete-duration assessment failed.'
-  foreach ($change in @(@{TargetAlive=$false},@{ReachedEnd=$false},@{ClockContinuous=$false},@{Samples=100},@{MaximumGapMilliseconds=30000},@{ElapsedSeconds=28799})) {
+  foreach ($change in @(@{TargetAlive=$false},@{ReachedEnd=$false},@{ClockContinuous=$false},@{Samples=100},@{MaximumGapMilliseconds=30000},@{ElapsedSeconds=28799},@{LastSampleSeconds=28799},@{LastSampleSeconds=28801})) {
     $incomplete = $complete.Clone()
     foreach ($key in $change.Keys) { $incomplete[$key] = $change[$key] }
     Assert-Soak (-not (Get-SoakCompleteness @incomplete).Completed) 'Interrupted/sparse observation was accepted.'

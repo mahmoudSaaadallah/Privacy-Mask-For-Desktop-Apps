@@ -24,14 +24,15 @@ function Get-SoakGrowth([double]$First, [double]$Last) {
 }
 
 function Get-SoakCompleteness {
-  param([double]$ElapsedSeconds, [double]$RequestedSeconds, [long]$Samples,
+  param([double]$ElapsedSeconds, [double]$LastSampleSeconds, [double]$RequestedSeconds, [long]$Samples,
     [int]$IntervalMilliseconds, [double]$MaximumGapMilliseconds, [bool]$TargetAlive,
     [bool]$ReachedEnd, [bool]$ClockContinuous)
   $coverage = if ($ElapsedSeconds -gt 0) { [math]::Min(1d, $Samples * $IntervalMilliseconds / ($ElapsedSeconds * 1000)) } else { 0d }
   [pscustomobject]@{
     Coverage = [math]::Round($coverage, 4)
     Completed = $ReachedEnd -and $TargetAlive -and $ClockContinuous -and
-      $ElapsedSeconds -ge $RequestedSeconds -and $Samples -gt 0 -and
+      $ElapsedSeconds -ge $RequestedSeconds -and $LastSampleSeconds -ge $RequestedSeconds -and
+      $LastSampleSeconds -le ($ElapsedSeconds + 0.001) -and $Samples -gt 0 -and
       $coverage -ge 0.8 -and $MaximumGapMilliseconds -le [math]::Max(1000, 5 * $IntervalMilliseconds)
   }
 }

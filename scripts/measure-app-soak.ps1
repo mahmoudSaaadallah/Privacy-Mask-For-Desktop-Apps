@@ -36,7 +36,7 @@ $admission = [pscustomobject]@{
   ProductVersion = $binary.VersionInfo.ProductVersion; FileVersion = $binary.VersionInfo.FileVersion; BinarySha256 = $sha256
   Scope = $(if ($AllowSyntheticProcess) { 'SyntheticProcessObserverTest' } else { 'FullAppResourceObservation' })
   WindowsVersion = [Environment]::OSVersion.Version.ToString(); LogicalProcessors = [Environment]::ProcessorCount
-  PowerShellVersion = $PSVersionTable.PSVersion.ToString(); RuntimeVersion = [Environment]::Version.ToString()
+  ObserverPowerShellVersion = $PSVersionTable.PSVersion.ToString(); ObserverRuntimeVersion = [Environment]::Version.ToString()
   RequestedDurationSeconds = $DurationSeconds; SampleIntervalMilliseconds = $SampleIntervalMilliseconds
   WarmupSeconds = $WarmupSeconds; EndpointWindowSeconds = $EndpointWindowSeconds
   FunctionalQualification = 'NotEvaluated'; SettingsRead = $false; WindowContentRead = $false
@@ -46,6 +46,7 @@ $writer = $null
 $watch = [Diagnostics.Stopwatch]::new()
 $status = 'Interrupted'; $reason = 'CollectorInterrupted'; $clockContinuous = $true; $reachedEnd = $false
 $sampleCount = 0L; $maximumGap = 0d; $firstCount = 0L; $firstWorking = 0d; $firstHandles = 0d
+$previousElapsed = 0d
 $tail = [Collections.Generic.Queue[object]]::new()
 $metrics = @{}
 foreach ($name in @('WorkingSetMiB','PrivateMemoryMiB','MachineCpuPercent','Handles','Threads')) { $metrics[$name] = New-SoakAccumulator }
@@ -69,7 +70,7 @@ try {
       $previousElapsed = 0d; $previousUtc = [datetime]::UtcNow
       $nextSampleMilliseconds = [double]$SampleIntervalMilliseconds
       $watch.Start()
-      while ($watch.Elapsed.TotalSeconds -lt $DurationSeconds) {
+      while ($previousElapsed -lt $DurationSeconds) {
         if (Test-Path -LiteralPath (Join-Path $output 'stop.request')) { $reason = 'StopRequested'; break }
         Start-Sleep -Milliseconds ([int][math]::Max(1, $nextSampleMilliseconds - $watch.Elapsed.TotalMilliseconds))
         $target.Refresh()
@@ -98,7 +99,7 @@ try {
         $previousCpu = $cpu; $previousElapsed = $elapsed; $previousUtc = $now
         $nextSampleMilliseconds = [math]::Max($nextSampleMilliseconds + $SampleIntervalMilliseconds, $watch.Elapsed.TotalMilliseconds + 1)
       }
-      $reachedEnd = $reason -eq 'CollectorInterrupted' -and $watch.Elapsed.TotalSeconds -ge $DurationSeconds
+      $reachedEnd = $reason -eq 'CollectorInterrupted' -and $previousElapsed -ge $DurationSeconds
     }
   }
 }
@@ -107,7 +108,7 @@ finally {
   $watch.Stop()
   if ($null -ne $writer) { $writer.Dispose() }
   $target.Refresh()
-  $complete = Get-SoakCompleteness -ElapsedSeconds $watch.Elapsed.TotalSeconds -RequestedSeconds $DurationSeconds `
+  $complete = Get-SoakCompleteness -ElapsedSeconds $watch.Elapsed.TotalSeconds -LastSampleSeconds $previousElapsed -RequestedSeconds $DurationSeconds `
     -Samples $sampleCount -IntervalMilliseconds $SampleIntervalMilliseconds -MaximumGapMilliseconds $maximumGap `
     -TargetAlive (-not $target.HasExited) -ReachedEnd $reachedEnd -ClockContinuous $clockContinuous
   if ($complete.Completed) { $status = 'Completed'; $reason = 'RequestedObservationCompleted' }

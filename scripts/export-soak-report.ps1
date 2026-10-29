@@ -40,7 +40,8 @@ if (Test-Path -LiteralPath $summaryPath) {
       $summary.MeasurementStatus -cnotin @('Completed','Interrupted','Failed')) { throw 'Summary/CSV/session mismatch.' }
   $state = "$($summary.MeasurementStatus): $($summary.Reason)"
   if ($summary.MeasurementStatus -ceq 'Completed') {
-    $check = Get-SoakCompleteness -ElapsedSeconds $summary.ElapsedSeconds -RequestedSeconds $admission.RequestedDurationSeconds `
+    $lastSampleSeconds = if ($samples.Count -gt 0) { $samples[-1].ElapsedSeconds } else { 0 }
+    $check = Get-SoakCompleteness -ElapsedSeconds $summary.ElapsedSeconds -LastSampleSeconds $lastSampleSeconds -RequestedSeconds $admission.RequestedDurationSeconds `
       -Samples $samples.Count -IntervalMilliseconds $admission.SampleIntervalMilliseconds -MaximumGapMilliseconds $summary.MaximumSampleGapMilliseconds `
       -TargetAlive $summary.TargetAliveAtEnd -ReachedEnd $summary.ReachedRequestedEnd -ClockContinuous $summary.ClockContinuous
     if (-not $check.Completed -or $samples.Count -eq 0 -or $samples[-1].ElapsedSeconds -lt $admission.RequestedDurationSeconds) { throw 'Summary claims unsupported completion.' }
