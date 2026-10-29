@@ -54,6 +54,14 @@ jobs:
         shell: pwsh
         run: .\scripts\test-performance-probes.ps1
 
+      - name: Test bounded soak observer with short owned processes
+        shell: pwsh
+        run: .\scripts\test-app-soak.ps1
+
+      - name: Test offline soak reports and manual checkpoint history
+        shell: pwsh
+        run: .\scripts\test-soak-report.ps1
+
       - name: Test isolated synthetic GUI benchmark sessions
         shell: pwsh
         run: .\scripts\test-gui-benchmark.ps1

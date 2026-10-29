@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased - Full-App observation tools (no App version change)
+
+- Add read-only process observation with exact PID/start/version/SHA-256 admission, incremental CSV, bounded endpoint memory and explicit incomplete-run evidence
+- Add offline resource graphs and append-only manual checkpoint reports; short/synthetic runs, missing summaries and timer completion never automatically qualify Stable
+- Exercise short owned-process and report fixtures in CI; the live eight-hour candidate run remains NotRun, with no production installation/protection/update-policy change
+
 ## 2.0.0-beta.17 - Live-renderer movement fix (not published)
 
 - Fix continuous movement discarding valid blur frames: capture identity now uses window-local width/height instead of screen origin, matching PrintWindow's existing window-relative source capture
