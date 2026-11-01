@@ -6,6 +6,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'ShortcutTools.ps1')
 
 function Assert-SafeManagedDirectory {
   param([string]$Path, [string]$ParameterName)
@@ -71,10 +72,7 @@ if (Test-Path -LiteralPath $runKeyPath) {
   $runKey = Get-ItemProperty -LiteralPath $runKeyPath -ErrorAction SilentlyContinue
   $startupProperty = $runKey.PSObject.Properties['PrivacyMask.Desktop']
   if ($null -ne $startupProperty -and
-      $startupProperty.Value -is [string] -and
-      ($startupProperty.Value.IndexOf($exePath, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
-       $startupProperty.Value.IndexOf($legacyExePath, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
-       $startupProperty.Value.IndexOf($launcherPath, [StringComparison]::OrdinalIgnoreCase) -ge 0)) {
+      (Get-PrivacyMaskStartupMatch -Value $startupProperty.Value -ExecutablePaths @($exePath, $legacyExePath, $launcherPath)).Matches) {
     Remove-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -ErrorAction SilentlyContinue
   }
 }

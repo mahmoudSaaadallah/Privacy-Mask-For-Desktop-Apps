@@ -85,6 +85,7 @@ $startMenuShortcutPath = Join-Path $StartMenuFolder 'PrivacyMask.lnk'
 $hadExistingInstall = Test-Path -LiteralPath $resolvedInstallPath -PathType Container
 $wasRunning = $false
 $replacementCompleted = $false
+$startupWriteAttempted = $false
 
 if ([string]::Equals(
     $resolvedInstallPath,
@@ -288,13 +289,11 @@ try {
     throw 'PrivacyMask.Launcher.exe was not found after installation.'
   }
 
-  if (-not [string]::IsNullOrWhiteSpace($startupValueBefore) -and
-      ($startupValueBefore.IndexOf($legacyExePath, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
-       $startupValueBefore.IndexOf($exePath, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
-       $startupValueBefore.IndexOf($launcherPath, [StringComparison]::OrdinalIgnoreCase) -ge 0)) {
-    $startupMinimized = $startupValueBefore.IndexOf('--minimized', [StringComparison]::OrdinalIgnoreCase) -ge 0
-    $startupCommand = if ($startupMinimized) { "`"$launcherPath`" --minimized" } else { "`"$launcherPath`"" }
-    New-Item -Path $runKeyPath -Force | Out-Null
+  $startupCommand = Get-PrivacyMaskStartupMigration -Value $startupValueBefore `
+    -ExecutablePaths @($legacyExePath, $exePath, $launcherPath) -LauncherPath $launcherPath
+  if ($null -ne $startupCommand) {
+    # This migrates an existing owned command; unchanged registration is read-only.
+    $startupWriteAttempted = $true
     Set-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -Value $startupCommand
   }
 
@@ -317,11 +316,8 @@ catch {
       Remove-Item -LiteralPath $DesktopShortcutPath -Force -ErrorAction SilentlyContinue
       Remove-Item -LiteralPath $StartMenuFolder -Recurse -Force -ErrorAction SilentlyContinue
     }
-    if ($null -eq $startupValueBefore) {
-      Remove-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -ErrorAction SilentlyContinue
-    }
-    else {
-      New-Item -Path $runKeyPath -Force | Out-Null
+    if ($startupWriteAttempted) {
+      # Do not rewrite startup registration after unrelated install/shortcut failures.
       Set-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -Value $startupValueBefore
     }
   }
