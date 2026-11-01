@@ -439,6 +439,9 @@ Press `Esc` or close the window to discard the preview and return to the tray.
 - Use the [full-App observation/eight-hour runbook](docs/full-app-soak.md) for
   exact-binary admission, streamed resource counters, manual checkpoints and
   offline charts. Short tool checks never qualify an eight-hour run or Stable.
+- The [compression/memory experiment](docs/compression-memory-experiment.md)
+  compares isolated compressed/uncompressed GUI fixtures, including EXE/ZIP/cache
+  trade-offs. It does not change App packaging or qualify full-App resource use.
 - Keep tests updated whenever profile matching, settings migration, or overlay behavior changes.
 
 ## Known limitations

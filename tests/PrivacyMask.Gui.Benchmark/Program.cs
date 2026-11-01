@@ -44,11 +44,21 @@ internal static class Program
             root.Arrange(new Rect(0, 0, 1280, 800));
             root.UpdateLayout();
         }
+        var build = typeof(Program).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+            .ToDictionary(attribute => attribute.Key, attribute => attribute.Value);
+        bool Flag(string key) => build.TryGetValue(key, out var value) && bool.TryParse(value, out var enabled) && enabled;
+        var singleFile = Flag("BenchmarkSingleFile");
+        var selfContained = Flag("BenchmarkSelfContained");
+        var distribution = selfContained
+            ? singleFile ? "SelfContainedSingleFile" : "SelfContainedFolder"
+            : singleFile ? "FrameworkDependentSingleFile" : "FrameworkDependent";
         Console.WriteLine(JsonSerializer.Serialize(new
         {
             State = "READY", EvidenceKind = "SyntheticHiddenGui", Scenario = scenario, ProfileCount = settings.AppProfiles.Count,
             ProductVersion = typeof(MainWindow).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion,
-            Distribution = "FrameworkDependent", WidthDip = 1280, HeightDip = 800,
+            Distribution = distribution,
+            BenchmarkBuild = new { SingleFile = singleFile, SelfContained = selfContained, Compression = Flag("BenchmarkCompression") },
+            WidthDip = 1280, HeightDip = 800,
             ProductionRuntimeStarted = false, CaptureStarted = false,
         }));
         // Console's synchronized reader may implement ReadLineAsync synchronously.

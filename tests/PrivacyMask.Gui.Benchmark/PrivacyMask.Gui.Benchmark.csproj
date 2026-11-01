@@ -7,4 +7,9 @@
     <ProductRoot Condition="'$(ProductRoot)' == ''">../..</ProductRoot>
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="$(ProductRoot)/src/PrivacyMask.App/PrivacyMask.App.csproj"/></ItemGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="BenchmarkSingleFile" Value="$(PublishSingleFile)" />
+    <AssemblyMetadata Include="BenchmarkSelfContained" Value="$(SelfContained)" />
+    <AssemblyMetadata Include="BenchmarkCompression" Value="$(EnableCompressionInSingleFile)" />
+  </ItemGroup>
 </Project>

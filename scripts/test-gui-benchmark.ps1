@@ -12,6 +12,8 @@ try {
         $scenario.Identity.ProfileCount -ne 42 -or $scenario.Identity.CaptureStarted -ne $false -or
         $scenario.Identity.ProductionRuntimeStarted -ne $false) { throw 'Incomplete/unsafe benchmark scenario.' }
     if ($scenario.Passes[0].ProductVersion -cne $scenario.Identity.ProductVersion) { throw 'Measured and product identities differ.' }
+    if ($scenario.Identity.Distribution -cne 'FrameworkDependent' -or $scenario.Identity.BenchmarkBuild.SingleFile -or
+        $scenario.Identity.BenchmarkBuild.SelfContained -or $scenario.Identity.BenchmarkBuild.Compression) { throw 'Framework-dependent build metadata is incorrect.' }
   }
   $exe = Join-Path $testRoot 'bin/PrivacyMask.Gui.Benchmark.exe'
   & $exe --scenario Unsupported --duration-seconds 2

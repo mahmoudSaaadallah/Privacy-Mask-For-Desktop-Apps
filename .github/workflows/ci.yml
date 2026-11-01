@@ -66,6 +66,10 @@ jobs:
         shell: pwsh
         run: .\scripts\test-gui-benchmark.ps1
 
+      - name: Test synthetic compressed and uncompressed bundle evidence
+        shell: pwsh
+        run: .\scripts\test-compression-baseline.ps1
+
       - name: Test live renderer opt-in gates without opening windows
         shell: pwsh
         run: .\scripts\test-renderer-benchmark-arguments.ps1
