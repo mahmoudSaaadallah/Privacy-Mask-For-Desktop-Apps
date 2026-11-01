@@ -70,6 +70,10 @@ jobs:
         shell: pwsh
         run: .\scripts\test-compression-baseline.ps1
 
+      - name: Test offline full-App packaging trial admission and comparison
+        shell: pwsh
+        run: .\scripts\test-full-app-packaging-trial.ps1
+
       - name: Test live renderer opt-in gates without opening windows
         shell: pwsh
         run: .\scripts\test-renderer-benchmark-arguments.ps1
