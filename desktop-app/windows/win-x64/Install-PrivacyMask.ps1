@@ -4,7 +4,8 @@ param(
   [string]$InstallPath = (Join-Path $env:LOCALAPPDATA 'PrivacyMask.Desktop'),
   [string]$DesktopShortcutPath = (Join-Path ([Environment]::GetFolderPath('Desktop')) 'PrivacyMask.lnk'),
   [string]$StartMenuFolder = (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\PrivacyMask'),
-  [switch]$SkipRestart
+  [switch]$SkipRestart,
+  [switch]$RequireStopped
 )
 
 $ErrorActionPreference = 'Stop'
@@ -214,6 +215,9 @@ try {
 
   $runningProcesses = @(Get-InstalledPrivacyMaskProcesses -ExpectedExecutablePaths @($legacyExePath, $exePath))
   if ($runningProcesses.Count -gt 0) {
+    if ($RequireStopped) {
+      throw 'PrivacyMask started or is still running. Exit it from the tray before this installation; no process was stopped.'
+    }
     $wasRunning = $true
     Write-Host 'Closing the running PrivacyMask instance before updating...'
     $runningProcesses | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop }

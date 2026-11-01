@@ -143,6 +143,19 @@ try {
     throw 'The running-update test process exited before the installer could detect it.'
   }
 
+  $runningHash=(Get-FileHash -LiteralPath $installedExePath -Algorithm SHA256).Hash
+  $stoppedRequired=$false
+  try {
+    & $installerPath -SourcePath $resolvedSourcePath -LauncherSourcePath $resolvedLauncherSourcePath `
+      -InstallPath $installPath -DesktopShortcutPath $desktopShortcutPath -StartMenuFolder $startMenuFolder -SkipRestart -RequireStopped
+  }
+  catch { $stoppedRequired=$true }
+  $runningTestProcess.Refresh()
+  if (-not $stoppedRequired -or $runningTestProcess.HasExited -or
+      (Get-FileHash -LiteralPath $installedExePath -Algorithm SHA256).Hash -cne $runningHash) {
+    throw 'RequireStopped stopped a live process or replaced the installed payload.'
+  }
+
   & $installerPath `
     -SourcePath $resolvedSourcePath `
     -LauncherSourcePath $resolvedLauncherSourcePath `
