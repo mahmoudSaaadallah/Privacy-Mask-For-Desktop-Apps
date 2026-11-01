@@ -442,6 +442,9 @@ Press `Esc` or close the window to discard the preview and return to the tray.
 - The [compression/memory experiment](docs/compression-memory-experiment.md)
   compares isolated compressed/uncompressed GUI fixtures, including EXE/ZIP/cache
   trade-offs. It does not change App packaging or qualify full-App resource use.
+- The [full-App packaging trial](docs/full-app-packaging-trial.md) prepares matched
+  compressed/uncompressed diagnostic packages and explicit owner-run C/U/C steps;
+  preparation and CI never start the personal App or change its installation.
 - Keep tests updated whenever profile matching, settings migration, or overlay behavior changes.
 
 ## Known limitations
