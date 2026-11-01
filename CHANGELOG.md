@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased - Compression/memory experiment (no App version change)
+
+- Report actual GUI fixture deployment flags from generated build metadata instead of a fixed framework-dependent label
+- Add matched compressed/uncompressed self-contained fixture publishing, strict alternating resource passes, query-only region snapshots and separate EXE/ZIP/cache footprints
+- Run short synthetic identity/cleanup regressions in CI; production packaging, protection, updater and existing budgets remain unchanged pending full-App trade-off review
+
 ## Unreleased - Full-App observation tools (no App version change)
 
 - Add read-only process observation with exact PID/start/version/SHA-256 admission, incremental CSV, bounded endpoint memory and explicit incomplete-run evidence
