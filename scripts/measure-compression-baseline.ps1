@@ -62,6 +62,9 @@ if ($prepared.SchemaVersion -ne 1 -or $prepared.EvidenceKind -cne 'SyntheticComp
     $prepared.Variants.Count -ne 2 -or (@($prepared.Variants.Name | Sort-Object) -join ',') -cne 'Compressed,Uncompressed') {
   throw 'Prepared experiment/source/build identity mismatch.'
 }
+$runtimeA=$prepared.Variants[0].RuntimeConfiguration|ConvertTo-Json -Depth 10 -Compress
+$runtimeB=$prepared.Variants[1].RuntimeConfiguration|ConvertTo-Json -Depth 10 -Compress
+if ($runtimeA -cne $runtimeB) { throw 'Runtime configurations differ; compression is not the only variable.' }
 function Assert-Variant($Variant) {
   $root=[IO.Path]::GetFullPath((Join-Path $bundleRoot $Variant.Name))
   if (@(Get-ChildItem -LiteralPath $root -Recurse -File).Count -ne $Variant.Files.Count) { throw 'Prepared payload file count changed.' }

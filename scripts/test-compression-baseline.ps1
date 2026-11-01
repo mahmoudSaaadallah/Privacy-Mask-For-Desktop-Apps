@@ -45,6 +45,10 @@ try {
   $prepared.SourceCommit='0'*40
   $prepared|ConvertTo-Json -Depth 10|Set-Content -LiteralPath (Join-Path $bad 'prepared.json') -Encoding utf8
   Assert-Rejected { & $runner -OutputDirectory (Join-Path $root 'rejected-source') -PreparedDirectory $bad } 'Different-source prepared fixture accepted.'
+  $prepared=Get-Content -LiteralPath (Join-Path $root 'prepared.json') -Raw|ConvertFrom-Json
+  $prepared.Variants[1].RuntimeConfiguration.runtimeOptions.includedFrameworks[0].version='99.0.0'
+  $prepared|ConvertTo-Json -Depth 10|Set-Content -LiteralPath (Join-Path $bad 'prepared.json') -Encoding utf8
+  Assert-Rejected { & $runner -OutputDirectory (Join-Path $root 'rejected-runtime') -PreparedDirectory $bad } 'Mixed-runtime comparison accepted.'
   Write-Host "Passed $script:checks compression experiment checks. Synthetic seconds only; no App or Stable performance qualification."
   $global:LASTEXITCODE=0
 }
