@@ -1,7 +1,8 @@
 # Shared developer-trial validation; never launches, installs or stops the App.
-function Assert-PackagingTrialVersion([string]$InstalledFileVersion,[string]$TrialFileVersion) {
+function Assert-PackagingTrialVersion([string]$InstalledFileVersion,[string]$TrialFileVersion,[string]$InstalledProductVersion,[string]$TrialProductVersion) {
   if ($InstalledFileVersion -notmatch '^\d+\.\d+\.\d+\.\d+$' -or $TrialFileVersion -notmatch '^\d+\.\d+\.\d+\.\d+$' -or
-      [version]$InstalledFileVersion -gt [version]$TrialFileVersion) { throw 'Trial would downgrade or cannot identify the installed file version.' }
+      [version]$InstalledFileVersion -gt [version]$TrialFileVersion -or [string]::IsNullOrWhiteSpace($InstalledProductVersion) -or
+      $InstalledProductVersion.Split('+')[0] -cne $TrialProductVersion) { throw 'Trial needs the same product version and must not downgrade the installed file version.' }
 }
 
 function Get-PackagingTrialVariant([string]$Stage) {

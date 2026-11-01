@@ -15,10 +15,12 @@ function Assert-Rejected([scriptblock]$Action,[string]$Message) {
 function Save-Json($Value,[string]$Path) { $Value|ConvertTo-Json -Depth 15|Set-Content -LiteralPath $Path -Encoding utf8 }
 try {
   $null=New-Item -ItemType Directory -Path $root
-  Assert-PackagingTrialVersion '2.0.0.17' '2.0.0.17'
+  Assert-PackagingTrialVersion '2.0.0.17' '2.0.0.17' '2.0.0-beta.17+previous-source' '2.0.0-beta.17'
   Assert-Trial ($true) 'Same file version rejected.'
-  Assert-Rejected { Assert-PackagingTrialVersion '2.0.0.18' '2.0.0.17' } 'Newer installation could be downgraded.'
-  Assert-Rejected { Assert-PackagingTrialVersion 'unknown' '2.0.0.17' } 'Unidentified installation accepted.'
+  Assert-Rejected { Assert-PackagingTrialVersion '2.0.0.18' '2.0.0.17' '2.0.0-beta.17' '2.0.0-beta.17' } 'Newer installation could be downgraded.'
+  Assert-Rejected { Assert-PackagingTrialVersion 'unknown' '2.0.0.17' '2.0.0-beta.17' '2.0.0-beta.17' } 'Unidentified installation accepted.'
+  Assert-Rejected { Assert-PackagingTrialVersion '2.0.0.0' '2.0.0.17' '2.0.0' '2.0.0-beta.17' } 'Stable installation could be replaced by Preview due to lower numeric revision.'
+  Assert-Rejected { Assert-PackagingTrialVersion '2.0.0.17' '2.0.0.17' '2.0.0-beta.18' '2.0.0-beta.17' } 'Different product with reused file revision accepted.'
   Assert-Rejected { Get-PackagingTrialVariant 'u1' } 'Noncanonical stage accepted.'
   $optInError=''
   try { & (Join-Path $PSScriptRoot 'invoke-full-app-packaging-step.ps1') -TrialDirectory $root -Stage U1 } catch { $optInError=$_.Exception.Message }

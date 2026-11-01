@@ -21,7 +21,8 @@ if (@(Get-Process -Name PrivacyMask.App -ErrorAction SilentlyContinue).Count -ne
 $installRoot=Join-Path $env:LOCALAPPDATA 'PrivacyMask.Desktop'
 $installed=Join-Path $installRoot 'app/PrivacyMask.App.exe'
 if (-not (Test-Path -LiteralPath $installed -PathType Leaf)) { throw 'Trial needs the existing managed installation; use the ordinary installer first.' }
-Assert-PackagingTrialVersion (Get-Item -LiteralPath $installed).VersionInfo.FileVersion $trial.FileVersion
+$installedIdentity=(Get-Item -LiteralPath $installed).VersionInfo
+Assert-PackagingTrialVersion $installedIdentity.FileVersion $trial.FileVersion $installedIdentity.ProductVersion $trial.ProductVersion
 $package=Join-Path $trialRoot "$variantName/package"
 $repo=Split-Path -Parent $PSScriptRoot
 $output=Join-Path $repo ('artifacts/full-app-trial-'+$Stage+'-'+[datetime]::UtcNow.ToString('yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,8))
@@ -39,7 +40,8 @@ try {
   if (-not $created -or -not $mutex.WaitOne(0)) { throw 'Another App/startup/trial owns the singleton; nothing installed.' }
   $ownsMutex=$true
   if (@(Get-Process -Name PrivacyMask.App -ErrorAction SilentlyContinue).Count -ne 0) { throw 'App appeared before replacement; nothing installed.' }
-  Assert-PackagingTrialVersion (Get-Item -LiteralPath $installed).VersionInfo.FileVersion $trial.FileVersion
+  $installedIdentity=(Get-Item -LiteralPath $installed).VersionInfo
+  Assert-PackagingTrialVersion $installedIdentity.FileVersion $trial.FileVersion $installedIdentity.ProductVersion $trial.ProductVersion
   & (Join-Path $package 'Install-PrivacyMask.ps1') -SourcePath (Join-Path $package 'single-file/PrivacyMask.App.exe') `
     -LauncherSourcePath (Join-Path $package 'single-file/PrivacyMask.Launcher.exe') -SkipRestart -RequireStopped
   $packagingInstalled=$true

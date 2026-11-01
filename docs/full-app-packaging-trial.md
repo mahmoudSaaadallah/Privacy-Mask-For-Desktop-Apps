@@ -33,7 +33,10 @@ ordinary force-stop path; the default installer behavior stays unchanged.
 Existing settings/history are preserved through the normal installer transaction.
 No process is killed, minimized or automatically restored by the trial helper.
 
-Unknown installed versions or a higher installed FileVersion are rejected.
+Unknown installed versions, a different product version (ignoring Git build
+metadata), or a higher installed FileVersion are rejected. This is a same-version
+experiment, not an upgrade/downgrade tool; even a Stable build with a numerically
+lower file revision cannot be replaced by this Preview pair.
 Required updating remains active. If it installs a newer release, the PID/hash
 admission fails and this old pair must not be resumed or used to downgrade.
 An interrupted U1 can leave the uncompressed diagnostic installed; the run packet
@@ -163,7 +166,7 @@ The uncompressed real EXE also passed **25** authenticated update-package checks
 using a memory-only ephemeral test key, including download/staging and exact
 baseline copies; no release or installed App was used. Local solution verification
 passed **925** unit tests, zero build warnings/errors, **53** PowerShell syntax
-checks, policy/installer/rollback/compiled GUI checks, and **18** additional
+checks, policy/installer/rollback/compiled GUI checks, and **20** additional
 offline packaging-trial checks. Logs remain under ignored `artifacts`.
 
 Offline fixture tests cover the opt-in gate, downgrade refusal, comparison math,
