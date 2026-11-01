@@ -1,3 +1,31 @@
+function Get-PrivacyMaskStartupMatch {
+  param([object]$Value, [string[]]$ExecutablePaths)
+  if ($Value -is [string]) {
+    $command = $Value.Trim()
+    foreach ($path in $ExecutablePaths) {
+      if ([string]::IsNullOrWhiteSpace($path)) { continue }
+      $quoted = '"' + $path + '"'
+      if ([string]::Equals($command, $quoted, [StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{ Matches = $true; StartMinimized = $false }
+      }
+      if ([string]::Equals($command, $quoted + ' --minimized', [StringComparison]::OrdinalIgnoreCase)) {
+        return [pscustomobject]@{ Matches = $true; StartMinimized = $true }
+      }
+    }
+  }
+  return [pscustomobject]@{ Matches = $false; StartMinimized = $false }
+}
+
+function Get-PrivacyMaskStartupMigration {
+  param([object]$Value, [string[]]$ExecutablePaths, [string]$LauncherPath)
+  $match = Get-PrivacyMaskStartupMatch -Value $Value -ExecutablePaths $ExecutablePaths
+  if (-not $match.Matches) { return $null }
+  $desired = '"' + $LauncherPath + '"'
+  if ($match.StartMinimized) { $desired += ' --minimized' }
+  if ([string]::Equals($Value, $desired, [StringComparison]::Ordinal)) { return $null }
+  return $desired
+}
+
 if (-not ('PrivacyMask.Installer.UnicodeShortcut' -as [type])) {
   Add-Type -TypeDefinition @'
 using System;

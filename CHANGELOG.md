@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0-beta.18 - Startup-registration correctness (not published)
+
+- Make unchanged startup preferences read-only: write the current-user Run command only when it differs; do not create a key to disable an absent value
+- Recognize only the complete quoted executable command with the supported optional `--minimized` argument, instead of accepting a path embedded in a wrapper or extra arguments
+- Keep matching rules consistent in installer/uninstaller; preserve unknown commands and skip unchanged launcher migration
+- Restore startup registration on installer rollback only after a migration write was attempted; unrelated installation failures no longer rewrite or delete it
+- Isolate installer transaction tests under an owned non-startup registry key, with no mutation of the real user Run key; cover no-op reinstall, legacy migration and rollback after a committed write
+- Advance FileVersion to 2.0.0.18 with unchanged defaults, updater trust/protocol and settings/history schemas. No publication, installed-app repair, antivirus exclusion or quarantine restore; the reported Defender detection remains unresolved
+
 ## Unreleased - Compression/memory experiment (no App version change)
 
 - Report actual GUI fixture deployment flags from generated build metadata instead of a fixed framework-dependent label

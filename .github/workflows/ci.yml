@@ -26,6 +26,10 @@ jobs:
         shell: powershell
         run: .\scripts\test-version-policy.ps1
 
+      - name: Test exact startup command matching and no-op migration without registry access
+        shell: powershell
+        run: .\scripts\test-startup-command.ps1
+
       - name: Test draft publication without external writes
         shell: powershell
         run: .\scripts\test-release-publication.ps1

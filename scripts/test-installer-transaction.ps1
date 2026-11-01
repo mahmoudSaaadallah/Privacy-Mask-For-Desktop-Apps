@@ -33,10 +33,31 @@ $startMenuFolder = Join-Path $smokeRoot 'start-menu\PrivacyMask'
 $startMenuShortcutPath = Join-Path $startMenuFolder 'PrivacyMask.lnk'
 $runningTestProcess = $null
 $runKeyPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-$runKey = Get-ItemProperty -LiteralPath $runKeyPath -ErrorAction SilentlyContinue
-$originalStartupProperty = if ($null -ne $runKey) { $runKey.PSObject.Properties['PrivacyMask.Desktop'] } else { $null }
-$hadOriginalStartupValue = $null -ne $originalStartupProperty
-$originalStartupValue = if ($hadOriginalStartupValue) { $originalStartupProperty.Value } else { $null }
+$registryFixturePath = 'Software\PrivacyMask.Tests\Installer-' + [guid]::NewGuid().ToString('N')
+$originalHkcuRoot = (Get-PSDrive -Name HKCU).Root
+$startupOperations = [pscustomobject]@{ Writes = 0; Deletes = 0; FailAfterWrite = $false }
+
+# The script-local HKCU drive below points only into an owned non-startup test
+# key. Child installer scripts inherit it; the real Windows Run key is untouched.
+function Set-ItemProperty {
+  [CmdletBinding()]
+  param([string]$LiteralPath, [string]$Name, [object]$Value)
+  Microsoft.PowerShell.Management\Set-ItemProperty @PSBoundParameters
+  if ($LiteralPath -ceq $runKeyPath -and $Name -ceq 'PrivacyMask.Desktop') {
+    $startupOperations.Writes++
+    if ($startupOperations.FailAfterWrite) {
+      $startupOperations.FailAfterWrite = $false
+      throw 'Fixture: startup write committed then failed.'
+    }
+  }
+}
+
+function Remove-ItemProperty {
+  [CmdletBinding()]
+  param([string]$LiteralPath, [string]$Name)
+  if ($LiteralPath -ceq $runKeyPath -and $Name -ceq 'PrivacyMask.Desktop') { $startupOperations.Deletes++ }
+  Microsoft.PowerShell.Management\Remove-ItemProperty @PSBoundParameters
+}
 
 function Assert-PathExists {
   param([string]$Path, [string]$Description)
@@ -80,6 +101,12 @@ function Assert-PrivatePath {
 }
 
 try {
+  $registryFixture = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($registryFixturePath)
+  $registryFixture.Dispose()
+  # Windows PowerShell 5 does not shadow an existing script-visible drive.
+  # Remap only this PowerShell process; restore its original drive in finally.
+  Remove-PSDrive -Name HKCU -Force
+  $null = New-PSDrive -Name HKCU -PSProvider Registry -Root ('HKEY_CURRENT_USER\' + $registryFixturePath) -Scope Script
   $unsafePathRejected = $false
   try {
     & $installerPath `
@@ -118,6 +145,7 @@ try {
     Assert-PrivatePath -Path $privatePath
   }
   $installId = (Get-Content -LiteralPath (Join-Path $installPath 'managed-install.json') -Raw | ConvertFrom-Json).installId
+  if ($startupOperations.Writes -ne 0 -or $startupOperations.Deletes -ne 0) { throw 'Fresh install touched missing startup registration.' }
 
   . $shortcutToolsPath
   Assert-ShortcutIcons -ExecutablePath $installedLauncherPath
@@ -155,6 +183,7 @@ try {
       (Get-FileHash -LiteralPath $installedExePath -Algorithm SHA256).Hash -cne $runningHash) {
     throw 'RequireStopped stopped a live process or replaced the installed payload.'
   }
+  if ($startupOperations.Writes -ne 0 -or $startupOperations.Deletes -ne 0) { throw 'Stopped-only refusal touched startup registration.' }
 
   & $installerPath `
     -SourcePath $resolvedSourcePath `
@@ -218,6 +247,10 @@ try {
 
   $rollbackMarkerPath = Join-Path $installPath 'rollback.marker'
   Set-Content -LiteralPath $rollbackMarkerPath -Value 'previous installation' -Encoding ascii
+  New-Item -Path $runKeyPath -Force | Out-Null
+  $unchangedStartup = '"' + $installedLauncherPath + '" --minimized'
+  Set-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -Value $unchangedStartup
+  $startupOperations.Writes = 0; $startupOperations.Deletes = 0
   $failureObserved = $false
   try {
     & $installerPath `
@@ -237,6 +270,10 @@ try {
   }
 
   Assert-PathExists -Path $rollbackMarkerPath -Description 'Rollback marker from the previous installation'
+  if ($startupOperations.Writes -ne 0 -or $startupOperations.Deletes -ne 0 -or
+      (Get-ItemPropertyValue -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop') -cne $unchangedStartup) {
+    throw 'Unrelated shortcut failure rewrote unchanged startup registration.'
+  }
 
   & $uninstallerPath `
     -InstallPath $installPath `
@@ -256,7 +293,20 @@ try {
   Copy-Item -LiteralPath $resolvedSourcePath -Destination $legacyExePath
   Set-Content -LiteralPath (Join-Path $installPath 'settings.v1.json') -Value '{"legacy":true}' -Encoding UTF8
   New-Item -Path $runKeyPath -Force | Out-Null
-  Set-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -Value "`"$legacyExePath`" --minimized"
+  $legacyStartup = "`"$legacyExePath`" --minimized"
+  Set-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -Value $legacyStartup
+  $startupOperations.Writes = 0; $startupOperations.Deletes = 0
+  $startupOperations.FailAfterWrite = $true
+  $startupFailureObserved = $false
+  try {
+    & $installerPath -SourcePath $resolvedSourcePath -LauncherSourcePath $resolvedLauncherSourcePath `
+      -InstallPath $installPath -DesktopShortcutPath $desktopShortcutPath -StartMenuFolder $startMenuFolder -SkipRestart
+  }
+  catch { $startupFailureObserved = $_.Exception.Message -like '*Fixture: startup write committed then failed*' }
+  if (-not $startupFailureObserved -or $startupOperations.Writes -ne 2 -or
+      (Get-ItemPropertyValue -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop') -cne $legacyStartup -or
+      -not (Test-Path -LiteralPath $legacyExePath)) { throw 'Startup migration failure did not restore the prior command and installation.' }
+  $startupOperations.Writes = 0; $startupOperations.Deletes = 0
 
   & $installerPath `
     -SourcePath $resolvedSourcePath `
@@ -278,6 +328,11 @@ try {
   if (-not [string]::Equals($actualStartup, $expectedStartup, [StringComparison]::OrdinalIgnoreCase)) {
     throw "The installer did not migrate the legacy startup command to the stable launcher."
   }
+  if ($startupOperations.Writes -ne 1) { throw 'Legacy startup migration did not write exactly once.' }
+  $startupOperations.Writes = 0; $startupOperations.Deletes = 0
+  & $installerPath -SourcePath $resolvedSourcePath -LauncherSourcePath $resolvedLauncherSourcePath `
+    -InstallPath $installPath -DesktopShortcutPath $desktopShortcutPath -StartMenuFolder $startMenuFolder -SkipRestart
+  if ($startupOperations.Writes -ne 0 -or $startupOperations.Deletes -ne 0) { throw 'Normal reinstall rewrote unchanged startup registration.' }
 
   & $uninstallerPath `
     -InstallPath $installPath `
@@ -290,6 +345,16 @@ try {
   if ($null -ne $startupAfterUninstall) {
     throw 'The uninstaller retained the managed launcher startup command.'
   }
+  $foreignStartup = 'cmd.exe /c "' + (Join-Path $installPath 'PrivacyMask.Launcher.exe') + '"'
+  Set-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -Value $foreignStartup
+  $startupOperations.Writes = 0; $startupOperations.Deletes = 0
+  & $installerPath -SourcePath $resolvedSourcePath -LauncherSourcePath $resolvedLauncherSourcePath `
+    -InstallPath $installPath -DesktopShortcutPath $desktopShortcutPath -StartMenuFolder $startMenuFolder -SkipRestart
+  & $uninstallerPath -InstallPath $installPath -DesktopShortcutPath $desktopShortcutPath -StartMenuFolder $startMenuFolder
+  if ($startupOperations.Writes -ne 0 -or $startupOperations.Deletes -ne 0 -or
+      (Get-ItemPropertyValue -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop') -cne $foreignStartup) {
+    throw 'Installer/uninstaller changed a command wrapper merely containing an owned executable path.'
+  }
 
   Write-Host 'Transactional installer test passed.'
 }
@@ -299,16 +364,16 @@ finally {
   }
 
   $resolvedSmokeRoot = [System.IO.Path]::GetFullPath($smokeRoot)
-  $resolvedTempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
-  if ($resolvedSmokeRoot.StartsWith($resolvedTempRoot, [StringComparison]::OrdinalIgnoreCase) -and
-      (Test-Path -LiteralPath $resolvedSmokeRoot)) {
+  $resolvedTempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath()).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+  if (-not $resolvedSmokeRoot.StartsWith($resolvedTempRoot, [StringComparison]::OrdinalIgnoreCase) -or
+      [System.IO.Path]::GetFileName($resolvedSmokeRoot) -cnotmatch '^PrivacyMask-installer-test-[a-f0-9]{32}$') { throw 'Unsafe installer fixture cleanup.' }
+  if (Test-Path -LiteralPath $resolvedSmokeRoot) {
     Remove-Item -LiteralPath $resolvedSmokeRoot -Recurse -Force
   }
-  if ($hadOriginalStartupValue) {
-    New-Item -Path $runKeyPath -Force | Out-Null
-    Set-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -Value $originalStartupValue
+  if ($registryFixturePath -cnotmatch '^Software\\PrivacyMask\.Tests\\Installer-[a-f0-9]{32}$') { throw 'Unsafe registry fixture cleanup.' }
+  Remove-PSDrive -Name HKCU -Scope Script -ErrorAction SilentlyContinue
+  if ($null -eq (Get-PSDrive -Name HKCU -ErrorAction SilentlyContinue)) {
+    $null = New-PSDrive -Name HKCU -PSProvider Registry -Root $originalHkcuRoot -Scope Global
   }
-  else {
-    Remove-ItemProperty -LiteralPath $runKeyPath -Name 'PrivacyMask.Desktop' -ErrorAction SilentlyContinue
-  }
+  [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($registryFixturePath, $false)
 }

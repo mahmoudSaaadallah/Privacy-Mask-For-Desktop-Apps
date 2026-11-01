@@ -5,6 +5,7 @@ Set-Location $repoRoot
 
 & .\scripts\verify-powershell-syntax.ps1
 & .\scripts\test-version-policy.ps1
+& .\scripts\test-startup-command.ps1
 & .\scripts\test-release-publication.ps1
 & .\scripts\test-release-source.ps1
 & .\scripts\test-release-environment.ps1
