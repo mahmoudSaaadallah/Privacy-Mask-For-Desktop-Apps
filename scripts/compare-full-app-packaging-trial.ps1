@@ -17,6 +17,6 @@ $first=Read-PackagingTrialRun $CompressedFirstDirectory $trial $hash
 $candidate=Read-PackagingTrialRun $UncompressedDirectory $trial $hash
 $restored=Read-PackagingTrialRun $CompressedRestoredDirectory $trial $hash
 $report=Get-PackagingTrialComparison $first $candidate $restored
-$report|ConvertTo-Json -Depth 6|Set-Content -LiteralPath $OutputPath -Encoding utf8 -NoClobber
+Export-PackagingTrialComparison $report $OutputPath
 $report.Means|Format-Table
 Write-Host 'Comparison is a short owner-declared full-App observation; qualification remains NotEvaluated.'
