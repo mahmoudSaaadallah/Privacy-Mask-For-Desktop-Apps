@@ -8,7 +8,9 @@ param(
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 if (-not $RunForCurrentUser) { throw 'Explicit -RunForCurrentUser is required: this step installs the chosen trial and starts the full App.' }
-if (-not [OperatingSystem]::IsWindows() -or -not [Environment]::Is64BitProcess) { throw 'Requires Windows x64.' }
+if (-not [OperatingSystem]::IsWindows() -or
+    [Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -ne [Runtime.InteropServices.Architecture]::X64 -or
+    [Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne [Runtime.InteropServices.Architecture]::X64) { throw 'Requires Windows x64.' }
 . (Join-Path $PSScriptRoot 'PrivacyMask.PackagingTrial.ps1')
 $Stage=$Stage.ToUpperInvariant()
 $trialRoot=[IO.Path]::GetFullPath($TrialDirectory)

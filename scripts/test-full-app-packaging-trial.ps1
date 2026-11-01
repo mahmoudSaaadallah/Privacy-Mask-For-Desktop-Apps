@@ -84,13 +84,17 @@ try {
   $rows|Export-Csv -LiteralPath $csvPath -NoTypeInformation
   Assert-Rejected { Read-PackagingTrialRun (Join-Path $root 'U1') $trial $manifestHash } 'Tampered raw samples accepted.'
   $original|Set-Content -LiteralPath $csvPath
-  $rows=@(Import-Csv -LiteralPath $csvPath); $rows[-1].ElapsedSeconds='59.9'
+  $rows=@(Import-Csv -LiteralPath $csvPath); $rows[-1].ElapsedSeconds='59.9'; $rows[-1].IntervalMilliseconds=400
   $rows|Export-Csv -LiteralPath $csvPath -NoTypeInformation
   Assert-Rejected { Read-PackagingTrialRun (Join-Path $root 'U1') $trial $manifestHash } 'Incomplete final sample accepted.'
   $original|Set-Content -LiteralPath $csvPath
   $rows=@(Import-Csv -LiteralPath $csvPath); $rows[0].IntervalMilliseconds=9000
   $rows|Export-Csv -LiteralPath $csvPath -NoTypeInformation
   Assert-Rejected { Read-PackagingTrialRun (Join-Path $root 'U1') $trial $manifestHash } 'Invented sample intervals accepted.'
+  $original|Set-Content -LiteralPath $csvPath
+  $rows=@(Import-Csv -LiteralPath $csvPath); $rows[60].UtcTimestamp='2026-11-01T04:00:00Z'
+  $rows|Export-Csv -LiteralPath $csvPath -NoTypeInformation
+  Assert-Rejected { Read-PackagingTrialRun (Join-Path $root 'U1') $trial $manifestHash } 'Clock discontinuity hidden by summary accepted.'
   $original|Set-Content -LiteralPath $csvPath
   Assert-Rejected { Read-PackagingTrialRun (Join-Path $root 'U1') $trial ('f'*64) } 'Different manifest identity accepted.'
   $summaryPath=Join-Path $root 'U1/pass-1/summary.json'

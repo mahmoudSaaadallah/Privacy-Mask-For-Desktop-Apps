@@ -106,7 +106,7 @@ function Read-PackagingTrialRun([string]$RunDirectory,$Trial,[string]$ManifestSh
         $admission.ProcessId -ne $run.Admissions[0].ProcessId -or $admission.ProcessStartTimeUtc -ne $run.Admissions[0].ProcessStartTimeUtc -or
         $summary.SessionId -cne $admission.SessionId -or $summary.MeasurementStatus -cne 'Completed' -or $summary.SampleCount -ne $csv.Count -or
         $csv.Count -eq 0 -or $run.Passes[$pass-1].SessionId -cne $summary.SessionId) { throw 'Run raw evidence identity mismatch.' }
-    $last=0d; $maximumGap=0d
+    $last=0d; $maximumGap=0d; $previousUtc=$null
     foreach ($row in $csv) {
       foreach ($name in @('ElapsedSeconds','WorkingSetMiB','PrivateMemoryMiB','MachineCpuPercent','Handles','Threads')) {
         $value=[double]::Parse($row.$name,[Globalization.CultureInfo]::InvariantCulture)
@@ -117,6 +117,9 @@ function Read-PackagingTrialRun([string]$RunDirectory,$Trial,[string]$ManifestSh
       $gap=($elapsed-$last)*1000
       $reportedGap=[double]::Parse($row.IntervalMilliseconds,[Globalization.CultureInfo]::InvariantCulture)
       if (-not [double]::IsFinite($reportedGap) -or [math]::Abs($gap-$reportedGap) -gt 0.02) { throw 'Trial CSV interval mismatch.' }
+      $utc=[datetimeoffset]::Parse($row.UtcTimestamp,[Globalization.CultureInfo]::InvariantCulture)
+      if ($null -ne $previousUtc -and [math]::Abs(($utc-$previousUtc).TotalMilliseconds-$gap) -gt 2000) { throw 'Trial CSV clock discontinuity.' }
+      $previousUtc=$utc
       $maximumGap=[math]::Max($maximumGap,$gap)
       $last=$elapsed
     }
