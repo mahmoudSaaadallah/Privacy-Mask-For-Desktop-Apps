@@ -1,6 +1,8 @@
 # Full-App bundle compression trial (C/U/C)
 
-Status: **prepared, isolated package tests completed; live full-App comparison NotRun**.
+Status: **prepared, isolated package tests completed; live comparison blocked by
+Defender during the owner's first compressed stage**. See the incident below;
+do not resume this packet pending review.
 Production bundle compression remains enabled. This work does not publish a
 release, qualify Stable, start an eight-hour observation or change resource
 budgets. The preceding [synthetic experiment](compression-memory-experiment.md)
@@ -175,7 +177,48 @@ runs those short fixtures, not the owner-run installation/measurement steps.
 The existing installer transaction test covers stopped-only refusal while an
 owned fake App is running, followed by ordinary replacement/rollback behavior.
 
-Live C1/U1/C2 RAM/CPU/handles, blur/input response, startup comparison and eight-hour
-stability remain **NotRun/NotEvaluated**. No full-App saving is claimed and no
+The controlled C1/U1/C2 comparison, blur/input response, startup comparison and
+eight-hour stability remain **NotRun/NotEvaluated**. No full-App saving is claimed and no
 performance budget has been relaxed. This delivery does not change version
 policy, update protocols/trust, settings schemas, renderer quality or defaults.
+
+## Owner trial interrupted by Defender, 2026-11-01
+
+The owner completed three C1 counter passes with exact expected App identity,
+approximately full sampling coverage and numeric means: working set 299.250 MiB,
+private memory 181.184 MiB, machine-capacity-normalized CPU 0.1062%, handles
+1044.65. This is observed counter data, **excluded from the controlled comparison**:
+Defender intervened during startup/warmup and changed installation state.
+
+Matching Defender Operational events 1116/1117 reported
+`Behavior:Win32/Persistence.A!ml` and quarantine. At about 13:16 UTC the event
+referenced the installed launcher, Desktop/Start Menu shortcuts and current-user
+startup registration. At about 13:22 UTC it referenced the compressed package's
+launcher. U1 then failed while hashing that package launcher in read-only
+admission, before installation. U1 and C2 remain **NotRun**. The original CSV,
+admission and completed short-observation summaries are preserved, not rewritten
+to imply a clean comparison or eight-hour qualification.
+
+The expected common launcher SHA-256 remains
+`a80b89751eef66dcc30afca6a6b28fa5fe1035d9cc601b8fa4246430985b185b`.
+This is a behavior detection, not an independently confirmed malware verdict
+or confirmed false positive. Normal startup registration does write the user's
+Run key; the event associations alone do not prove the exact detection trigger.
+Repository review and prior CI do not establish an antivirus false positive.
+
+Stop the trial. Do not restore a quarantined file, add antivirus exclusions,
+disable protection, or rebuild/copy the launcher to get past the detection.
+Keep sensitive windows closed if the App is not running; a missing launcher can
+also prevent ordinary shortcuts from working. Review the suspected detection
+through [Microsoft's submission guidance](https://learn.microsoft.com/defender-xdr/submission-guide)
+and [software developer submission portal](https://www.microsoft.com/en-us/wdsi/filesubmission)
+before installation repair or a new complete C/U/C session. No sample, personal
+log or diagnostic file has been uploaded by the agent. The local sanitized
+record is `artifacts/packaging-security-interruption-20261101.json`.
+
+A separate offline export defect was found during evidence review:
+`Set-Content -NoClobber` is unsupported. Comparison export now uses
+`Out-File -NoClobber`, with real JSON roundtrip, literal filename and existing-file
+preservation checks (**23** offline trial checks total). This defect was not the
+cause of the security block and its correction does not unblock or resume the
+trial. No launcher code, binary, security setting or production default is changed.

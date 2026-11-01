@@ -73,6 +73,13 @@ try {
   $comparison=Get-PackagingTrialComparison $runs[0] $runs[1] $runs[2]
   Assert-Trial ($comparison.Means[0].PrivateMiB -eq 105 -and $comparison.Means[1].PrivateMiB -eq 40) 'C1/C2 means or uncompressed means incorrect.'
   Assert-Trial ($comparison.Qualification -ceq 'NotEvaluated') 'Short fixture became qualification.'
+  $reportPath=Join-Path $root 'comparison [fixture].json'
+  Export-PackagingTrialComparison $comparison $reportPath
+  $saved=Get-Content -LiteralPath $reportPath -Raw|ConvertFrom-Json
+  Assert-Trial ($saved.Means[0].PrivateMiB -eq 105 -and $saved.TrialId -ceq $trial.TrialId -and $saved.Qualification -ceq 'NotEvaluated') 'Actual report export failed JSON roundtrip.'
+  $reportHash=(Get-FileHash -LiteralPath $reportPath -Algorithm SHA256).Hash
+  Assert-Rejected { Export-PackagingTrialComparison @{replacement=$true} $reportPath } 'Existing comparison could be overwritten.'
+  Assert-Trial ((Get-FileHash -LiteralPath $reportPath -Algorithm SHA256).Hash -ceq $reportHash) 'Rejected export changed previous evidence.'
   Assert-Rejected { Get-PackagingTrialComparison $runs[1] $runs[0] $runs[2] } 'Incorrect C/U/C order accepted.'
   $runs[2].TrialId='e'*32
   Assert-Rejected { Get-PackagingTrialComparison $runs[0] $runs[1] $runs[2] } 'Unrelated trial accepted.'

@@ -1,4 +1,9 @@
 # Shared developer-trial validation; never launches, installs or stops the App.
+function Export-PackagingTrialComparison($Report,[string]$OutputPath) {
+  # Set-Content has no NoClobber parameter. Keep existing numeric evidence intact.
+  $Report|ConvertTo-Json -Depth 6|Out-File -LiteralPath $OutputPath -Encoding utf8 -NoClobber -ErrorAction Stop
+}
+
 function Assert-PackagingTrialVersion([string]$InstalledFileVersion,[string]$TrialFileVersion,[string]$InstalledProductVersion,[string]$TrialProductVersion) {
   if ($InstalledFileVersion -notmatch '^\d+\.\d+\.\d+\.\d+$' -or $TrialFileVersion -notmatch '^\d+\.\d+\.\d+\.\d+$' -or
       [version]$InstalledFileVersion -gt [version]$TrialFileVersion -or [string]::IsNullOrWhiteSpace($InstalledProductVersion) -or
