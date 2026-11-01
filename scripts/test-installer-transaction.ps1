@@ -364,9 +364,10 @@ finally {
   }
 
   $resolvedSmokeRoot = [System.IO.Path]::GetFullPath($smokeRoot)
-  $resolvedTempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
-  if ($resolvedSmokeRoot.StartsWith($resolvedTempRoot, [StringComparison]::OrdinalIgnoreCase) -and
-      (Test-Path -LiteralPath $resolvedSmokeRoot)) {
+  $resolvedTempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath()).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+  if (-not $resolvedSmokeRoot.StartsWith($resolvedTempRoot, [StringComparison]::OrdinalIgnoreCase) -or
+      [System.IO.Path]::GetFileName($resolvedSmokeRoot) -cnotmatch '^PrivacyMask-installer-test-[a-f0-9]{32}$') { throw 'Unsafe installer fixture cleanup.' }
+  if (Test-Path -LiteralPath $resolvedSmokeRoot) {
     Remove-Item -LiteralPath $resolvedSmokeRoot -Recurse -Force
   }
   if ($registryFixturePath -cnotmatch '^Software\\PrivacyMask\.Tests\\Installer-[a-f0-9]{32}$') { throw 'Unsafe registry fixture cleanup.' }
