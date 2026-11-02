@@ -1,5 +1,8 @@
 # beta.18 paired one-window renderer results — 2026-11-02
 
+Later [movement/reveal measurements](renderer-motion-reveal-results-beta18.md)
+are a separate session; the NotRun statements below describe this one-window run.
+
 The uncompressed fixture used **74.523 MiB less private memory** and 126.137 MiB
 less working set in this static one-window experiment. Mean CPU and observed
 frame intervals were close between variants. These results support the memory
