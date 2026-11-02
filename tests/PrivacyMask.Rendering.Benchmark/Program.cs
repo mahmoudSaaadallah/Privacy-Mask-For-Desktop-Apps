@@ -30,7 +30,7 @@ internal static class Program
         for (var i = 0; i < args.Length; i += 2)
         {
             if (i + 1 >= args.Length) return 2;
-            if (args[i] == "--scenario" && args[i + 1] is "IdleFixture" or "OneWindow" or "TwoWindows" or "MoveOnly" or "MoveResize" or "RevealInputs") scenario = args[i + 1];
+            if (args[i] == "--scenario" && args[i + 1] is "IdleFixture" or "OneWindow" or "TwoWindows" or "MoveOnly" or "MoveResize" or "RevealInputs" or "Recovery") scenario = args[i + 1];
             else if (args[i] == "--duration-seconds" && int.TryParse(args[i + 1], out var duration) && duration is >= 5 and <= 3600) seconds = duration;
             else if (args[i] == "--allow-visible-fixtures" && args[i + 1] == "true") admitted = true;
             else return 2;
@@ -56,6 +56,13 @@ internal static class Program
         var measuredFrameTimes = new double[lastFrames.Length];
         var measuredFrames = new long[lastFrames.Length];
         var scenarioStart = 0d;
+        var recoveryPhase = -1;
+        double? recoveryStarted = null;
+        var recoveryKind = "";
+        var recoveries = new List<object>();
+        var missingMaskSamples = 0;
+        var fallbackSamples = 0;
+        var missedRecoveries = 0;
         var ready = false;
         var stopping = false;
         var aborted = false;
@@ -78,7 +85,7 @@ internal static class Program
             MaskStyle = "Blur", Strength = 0.7, RendererTickMilliseconds = OverlayRefreshCadence.ActiveInterval.TotalMilliseconds,
             FrameDimensions = dimensions, LastFrameAgeSeconds = lastSeen.Select(value => Math.Round(elapsed.Elapsed.TotalSeconds - value, 2)).ToArray(),
             ElapsedSeconds = Math.Round(elapsed.Elapsed.TotalSeconds, 2), Aborted = aborted,
-            FullProductionShellStarted = false, RevealParametersSimulated = scenario == "RevealInputs",
+            FullProductionShellStarted = false, RevealParametersSimulated = scenario is "RevealInputs" or "Recovery",
             CaptureScope = "Only handles created by this process; no settings/hotkeys/startup/network",
             ResponseMetrics = new
             {
@@ -88,6 +95,13 @@ internal static class Program
                 FrameIntervals = frameTiming.Select(value => value.Snapshot()).ToArray(),
                 MeasuredFrames = measuredFrames,
                 Scope = "Synchronous UpdateOverlay calls and observed frame/tick intervals; not display or keyboard latency",
+            },
+            RecoveryMetrics = new
+            {
+                Transitions = recoveries, MissingMaskSamples = missingMaskSamples,
+                FallbackSamples = fallbackSamples, MissedRecoveries = missedRecoveries,
+                Pending = recoveryStarted is not null,
+                Scope = "Sampled WPF interior coverage and first varied frame after settle/re-hide; not physical display or real keyboard latency",
             },
         };
         try
@@ -130,13 +144,21 @@ internal static class Program
                         if (form.IsDisposed) { Stop(true); return; }
                         if (scenario == "MoveOnly")
                             form.SetBounds(area.Left + 80 + (int)(40 * Math.Sin(phase)), area.Top + 80 + (int)(25 * Math.Cos(phase)), width, height);
-                        if (scenario == "MoveResize" && (int)phase % 4 < 2)
+                        var recoveryStep = (int)(phase / 2) % 4;
+                        if ((scenario == "MoveResize" && (int)phase % 4 < 2) || (scenario == "Recovery" && recoveryStep == 0))
                             form.SetBounds(area.Left + 80 + (int)(40 * Math.Sin(phase)), area.Top + 80 + (int)(25 * Math.Cos(phase)),
                                 width - 50 + (int)(30 * Math.Sin(phase)), height - 40 + (int)(20 * Math.Cos(phase)));
                         GetWindowThreadProcessId(form.Handle, out var owner);
                         if (owner != Environment.ProcessId || !GetWindowRect(form.Handle, out var rect)) { Stop(true); return; }
                         var bounds = new ScreenRect(rect.Left, rect.Top, rect.Right, rect.Bottom);
-                        var reveal = scenario == "RevealInputs" && (int)phase % 4 >= 2;
+                        var reveal = (scenario == "RevealInputs" && (int)phase % 4 >= 2) || (scenario == "Recovery" && recoveryStep == 2);
+                        if (scenario == "Recovery" && measurementActive && recoveryStep != recoveryPhase)
+                        {
+                            if (recoveryStarted is not null) missedRecoveries++;
+                            recoveryStarted = recoveryStep is 1 or 3 ? elapsed.Elapsed.TotalSeconds : null;
+                            recoveryKind = recoveryStep == 1 ? "Settle" : "Rehide";
+                            recoveryPhase = recoveryStep;
+                        }
                         var cursor = scenario == "RevealInputs" ? new Point(bounds.Left + bounds.Width * (0.5 + 0.4 * Math.Sin(phase)), bounds.Top + bounds.Height / 2d) : new Point(-10000, -10000);
                         var callStart = Stopwatch.GetTimestamp();
                         overlays[i].UpdateOverlay(new TrackedWindow
@@ -148,6 +170,26 @@ internal static class Program
                         if (overlays[i].Content is Canvas canvas)
                         {
                             var frame = canvas.Children.OfType<System.Windows.Controls.Image>().Select(image => image.Source).OfType<BitmapSource>().FirstOrDefault();
+                            if (scenario == "Recovery" && measurementActive && !reveal)
+                            {
+                                // Cursor stays outside: no intentional hover cutout in this probe.
+                                // Sample the interior, excluding the product's rounded outer corners.
+                                var points = new[] { new Point(20, 20), new Point(overlays[i].Width / 2, overlays[i].Height / 2),
+                                    new Point(overlays[i].Width - 20, overlays[i].Height - 20) };
+                                var hasFrame = frame is not null && HasVariation(frame) && canvas.Children.OfType<System.Windows.Controls.Image>().Any(image =>
+                                    ReferenceEquals(image.Source, frame) && image.Opacity == 1 && image.IsVisible && image.Clip is not null &&
+                                    points.All(point => image.Clip.FillContains(point)));
+                                var opaqueFallback = canvas.Children.OfType<System.Windows.Shapes.Path>().Any(path =>
+                                    path.Opacity == 1 && path.Fill is System.Windows.Media.GradientBrush brush && brush.Opacity == 1 &&
+                                    brush.GradientStops.All(stop => stop.Color.A == 255) && points.All(point => path.Data.FillContains(point)));
+                                if (!overlays[i].IsVisible || overlays[i].Opacity != 1 || (!hasFrame && !opaqueFallback)) missingMaskSamples++;
+                                if (!hasFrame && opaqueFallback) fallbackSamples++;
+                                if (recoveryStarted is { } since && hasFrame)
+                                {
+                                    recoveries.Add(new { Kind = recoveryKind, Milliseconds = (elapsed.Elapsed.TotalSeconds - since) * 1000 });
+                                    recoveryStarted = null;
+                                }
+                            }
                             if (frame is not null && !ReferenceEquals(frame, lastFrames[i]))
                             {
                                 lastFrames[i] = frame;
@@ -193,6 +235,10 @@ internal static class Program
                             previousTick = 0;
                             measurementStart = scenarioStart = elapsed.Elapsed.TotalSeconds;
                             measurementActive = true;
+                            recoveryPhase = -1;
+                            recoveryStarted = null;
+                            recoveries.Clear();
+                            missingMaskSamples = fallbackSamples = missedRecoveries = 0;
                             Console.WriteLine(JsonSerializer.Serialize(Status("MEASURING")));
                         }
                         else if (current == "stop") Stop(false);

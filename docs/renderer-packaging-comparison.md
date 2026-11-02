@@ -85,3 +85,19 @@ change or Stable qualification follows from this experiment.
 
 CI runs pure admission/response/packet rejection tests and histogram unit tests;
 it does not open visible windows or assert performance budgets on shared runners.
+
+## Short candidate recovery check
+
+The `Recovery` scenario added for beta.19 cycles through two seconds each of
+resize, settle, held reveal and re-hide, with the cursor outside the target.
+Run one pair with `-Scenarios Recovery -WarmupSeconds 4 -DurationSeconds 24 -Pairs 1`
+using the same explicit visible-fixture admission and prepared bundles above.
+This is a short functional check, not a new CPU/memory baseline.
+
+It requires at least three completed settle and three re-hide transitions per
+variant, first varied frames within each two-second stable phase, no unfinished
+transition, and observed opaque fallback while frames are unavailable. It checks
+three interior points in the WPF mask geometry at dispatcher ticks, excluding
+the existing rounded corners. An absent/transparent fallback or missing recovery
+rejects the run. This does not prove pixel-level coverage between samples, physical
+display latency, real keyboard timing or the absence of every possible flash.

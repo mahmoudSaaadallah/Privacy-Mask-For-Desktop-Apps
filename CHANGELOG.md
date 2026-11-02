@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.0-beta.19 - Lower-memory packaging Preview (not published)
+
+- Disable compression inside the self-contained single-file App to reduce the memory cost of decompressed managed assemblies; keep ZIP compression and the Native AOT launcher
+- Accept the larger extracted EXE in exchange for measured private-memory savings; do not claim universal savings, CPU improvements or Stable qualification
+- Advance FileVersion to 2.0.0.19; preserve settings, blur/reveal defaults, hotkeys, mandatory daily update policy, trust pins and launcher protocol
+- Add a short synthetic recovery probe for sampled mask coverage and first usable frames after settling and re-hiding; real keyboard/display and eight-hour qualification remain separate
+
 ## Unreleased - Controlled renderer comparison tools (no App version change)
 
 - Add bounded timing histograms to the synthetic renderer fixture, reset after warmup; distinguish capture/tick/call timing from real keyboard or display latency

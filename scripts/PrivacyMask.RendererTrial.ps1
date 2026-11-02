@@ -44,6 +44,18 @@ function Assert-RendererTrialResponse($Status,[string]$Scenario,[int]$DurationSe
       throw 'Stale/insufficient captures; timing alone is not a live-renderer pass.'
     }
   }
+  if ($Scenario -ceq 'Recovery') {
+    $recovery=$Status.RecoveryMetrics
+    if ($DurationSeconds -lt 24 -or $recovery.MissingMaskSamples -ne 0 -or $recovery.MissedRecoveries -ne 0 -or
+        $recovery.Pending -or $recovery.FallbackSamples -lt 1 -or
+        @($recovery.Transitions | Where-Object Kind -CEQ 'Settle').Count -lt 3 -or
+        @($recovery.Transitions | Where-Object Kind -CEQ 'Rehide').Count -lt 3) { throw 'Incomplete or uncovered recovery probe.' }
+    foreach ($transition in $recovery.Transitions) {
+      if (-not [double]::IsFinite($transition.Milliseconds) -or $transition.Milliseconds -lt 0 -or $transition.Milliseconds -ge 2000) {
+        throw 'Recovery did not complete within its two-second stable phase.'
+      }
+    }
+  }
 }
 
 function Read-RendererTrialBundles([string]$Directory,[string]$Commit,[string]$Sdk) {

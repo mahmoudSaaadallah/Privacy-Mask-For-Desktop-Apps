@@ -10,6 +10,7 @@ try {
   $exe = Join-Path $output 'PrivacyMask.Rendering.Benchmark.exe'
   foreach ($arguments in @(
       @('--scenario','OneWindow','--duration-seconds','5'),
+      @('--scenario','Recovery','--duration-seconds','30'),
       @('--scenario','Unknown','--duration-seconds','5','--allow-visible-fixtures','true'),
       @('--scenario','OneWindow','--duration-seconds','1','--allow-visible-fixtures','true'))) {
     & $exe @arguments
