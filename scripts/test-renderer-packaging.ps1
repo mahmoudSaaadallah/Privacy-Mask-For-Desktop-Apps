@@ -54,6 +54,27 @@ try {
   Reject { & (Join-Path $PSScriptRoot 'measure-renderer-packaging.ps1') -OutputDirectory $root } 'Visible opt-in missing.'
   Check (-not (Test-Path -LiteralPath $root)) 'Admission failure wrote evidence.'
 
+  $recovery=Status Recovery
+  $recovery.ResponseMetrics.DurationSeconds=24.1
+  $transitions=@(foreach ($index in 1..3) { foreach ($kind in @('Settle','Rehide')) { [pscustomobject]@{Kind=$kind;Milliseconds=300} } })
+  $recovery | Add-Member -NotePropertyName RecoveryMetrics -NotePropertyValue ([pscustomobject]@{
+    MissingMaskSamples=0;MissedRecoveries=0;Pending=$false;FallbackSamples=20;Transitions=$transitions
+  })
+  Assert-RendererTrialResponse $recovery Recovery 24
+  foreach ($field in @('MissingMaskSamples','MissedRecoveries')) {
+    $recovery.RecoveryMetrics.$field=1
+    Reject { Assert-RendererTrialResponse $recovery Recovery 24 } "Accepted $field in recovery."
+    $recovery.RecoveryMetrics.$field=0
+  }
+  $recovery.RecoveryMetrics.Pending=$true
+  Reject { Assert-RendererTrialResponse $recovery Recovery 24 } 'Pending recovery accepted.'
+  $recovery.RecoveryMetrics.Pending=$false
+  $transitions[0].Milliseconds=2001
+  Reject { Assert-RendererTrialResponse $recovery Recovery 24 } 'Late recovery accepted.'
+  $transitions[0].Milliseconds=300
+  $recovery.RecoveryMetrics.Transitions=@($transitions | Select-Object -First 2)
+  Reject { Assert-RendererTrialResponse $recovery Recovery 24 } 'Insufficient recovery cycles accepted.'
+
   # Harmless local shell copy is only hashed, never executed as a renderer.
   $variants=@(foreach ($name in @('Compressed','Uncompressed')) {
     $directory=Join-Path $root $name

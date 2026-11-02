@@ -5,7 +5,7 @@ param(
   [string]$PreparedDirectory='',
   [switch]$PrepareOnly,
   [switch]$AllowVisibleFixtures,
-  [ValidateSet('IdleFixture','OneWindow','TwoWindows','MoveOnly','MoveResize','RevealInputs')]
+  [ValidateSet('IdleFixture','OneWindow','TwoWindows','MoveOnly','MoveResize','RevealInputs','Recovery')]
   [string[]]$Scenarios=@('OneWindow','MoveResize','RevealInputs'),
   [ValidateRange(0,600)][int]$WarmupSeconds=30,
   [ValidateRange(2,600)][int]$DurationSeconds=60,
