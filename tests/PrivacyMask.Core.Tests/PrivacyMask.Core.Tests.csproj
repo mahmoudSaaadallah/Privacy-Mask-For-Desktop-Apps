@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Compile Include="..\PrivacyMask.Rendering.Benchmark\TimingHistogram.cs" Link="Diagnostics\TimingHistogram.cs" />
   </ItemGroup>
 
   <ItemGroup>
