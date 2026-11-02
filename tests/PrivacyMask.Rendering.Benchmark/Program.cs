@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using PrivacyMask.App.Windows;
 using PrivacyMask.Core.Models;
 using PrivacyMask.Core.Services;
+using PrivacyMask.Rendering.Benchmark;
 using Forms = System.Windows.Forms;
 using Drawing = System.Drawing;
 using WpfApplication = System.Windows.Application;
@@ -46,6 +47,15 @@ internal static class Program
         var pixelVariation = new bool[lastFrames.Length];
         var dimensions = new string[lastFrames.Length];
         var elapsed = Stopwatch.StartNew();
+        var updateTiming = new TimingHistogram();
+        var tickTiming = new TimingHistogram();
+        var frameTiming = lastFrames.Select(_ => new TimingHistogram()).ToArray();
+        var measurementActive = false;
+        var measurementStart = 0d;
+        var previousTick = 0d;
+        var measuredFrameTimes = new double[lastFrames.Length];
+        var measuredFrames = new long[lastFrames.Length];
+        var scenarioStart = 0d;
         var ready = false;
         var stopping = false;
         var aborted = false;
@@ -70,6 +80,15 @@ internal static class Program
             ElapsedSeconds = Math.Round(elapsed.Elapsed.TotalSeconds, 2), Aborted = aborted,
             FullProductionShellStarted = false, RevealParametersSimulated = scenario == "RevealInputs",
             CaptureScope = "Only handles created by this process; no settings/hotkeys/startup/network",
+            ResponseMetrics = new
+            {
+                Active = measurementActive,
+                DurationSeconds = measurementActive ? elapsed.Elapsed.TotalSeconds - measurementStart : 0,
+                UpdateCalls = updateTiming.Snapshot(), TickIntervals = tickTiming.Snapshot(),
+                FrameIntervals = frameTiming.Select(value => value.Snapshot()).ToArray(),
+                MeasuredFrames = measuredFrames,
+                Scope = "Synchronous UpdateOverlay calls and observed frame/tick intervals; not display or keyboard latency",
+            },
         };
         try
         {
@@ -99,25 +118,33 @@ internal static class Program
                 try
                 {
                     var t = elapsed.Elapsed.TotalSeconds;
+                    var phase = t - scenarioStart;
+                    if (measurementActive)
+                    {
+                        if (previousTick > 0) tickTiming.Add((t - previousTick) * 1000);
+                        previousTick = t;
+                    }
                     for (var i = 0; i < forms.Count; i++)
                     {
                         var form = forms[i];
                         if (form.IsDisposed) { Stop(true); return; }
                         if (scenario == "MoveOnly")
-                            form.SetBounds(area.Left + 80 + (int)(40 * Math.Sin(t)), area.Top + 80 + (int)(25 * Math.Cos(t)), width, height);
-                        if (scenario == "MoveResize" && (int)t % 4 < 2)
-                            form.SetBounds(area.Left + 80 + (int)(40 * Math.Sin(t)), area.Top + 80 + (int)(25 * Math.Cos(t)),
-                                width - 50 + (int)(30 * Math.Sin(t)), height - 40 + (int)(20 * Math.Cos(t)));
+                            form.SetBounds(area.Left + 80 + (int)(40 * Math.Sin(phase)), area.Top + 80 + (int)(25 * Math.Cos(phase)), width, height);
+                        if (scenario == "MoveResize" && (int)phase % 4 < 2)
+                            form.SetBounds(area.Left + 80 + (int)(40 * Math.Sin(phase)), area.Top + 80 + (int)(25 * Math.Cos(phase)),
+                                width - 50 + (int)(30 * Math.Sin(phase)), height - 40 + (int)(20 * Math.Cos(phase)));
                         GetWindowThreadProcessId(form.Handle, out var owner);
                         if (owner != Environment.ProcessId || !GetWindowRect(form.Handle, out var rect)) { Stop(true); return; }
                         var bounds = new ScreenRect(rect.Left, rect.Top, rect.Right, rect.Bottom);
-                        var reveal = scenario == "RevealInputs" && (int)t % 4 >= 2;
-                        var cursor = scenario == "RevealInputs" ? new Point(bounds.Left + bounds.Width * (0.5 + 0.4 * Math.Sin(t)), bounds.Top + bounds.Height / 2d) : new Point(-10000, -10000);
+                        var reveal = scenario == "RevealInputs" && (int)phase % 4 >= 2;
+                        var cursor = scenario == "RevealInputs" ? new Point(bounds.Left + bounds.Width * (0.5 + 0.4 * Math.Sin(phase)), bounds.Top + bounds.Height / 2d) : new Point(-10000, -10000);
+                        var callStart = Stopwatch.GetTimestamp();
                         overlays[i].UpdateOverlay(new TrackedWindow
                         {
                             Profile = profiles[i], Preset = profiles[i].Presets[0], EffectiveZones = profiles[i].Zones,
                             Snapshot = new WindowSnapshot { Handle = form.Handle, Bounds = bounds, IsVisible = true, IsForeground = true, ProcessName = "PrivacyMask.Rendering.Benchmark" },
                         }, scenario == "IdleFixture" ? RuntimeMode.Off : mode, reveal, cursor);
+                        if (measurementActive) updateTiming.Add(Stopwatch.GetElapsedTime(callStart).TotalMilliseconds);
                         if (overlays[i].Content is Canvas canvas)
                         {
                             var frame = canvas.Children.OfType<System.Windows.Controls.Image>().Select(image => image.Source).OfType<BitmapSource>().FirstOrDefault();
@@ -125,6 +152,13 @@ internal static class Program
                             {
                                 lastFrames[i] = frame;
                                 frameCounts[i]++;
+                                if (measurementActive)
+                                {
+                                    var frameTime = elapsed.Elapsed.TotalSeconds;
+                                    if (measuredFrames[i] > 0) frameTiming[i].Add((frameTime - measuredFrameTimes[i]) * 1000);
+                                    measuredFrameTimes[i] = frameTime;
+                                    measuredFrames[i]++;
+                                }
                                 lastSeen[i] = t;
                                 dimensions[i] = $"{frame.PixelWidth}x{frame.PixelHeight}";
                                 if (!pixelVariation[i]) pixelVariation[i] = HasVariation(frame);
@@ -149,6 +183,18 @@ internal static class Program
                     application.Dispatcher.BeginInvoke(() =>
                     {
                         if (current == "status") Console.WriteLine(JsonSerializer.Serialize(Status("STATUS")));
+                        else if (current == "begin-measurement")
+                        {
+                            updateTiming.Reset();
+                            tickTiming.Reset();
+                            foreach (var histogram in frameTiming) histogram.Reset();
+                            Array.Clear(measuredFrames);
+                            Array.Clear(measuredFrameTimes);
+                            previousTick = 0;
+                            measurementStart = scenarioStart = elapsed.Elapsed.TotalSeconds;
+                            measurementActive = true;
+                            Console.WriteLine(JsonSerializer.Serialize(Status("MEASURING")));
+                        }
                         else if (current == "stop") Stop(false);
                     });
                     if (current == "stop") return;

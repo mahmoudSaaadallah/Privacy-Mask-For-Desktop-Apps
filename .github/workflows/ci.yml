@@ -82,6 +82,10 @@ jobs:
         shell: pwsh
         run: .\scripts\test-renderer-benchmark-arguments.ps1
 
+      - name: Test paired renderer evidence without opening windows
+        shell: pwsh
+        run: .\scripts\test-renderer-packaging.ps1
+
       - name: Restore
         run: dotnet restore PrivacyMask.Desktop.slnx
 
