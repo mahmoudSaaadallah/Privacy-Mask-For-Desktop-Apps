@@ -150,6 +150,10 @@ shortcut after a successful build/install.
 
 ## Developer setup
 
+For the next controlled performance experiment, see the
+[paired renderer packaging runbook](docs/renderer-packaging-comparison.md).
+It measures real capture on synthetic windows without changing the installed App.
+
 1. Install the tools listed in [requirements.md](requirements.md).
 2. Restore the solution:
 
