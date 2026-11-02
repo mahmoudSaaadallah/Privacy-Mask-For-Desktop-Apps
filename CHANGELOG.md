@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased - beta.18 full-App packaging evidence (no App version change)
+
+- Record a matched owner-assisted C/U/C session: 81.155 MiB lower private memory without compression in fresh tray idle; the compressed baseline returns after restoration
+- Preserve per-stage CPU drift as inconclusive rather than claiming a speed improvement or packaging-caused regression; distinguish EXE/ZIP bytes from total installed space
+- Record endpoint Defender checks and no matched session detection events without classifying the older report; keep compression enabled and Stable/functional/eight-hour gates open
+
 ## 2.0.0-beta.18 - Startup-registration correctness (not published)
 
 - Make unchanged startup preferences read-only: write the current-user Run command only when it differs; do not create a key to disable an absent value

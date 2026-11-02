@@ -1,5 +1,11 @@
 # Full-App bundle compression trial (C/U/C)
 
+The beta.17 packet below remains blocked. A separate, newly prepared beta.18
+pair completed an owner-assisted direct C/U/C session on 2026-11-02; see
+[full-App results and limits](full-app-packaging-results-beta18.md). Its memory
+contrast does not resolve CPU attribution or the original Defender detection,
+and production compression remains enabled. Do not resume the old packet.
+
 Status: **prepared, isolated package tests completed; live comparison blocked by
 Defender during the owner's first compressed stage**. See the incident below;
 do not resume this packet pending review.

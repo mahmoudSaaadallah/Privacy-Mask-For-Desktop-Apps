@@ -448,6 +448,9 @@ Press `Esc` or close the window to discard the preview and return to the tray.
 - The [full-App packaging trial](docs/full-app-packaging-trial.md) prepares matched
   compressed/uncompressed diagnostic packages and explicit owner-run C/U/C steps;
   preparation and CI never start the personal App or change its installation.
+- The [beta.18 full-App results](docs/full-app-packaging-results-beta18.md) record
+  the owner-assisted C/U/C memory/disk contrast and inconclusive CPU attribution;
+  the compressed diagnostic was restored and the production default stays enabled.
 - Keep tests updated whenever profile matching, settings migration, or overlay behavior changes.
 
 ## Known limitations
