@@ -1,5 +1,8 @@
 # Controlled renderer packaging comparison
 
+The first [paired one-window results](renderer-packaging-results-beta18.md) are
+recorded separately. Other scenarios and full-App qualification remain open.
+
 The beta.18 full-App C/U/C experiment found a repeatable memory difference but
 CPU increased in both U1 and the final compressed C2. Repeat short CPU/response
 measurements with a fixed workload and alternating order before attributing that

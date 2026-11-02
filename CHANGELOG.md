@@ -5,6 +5,7 @@
 - Add bounded timing histograms to the synthetic renderer fixture, reset after warmup; distinguish capture/tick/call timing from real keyboard or display latency
 - Prepare byte-matched compressed/uncompressed renderer bundles and alternate fresh-process pairs with strict capture/identity/completeness checks
 - Cover histogram math and offline packet/response rejection in CI; preserve the installed App, product defaults and all remaining Stable gates
+- Record six paired one-window passes: 74.523 MiB lower private memory without compression, with close CPU/frame timings; keep other scenarios, real input response and Stable qualification open
 
 ## Unreleased - beta.18 full-App packaging evidence (no App version change)
 
