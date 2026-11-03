@@ -19,7 +19,7 @@ public sealed class ProfileProtectionStateTests
     }
 
     [Fact]
-    public void Prune_RemovesProfilesThatNoLongerExist()
+    public void Prune_RemovesObsoletePausesButCannotUnlockPanic()
     {
         var state = new ProfileProtectionState();
         state.TogglePause("keep");
@@ -32,6 +32,9 @@ public sealed class ProfileProtectionStateTests
         Assert.True(state.IsPaused("keep"));
         Assert.True(state.IsPanic("keep"));
         Assert.False(state.IsPaused("remove"));
+        Assert.True(state.IsPanic("remove"));
+        Assert.Equal(RuntimeMode.Panic, state.ResolveMode("remove", RuntimeMode.Off));
+        Assert.False(state.TogglePanic("remove"));
         Assert.False(state.IsPanic("remove"));
     }
 

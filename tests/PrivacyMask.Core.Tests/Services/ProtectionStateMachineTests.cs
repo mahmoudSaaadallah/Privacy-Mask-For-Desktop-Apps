@@ -48,12 +48,24 @@ public sealed class ProtectionStateMachineTests
     }
 
     [Fact]
-    public void EnsureProtected_LeavesAnyTransientModeInProtectedState()
+    public void PauseCannotBypassAnIndividualPanicMask()
+    {
+        var stateMachine = new ProtectionStateMachine();
+        var profiles = new ProfileProtectionState();
+        profiles.TogglePanic("notes");
+
+        Assert.Equal(RuntimeMode.Standard, stateMachine.ToggleProtection(profiles.HasAnyPanic));
+        Assert.Equal(RuntimeMode.Panic, profiles.ResolveMode("notes", stateMachine.CurrentMode));
+        Assert.True(ProtectionRenderPolicy.ForMode(profiles.ResolveMode("notes", stateMachine.CurrentMode)).ForceFullWindowMask);
+    }
+
+    [Fact]
+    public void EnsureProtected_PreservesPanic()
     {
         var stateMachine = new ProtectionStateMachine();
         stateMachine.TogglePanic();
 
-        Assert.Equal(RuntimeMode.Standard, stateMachine.EnsureProtected());
-        Assert.Equal(RuntimeMode.Standard, stateMachine.CurrentMode);
+        Assert.Equal(RuntimeMode.Panic, stateMachine.EnsureProtected());
+        Assert.Equal(RuntimeMode.Panic, stateMachine.CurrentMode);
     }
 }
