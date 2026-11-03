@@ -55,6 +55,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     public double DownloadPercent => _downloadPercent;
     public string DownloadText => _downloadText;
     public bool CanReviewBlockingApplications => _downloadReady && !_isInstalling && _restartBlock?.CanReviewApplications == true;
+    public bool CanUnlockPanicForUpdate => IsMandatory && CanInstall && _restartBlock?.Kind == UpdateRestartBlockKind.Panic;
     public string StatusHeading => NeedsRepair ? "Update recovery needs attention" : _phase switch
     {
         DisplayPhase.Checking => "Checking for updates",
@@ -115,7 +116,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
     public bool HasCandidate => _result?.Status == UpdateCheckStatus.Available && _result.Candidate is not null;
     public string CandidateDetail => HasCandidate
         ? $"Version {_result!.Candidate!.Manifest.Version} · {_result.Candidate.Manifest.Package.Size / 1048576d:0.0} MiB. " + (IsMandatory
-            ? "Required update: downloads automatically and installs when Panic, unsaved edits and visible protected windows are clear."
+            ? "Required update: downloads automatically. Active Panic asks for your PIN, then minimizes protected windows before installing. Resolve any pending settings edits to continue."
             : "Download verifies a separate package. Update now asks before restarting; masks disappear during restart.")
         : "";
 
@@ -286,13 +287,14 @@ public sealed class UpdateStatusViewModel : ObservableObject
         Notify();
     }
 
-    internal void ShowRestartBlock(UpdateRestartBlock block)
+    internal void ShowRestartBlock(UpdateRestartBlock block, string? detail = null)
     {
         if (_isStopped || !_downloadReady || _isInstalling) return;
-        if (_restartBlock?.Kind == block.Kind && _downloadText == block.Message) return;
+        var message = detail ?? block.Message;
+        if (_restartBlock?.Kind == block.Kind && _downloadText == message) return;
         _phase = DisplayPhase.Waiting;
         _restartBlock = block;
-        _downloadText = block.Message;
+        _downloadText = message;
         Notify();
     }
 
@@ -303,6 +305,7 @@ public sealed class UpdateStatusViewModel : ObservableObject
             nameof(CanDownload), nameof(CanCancelDownload), nameof(CanDiscardDownload), nameof(HasDownloadStatus),
             nameof(IsDownloading), nameof(DownloadPercent), nameof(DownloadText), nameof(CanInstall), nameof(IsInstalling),
             nameof(IsMandatory), nameof(UserActionsAllowed), nameof(RequiredChannel), nameof(CanReviewBlockingApplications),
+            nameof(CanUnlockPanicForUpdate),
             nameof(StatusHeading), nameof(StatusDetail) })
             RaisePropertyChanged(property);
     }

@@ -34,6 +34,17 @@ public partial class PanicPinUnlockWindow : Window
         Close();
     }
 
+    internal void ConfigureForUpdate(string version)
+    {
+        Title = "Install PrivacyMask update";
+        HeadingText.Text = $"Install PrivacyMask {version}";
+        DescriptionText.Text = "Enter your panic PIN to unlock all active panic masks and install this verified update. Protected application windows will be minimized automatically. Cancel keeps Panic active.";
+        UnlockButton.Content = "_Unlock and install";
+        Width = 600;
+        Height = 540;
+        WindowWorkAreaSizer.Fit(this);
+    }
+
     protected override void OnClosed(EventArgs e)
     {
         PinBox.Clear();

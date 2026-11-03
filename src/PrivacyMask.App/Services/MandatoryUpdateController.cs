@@ -4,7 +4,8 @@ namespace PrivacyMask.App.Services;
 
 internal sealed record MandatoryUpdateActions(Func<bool> Enabled, Func<bool> Online,
     Func<bool, Task> Check, Func<Task> Download, Func<Task> RetireFailedStage, Func<Task> Install,
-    Func<DateTimeOffset?> NextCheckUtc, Func<UpdateRestartBlock?> RestartBlockReason);
+    Func<DateTimeOffset?> NextCheckUtc, Func<UpdateRestartBlock?> RestartBlockReason,
+    Func<Task<bool>>? PreparePanicUpdate = null);
 
 /// <summary>Dispatcher-owned required update pipeline; lifecycle stop is not a user opt-out.</summary>
 internal sealed class MandatoryUpdateController(UpdateStatusViewModel status, MandatoryUpdateActions host, TimeProvider? clock = null)
@@ -81,7 +82,14 @@ internal sealed class MandatoryUpdateController(UpdateStatusViewModel status, Ma
     private async Task TryInstallAsync()
     {
         if (_stopped || !Enabled || !status.CanInstall) return;
-        if (host.RestartBlockReason() is { } reason) { status.ShowRestartBlock(reason); return; }
+        var reason = host.RestartBlockReason();
+        if (reason?.Kind == UpdateRestartBlockKind.Panic && host.PreparePanicUpdate is not null)
+        {
+            if (!await host.PreparePanicUpdate()) return;
+            if (_stopped || !Enabled || !status.CanInstall) return;
+            reason = host.RestartBlockReason();
+        }
+        if (reason is not null) { status.ShowRestartBlock(reason); return; }
         await host.Install();
         if (status.RequiresNewDownload) _nextNetworkAttempt = _time.GetUtcNow().AddMinutes(15);
     }

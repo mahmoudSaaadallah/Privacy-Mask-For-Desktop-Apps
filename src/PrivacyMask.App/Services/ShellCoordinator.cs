@@ -63,6 +63,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private readonly UpdateInstallSession _updateInstall;
     private readonly MandatoryUpdateController _mandatoryUpdates;
     private readonly MandatoryUpdateMonitor _mandatoryMonitor;
+    private readonly PanicUpdatePreparation _panicUpdatePreparation;
     private readonly ToolStripMenuItem _checkUpdatesItem;
     private readonly SemaphoreSlim _panicOperationGate = new(1, 1);
     private readonly SemaphoreSlim _profileProtectionOperationGate = new(1, 1);
@@ -114,6 +115,22 @@ public sealed class ShellCoordinator : IAsyncDisposable
             downloads: new(_updateDownloads.PrepareAsync, _updateDownloads.DiscardAsync), mandatory: true);
         _updateInstall = new(_updateChecks.Status, _updateDownloads.Select, ApplyStagedUpdateAsync,
             channel => _updateDiscovery.Preflight(channel) is null);
+        _panicUpdatePreparation = new(_operations, new(
+            () => _updateDownloads.Select(RequiredUpdateChannel),
+            () => !_isShuttingDown && !_isUpdateSuspended && !_updateRestart.IsBusy
+                && _updateChecks.Status.CanInstall
+                && _mainWindow?.OwnedWindows.Cast<System.Windows.Window>().Any(window => window.IsVisible) != true,
+            HasActivePanic,
+            RequestPanicUnlockForUpdate,
+            canContinue => UpdateWindowMinimizer.RunAsync(CaptureProtectedUpdateWindows, MinimizeProtectedUpdateWindow, canContinue),
+            () =>
+            {
+                _profileProtectionState.UnlockAllPanic();
+                if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic) _protectionStateMachine.TogglePanic();
+                _temporaryRevealGesture.Reset();
+                UpdateTrayState();
+                RefreshOverlays();
+            }));
         _mandatoryUpdates = new(_updateChecks.Status, new(
             () => !_isShuttingDown && !_isUpdateSuspended && _updateDiscovery.Preflight(RequiredUpdateChannel) is null,
             MayHaveNetwork,
@@ -122,7 +139,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _updateChecks.RetireFailedDownloadAsync,
             () => _updateInstall.StartAsync(RequiredUpdateChannel),
             () => _updateChecks.NextAutomaticAttemptUtc,
-            AutomaticRestartBlockReason));
+            AutomaticRestartBlockReason,
+            PreparePanicUpdateAsync));
         _mandatoryMonitor = new(dispatcher, _mandatoryUpdates);
         _windowInspector = new DesktopWindowInspector();
         _applicationCatalog = new DesktopApplicationCatalog(_windowInspector);
@@ -277,6 +295,67 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private bool HasVisibleProtectedWindows()
     {
         return UpdateRestartBlock.Assess(false, false, CaptureUpdateWindows) is not null;
+    }
+
+    private IReadOnlyList<WindowSnapshot> CaptureProtectedUpdateWindows()
+    {
+        var profiles = _settings.AppProfiles.Concat(_savedSettings.AppProfiles).ToArray();
+        return _windowInspector.Capture(new WindowProcessFilter(profiles), requireCompleteEnumeration: true)
+            .CandidateWindows.Where(window => window.IsVisible && !window.IsMinimized
+                && (_windowProfileResolver.Resolve(window, _settings.AppProfiles) is not null
+                    || _windowProfileResolver.Resolve(window, _savedSettings.AppProfiles) is not null)).ToArray();
+    }
+
+    private bool MinimizeProtectedUpdateWindow(WindowSnapshot snapshot)
+    {
+        var current = _windowInspector.TryGetWindow(snapshot.Handle);
+        if (current is null || current.IsMinimized) return true;
+        if (!string.Equals(current.ProcessName, snapshot.ProcessName, StringComparison.OrdinalIgnoreCase)
+            || current.ClassName != snapshot.ClassName
+            || (_windowProfileResolver.Resolve(current, _settings.AppProfiles) is null
+                && _windowProfileResolver.Resolve(current, _savedSettings.AppProfiles) is null))
+            return false;
+        return NativeMethods.ShowWindowAsync(current.Handle, 6); // SW_MINIMIZE
+    }
+
+    private async Task<bool> PreparePanicUpdateAsync()
+    {
+        PanicUpdateResult result;
+        try { result = await _panicUpdatePreparation.RunAsync(); }
+        catch (Exception) { result = PanicUpdateResult.WindowsUnavailable; }
+        if (result == PanicUpdateResult.Ready)
+        {
+            // PIN consent has unlocked Panic after confirmed minimization. Retained
+            // editor changes still use the normal, explicit Save/Discard choice.
+            if (_mainWindow?.HasUpdateBlockingEdits == true)
+            {
+                if (await _mainWindow.ResolveUpdateEditsAsync()) return true;
+                _updateChecks.Status.ShowRestartBlock(new(UpdateRestartBlockKind.SettingsEdits, []));
+                return false;
+            }
+            return true;
+        }
+        _updateChecks.Status.ShowRestartBlock(new(UpdateRestartBlockKind.Panic, []),
+            result == PanicUpdateResult.WindowsUnavailable
+                ? "Protected windows could not all be minimized safely. Panic remains active. Choose Unlock and install to retry."
+                : "Required update is waiting for your PIN. Panic remains active. Choose Unlock and install to continue.");
+        return false;
+    }
+
+    private bool RequestPanicUnlockForUpdate(string version)
+    {
+        if (!PanicPinService.IsCredentialValid(_savedSettings.PanicPin)) return false;
+        var dialog = new PanicPinUnlockWindow(_savedSettings.PanicPin!, "Panic to install the update");
+        dialog.ConfigureForUpdate(version);
+        SetDialogOwner(dialog);
+        return dialog.ShowDialog() == true;
+    }
+
+    private void RetryPanicUpdate()
+    {
+        if (_isShuttingDown || _isUpdateSuspended || !_updateChecks.Status.CanUnlockPanicForUpdate) return;
+        _panicUpdatePreparation.AllowRetry();
+        _mandatoryMonitor.Pulse();
     }
 
     private IEnumerable<UpdateBlockingWindow> CaptureUpdateWindows() =>
@@ -450,6 +529,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _mainWindow.DiscardRequested -= DiscardPreview;
             _mainWindow.GlobalProtectionRequested -= ToggleProtection;
             _mainWindow.GlobalPanicRequested -= ToggleGlobalPanicModeAsync;
+            _mainWindow.UnlockPanicForUpdateRequested -= RetryPanicUpdate;
             _mainWindow.CheckForUpdatesRequested -= CheckForUpdatesFromSettingsAsync;
             _mainWindow.DownloadUpdateRequested -= DownloadUpdateFromSettingsAsync;
             _mainWindow.DiscardUpdateRequested -= DiscardUpdateFromSettingsAsync;
@@ -575,6 +655,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _mainWindow.DiscardRequested += DiscardPreview;
             _mainWindow.GlobalProtectionRequested += ToggleProtection;
             _mainWindow.GlobalPanicRequested += ToggleGlobalPanicModeAsync;
+            _mainWindow.UnlockPanicForUpdateRequested += RetryPanicUpdate;
             _mainWindow.CheckForUpdatesRequested += CheckForUpdatesFromSettingsAsync;
             _mainWindow.DownloadUpdateRequested += DownloadUpdateFromSettingsAsync;
             _mainWindow.DiscardUpdateRequested += DiscardUpdateFromSettingsAsync;

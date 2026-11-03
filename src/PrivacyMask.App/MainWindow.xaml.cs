@@ -50,6 +50,13 @@ public partial class MainWindow : Window
     public event Func<Task>? DiscardUpdateRequested;
     public event Action? CancelUpdateDownloadRequested;
     public event Action? InstallUpdateRequested;
+    public event Action? UnlockPanicForUpdateRequested;
+
+    private void UnlockPanicForUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_isShuttingDown && !_isUpdateSuspended && ViewModel.Updates.CanUnlockPanicForUpdate)
+            UnlockPanicForUpdateRequested?.Invoke();
+    }
 
     private void InstallUpdate_Click(object sender, RoutedEventArgs e)
     {

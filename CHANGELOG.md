@@ -1,6 +1,12 @@
 # Changelog
 
-## 2.0.0-beta.22 - Enforce Panic protection across app actions (unreleased)
+## 2.0.0-beta.23 - PIN-authorized updates during Panic (unreleased)
+
+- When a verified required update is ready during Panic, automatically request the saved PIN once for that staged package. Cancel retains Panic and exposes an explicit Unlock and install retry action.
+- After PIN verification, minimize protected application windows and confirm they actually minimized before unlocking all Panic masks and continuing installation.
+- Bind consent to the owned staged update. Failed enumeration, minimization, changed staging or shutdown keeps Panic active. Pending settings edits use the existing explicit Save/Discard flow.
+
+## 2.0.0-beta.22 - Enforce Panic protection across app actions
 
 - Block global Pause while any per-app or global Panic mask is active. Refresh tray and Overview controls immediately when a per-app lock changes.
 - Freeze settings preview, save, discard, PIN replacement and protection shortcuts while Panic is active. Unlock all active masks with the saved PIN before editing.

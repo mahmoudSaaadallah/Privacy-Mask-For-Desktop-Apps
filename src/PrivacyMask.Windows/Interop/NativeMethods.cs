@@ -58,6 +58,10 @@ public static class NativeMethods
     public static extern bool ShowWindow(nint hWnd, int nCmdShow);
 
     [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ShowWindowAsync(nint hWnd, int nCmdShow);
+
+    [DllImport("user32.dll", SetLastError = true)]
     public static extern bool RegisterHotKey(nint hWnd, int id, uint fsModifiers, uint vk);
 
     [DllImport("user32.dll", SetLastError = true)]
