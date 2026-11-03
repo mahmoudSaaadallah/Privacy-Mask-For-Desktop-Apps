@@ -21,7 +21,7 @@
  </Grid>
  <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,10">
   <Button Content="_Keep locked" IsCancel="True" Style="{StaticResource SecondaryButton}" MinWidth="132"/>
-  <Button Content="_Unlock" IsDefault="True" Style="{StaticResource PrimaryButton}" Click="Unlock_Click" MinWidth="114" Margin="12,0,0,0"/>
+  <Button x:Name="UnlockButton" Content="_Unlock" IsDefault="True" Style="{StaticResource PrimaryButton}" Click="Unlock_Click" MinWidth="114" Margin="12,0,0,0"/>
  </StackPanel>
  </Grid>
 </Window>

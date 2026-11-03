@@ -109,6 +109,7 @@ internal static class Program
                 CheckAboutReference(window, root, session, screenshots);
                 CheckUpdateSettings(window, root, session, screenshots);
                 CheckPanicLocks(window, root, session);
+                CheckOwnedWindowMinimization();
                 session.SelectedPage = DesktopPage.Security;
                 Layout(root, new Size(960, 520));
                 var globalHelp = Find<RadioButton>(root).Single(radio => AutomationProperties.GetName(radio) == "Explain global panic");
@@ -162,6 +163,30 @@ internal static class Program
             Console.Error.WriteLine(exception);
             return 1;
         }
+    }
+
+    private static void CheckOwnedWindowMinimization()
+    {
+        var windows = Enumerable.Range(0, 3).Select(index => new Window
+        {
+            Title = $"PrivacyMask synthetic update target {index}", Width = 220, Height = 120,
+            ShowActivated = false, ShowInTaskbar = false,
+        }).ToArray();
+        try
+        {
+            foreach (var window in windows) window.Show();
+            var handles = windows.Select(window => new System.Windows.Interop.WindowInteropHelper(window).Handle).ToArray();
+            var run = UpdateWindowMinimizer.RunAsync(
+                () => handles.Take(2).Where(handle => !PrivacyMask.Windows.Interop.NativeMethods.IsIconic(handle))
+                    .Select(handle => new WindowSnapshot { Handle = handle }).ToArray(),
+                snapshot => PrivacyMask.Windows.Interop.NativeMethods.ShowWindowAsync(snapshot.Handle, 6), () => true);
+            PumpUntil(run);
+            Check(run.Result && handles.Take(2).All(PrivacyMask.Windows.Interop.NativeMethods.IsIconic),
+                "Owned test windows did not minimize before preparation completed.");
+            Check(!PrivacyMask.Windows.Interop.NativeMethods.IsIconic(handles[2]), "Minimization touched an unselected window.");
+        }
+        finally { foreach (var window in windows) window.Close(); }
+        Console.WriteLine("Update minimization passed with two owned synthetic windows and an untouched unselected window.");
     }
 
     private static void CheckPanicLocks(MainWindow window, FrameworkElement root, SettingsViewModel session)
@@ -762,6 +787,22 @@ internal static class Program
         var errorTop = ((TextBlock)unlock.FindName("ErrorText")).TransformToAncestor(unlockRoot).Transform(new Point()).Y;
         Check(errorTop >= inputBottom && errorTop - inputBottom <= 28, "Unlock error is separated from its PIN input.");
         unlock.Close();
+        var updateUnlock = new PanicPinUnlockWindow(credential, "Panic");
+        updateUnlock.ConfigureForUpdate("2.0.0-beta.24");
+        Check(((TextBlock)updateUnlock.FindName("DescriptionText")).Text.Contains("minimized automatically"),
+            "Update PIN consent does not explain minimization.");
+        CheckDialogLayout(updateUnlock, "UnlockForUpdate", screenshots, 552, 480);
+        var updatePin = (PinEntry)updateUnlock.FindName("PinBox");
+        updateUnlock.Dispatcher.BeginInvoke(() =>
+        {
+            updatePin.Password = "9999";
+            Invoke(updateUnlock, "Unlock_Click");
+            Check(updateUnlock.DialogResult != true && updatePin.Password.Length == 0, "Update accepted an incorrect PIN.");
+            updatePin.Password = "1234";
+            Invoke(updateUnlock, "Unlock_Click");
+        });
+        Check(updateUnlock.ShowDialog() == true && updatePin.Password.Length == 0,
+            "Correct update PIN failed or retained input.");
         Check(PanicPinService.Verify("1234", credential), "Dialog changed the original credential.");
         Console.WriteLine("Reference dialogs passed: synthetic picker/search/relink, startup switches, PIN validation/reveal/cleanup and bounded layouts.");
     }
