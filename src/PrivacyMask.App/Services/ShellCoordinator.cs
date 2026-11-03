@@ -1209,6 +1209,11 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task ToggleLaunchAtLoginCoreAsync()
     {
+        if (HasActivePanic())
+        {
+            UpdateTrayState();
+            return;
+        }
         var nextSettings = AppSettingsCloner.Clone(_savedSettings);
         nextSettings.LaunchAtLogin = !_savedSettings.LaunchAtLogin;
         try
@@ -1261,6 +1266,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _ => "Protection: Active",
         };
         _launchAtLoginItem.Checked = _savedSettings.LaunchAtLogin;
+        _launchAtLoginItem.Enabled = !HasActivePanic();
         _toggleProtectionItem.Text = currentMode == RuntimeMode.Off ? "Resume protection" : "Pause protection";
         _toggleProtectionItem.Enabled = !HasActivePanic();
         _panicItem.Checked = currentMode == RuntimeMode.Panic;
