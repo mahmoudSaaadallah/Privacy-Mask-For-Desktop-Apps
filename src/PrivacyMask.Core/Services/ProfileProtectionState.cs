@@ -8,6 +8,8 @@ public sealed class ProfileProtectionState
     private readonly HashSet<string> _panicProfileIds = new(StringComparer.OrdinalIgnoreCase);
     public bool HasAnyPanic => _panicProfileIds.Count != 0;
 
+    public void UnlockAllPanic() => _panicProfileIds.Clear();
+
     public bool IsPaused(string profileId)
     {
         return !string.IsNullOrWhiteSpace(profileId) && _pausedProfileIds.Contains(profileId);
@@ -53,7 +55,7 @@ public sealed class ProfileProtectionState
     {
         var activeProfileIds = profileIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
         _pausedProfileIds.RemoveWhere(profileId => !activeProfileIds.Contains(profileId));
-        // A settings change cannot unlock Panic. Only the explicit PIN-gated
-        // panic toggle retires a lock, even if a caller removes its profile.
+        // A settings change cannot unlock Panic. Only PIN-gated unlock paths
+        // retire a lock, even if a caller removes its profile.
     }
 }
