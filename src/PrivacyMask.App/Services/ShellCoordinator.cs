@@ -472,7 +472,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         {
             var currentMode = _protectionStateMachine.CurrentMode;
             var settingsVisible = _mainWindow?.IsVisible == true;
-            if (currentMode == RuntimeMode.Off && !settingsVisible)
+            if (currentMode == RuntimeMode.Off && !_profileProtectionState.HasAnyPanic && !settingsVisible)
             {
                 _overlayManager.HideAll();
                 UpdateRefreshInterval(OverlayRefreshCadence.Select(currentMode, hasCandidateWindows: false));
@@ -483,7 +483,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
             _trackedWindows.Clear();
             _activeOcclusionHandles.Clear();
 
-            if (currentMode == RuntimeMode.Off)
+            if (currentMode == RuntimeMode.Off && !_profileProtectionState.HasAnyPanic)
             {
                 UpdateProfileRuntimeStatuses(discovery, currentMode);
                 _overlayManager.HideAll();
@@ -500,6 +500,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
                 }
 
                 var profilePanic = _profileProtectionState.IsPanic(trackedWindow.Profile.ProfileId);
+                if (currentMode == RuntimeMode.Off && !profilePanic) continue;
                 if (currentMode != RuntimeMode.Panic
                     && !profilePanic
                     && _profileProtectionState.IsPaused(trackedWindow.Profile.ProfileId))
@@ -539,7 +540,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         }
         catch
         {
-            _overlayManager.HideAll();
+            if (!HasActivePanic()) _overlayManager.HideAll();
             UpdateRefreshInterval(OverlayRefreshCadence.IdleInterval);
             if (propagateFailure) throw;
         }
@@ -641,6 +642,8 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task SaveSettingsCoreAsync(AppSettings updatedSettings)
     {
+        if (HasActivePanic())
+            throw new InvalidOperationException("Unlock all active panic masks with your PIN before changing settings.");
         updatedSettings.CurrentMode = RuntimeMode.Standard;
         updatedSettings.OnboardingCompleted = true;
         var nextSettings = _defaultSettingsFactory.MergeWithDefaults(updatedSettings);
@@ -667,7 +670,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void PreviewSettings(AppSettings previewSettings)
     {
-        if (_isShuttingDown || _isUpdateSuspended) return;
+        if (_isShuttingDown || _isUpdateSuspended || HasActivePanic()) return;
         previewSettings.CurrentMode = RuntimeMode.Standard;
         previewSettings.OnboardingCompleted = true;
         _settings = _defaultSettingsFactory.MergeWithDefaults(previewSettings);
@@ -677,7 +680,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private void DiscardPreview()
     {
-        if (_isShuttingDown || _isUpdateSuspended) return;
+        if (_isShuttingDown || _isUpdateSuspended || HasActivePanic()) return;
         _settings = AppSettingsCloner.Clone(_savedSettings);
         _mainWindow?.ReplaceViewModel(CreateSettingsViewModel());
         RebuildWindowProcessFilter();
@@ -686,12 +689,14 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private SettingsViewModel CreateSettingsViewModel()
     {
-        return SettingsViewModel.FromModel(
+        var viewModel = SettingsViewModel.FromModel(
             _settings,
             _protectionStateMachine.CurrentMode,
             _settingsStore.SettingsPath,
             _unavailableHotkeyActions,
             _updateChecks.Status);
+        viewModel.UpdateRuntimeMode(_protectionStateMachine.CurrentMode, _profileProtectionState.HasAnyPanic);
+        return viewModel;
     }
 
     private void RebuildWindowProcessFilter()
@@ -764,6 +769,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task AdjustBlurStrengthCoreAsync(string profileId, bool increase)
     {
+        if (HasActivePanic()) return;
         var nextSettings = AppSettingsCloner.Clone(_savedSettings);
         var nextProfile = nextSettings.AppProfiles.FirstOrDefault(profile =>
             string.Equals(profile.ProfileId, profileId, StringComparison.OrdinalIgnoreCase)
@@ -837,7 +843,12 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private void ToggleProtection()
     {
         if (_isShuttingDown || _isUpdateSuspended) return;
-        _protectionStateMachine.ToggleProtection();
+        if (HasActivePanic())
+        {
+            ShowProtectionTip("Unlock all active panic masks with your PIN before pausing protection.", ToolTipIcon.Warning);
+            return;
+        }
+        _protectionStateMachine.ToggleProtection(_profileProtectionState.HasAnyPanic);
         UpdateTrayState();
         RefreshOverlays();
     }
@@ -864,9 +875,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
     private async Task ToggleOrAddProfileProtectionCoreAsync(WindowSnapshot? foregroundSnapshot)
     {
-        if (_protectionStateMachine.CurrentMode == RuntimeMode.Panic)
+        if (HasActivePanic())
         {
-            ShowProtectionTip("Disable panic mode before changing protection for one app.", ToolTipIcon.Info);
+            ShowProtectionTip("Unlock all active panic masks with your PIN before changing protection.", ToolTipIcon.Info);
             return;
         }
 
@@ -1122,6 +1133,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         }
 
         var panicEnabled = _profileProtectionState.TogglePanic(profile.ProfileId);
+        UpdateTrayState();
         RefreshOverlays();
         ShowProtectionTip(
             $"{profile.DisplayName} panic mask {(panicEnabled ? "enabled" : "disabled")}. Other apps are unchanged.",
@@ -1239,7 +1251,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private void UpdateTrayState()
     {
         var currentMode = _protectionStateMachine.CurrentMode;
-        _mainWindow?.ViewModel.UpdateRuntimeMode(currentMode);
+        _mainWindow?.ViewModel.UpdateRuntimeMode(currentMode, _profileProtectionState.HasAnyPanic);
         _mainWindow?.ViewModel.SetSavedBaseline(_savedSettings);
         _modeItem.Text = currentMode switch
         {
@@ -1250,7 +1262,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         };
         _launchAtLoginItem.Checked = _savedSettings.LaunchAtLogin;
         _toggleProtectionItem.Text = currentMode == RuntimeMode.Off ? "Resume protection" : "Pause protection";
-        _toggleProtectionItem.Enabled = currentMode != RuntimeMode.Panic;
+        _toggleProtectionItem.Enabled = !HasActivePanic();
         _panicItem.Checked = currentMode == RuntimeMode.Panic;
         _panicItem.Text = currentMode == RuntimeMode.Panic ? "Disable panic mask" : "Panic mask all";
         _notifyIcon.Text = currentMode switch

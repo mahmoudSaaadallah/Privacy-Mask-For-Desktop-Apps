@@ -60,6 +60,32 @@ public sealed class SecondaryReferenceTests
     }
 
     [Fact]
+    public void ProfileAndGlobalPanicDisablePauseAndSettingsUntilAllLocksAreReleased()
+    {
+        using var model = Create();
+        model.AppProfiles[0].Enabled = !model.AppProfiles[0].Enabled;
+        Assert.True(model.CanSave);
+
+        model.UpdateRuntimeMode(RuntimeMode.Standard, hasProfilePanic: true);
+        Assert.True(model.IsPanicLocked);
+        Assert.False(model.CanToggleGlobalProtection);
+        Assert.False(model.CanEditSettings);
+        Assert.False(model.CanSave);
+        Assert.Contains("PIN", model.EditStatus);
+
+        model.UpdateRuntimeMode(RuntimeMode.Panic, hasProfilePanic: true);
+        model.UpdateRuntimeMode(RuntimeMode.Standard, hasProfilePanic: true);
+        Assert.False(model.CanToggleGlobalProtection);
+
+        model.UpdateRuntimeMode(RuntimeMode.Panic);
+        Assert.False(model.CanEditSettings);
+        model.UpdateRuntimeMode(RuntimeMode.Standard);
+        Assert.True(model.CanEditSettings);
+        Assert.True(model.CanToggleGlobalProtection);
+        Assert.True(model.CanSave);
+    }
+
+    [Fact]
     public void PinStatusAndAboutVersion_AreTakenFromActualData()
     {
         using var model = Create();

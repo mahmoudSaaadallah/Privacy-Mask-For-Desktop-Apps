@@ -167,13 +167,13 @@ public partial class MainWindow : Window
 
     private void QueuePreview()
     {
-        if (!IsLoaded || _isSaving || _previewQueued || _allowClose || _isShuttingDown || _isUpdateSuspended) return;
+        if (!IsLoaded || !ViewModel.CanEditSettings || _isSaving || _previewQueued || _allowClose || _isShuttingDown || _isUpdateSuspended) return;
         _previewQueued = true;
         var editedSession = ViewModel;
         Dispatcher.BeginInvoke(() =>
         {
             _previewQueued = false;
-            if (!ReferenceEquals(editedSession, DataContext) || !IsVisible || _isSaving || _isShuttingDown || _isUpdateSuspended) return;
+            if (!ReferenceEquals(editedSession, DataContext) || !editedSession.CanEditSettings || !IsVisible || _isSaving || _isShuttingDown || _isUpdateSuspended) return;
             var preview = editedSession.ToModel();
             if (!HasBindingErrors(this) && AppSettingsValidator.Validate(preview).Count == 0)
             {
