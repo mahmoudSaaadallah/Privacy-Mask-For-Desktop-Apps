@@ -27,6 +27,15 @@ public partial class App : System.Windows.Application
 
         try
         {
+            // Hand off before taking the singleton or touching settings. The installed
+            // launcher owns normal boot and recovery; authenticated update startup is separate.
+            if (!updateRequested && InstalledLaunchRedirect.TryLaunch(Environment.ProcessPath,
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), e.Args))
+            {
+                await RequestShutdownAsync();
+                return;
+            }
+
             using var updateDeadline = updateRequested
                 ? new System.Threading.CancellationTokenSource(System.TimeSpan.FromSeconds(55))
                 : null;

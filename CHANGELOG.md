@@ -1,6 +1,11 @@
 # Changelog
 
-## 2.0.0-beta.19 - Lower-memory packaging Preview (not published)
+## 2.0.0-beta.20 - Managed startup and Panic protection fixes (unreleased)
+
+- Opening a beta.20 or newer copy of the App outside the managed installation starts the installed launcher when a managed installation exists. Without one, portable startup remains available.
+- Tray Exit keeps PrivacyMask running while a global or per-app Panic mask is active. Unlock active masks with the PIN before exiting.
+
+## 2.0.0-beta.19 - Lower-memory packaging Preview
 
 - Disable compression inside the self-contained single-file App to reduce the memory cost of decompressed managed assemblies; keep ZIP compression and the Native AOT launcher
 - Accept the larger extracted EXE in exchange for measured private-memory savings; do not claim universal savings, CPU improvements or Stable qualification

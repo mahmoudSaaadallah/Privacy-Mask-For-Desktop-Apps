@@ -95,7 +95,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
         _protectionStateMachine = new ProtectionStateMachine();
         _profileProtectionState = new ProfileProtectionState();
         _updateRestart = new(_operations, new(
-            () => _protectionStateMachine.CurrentMode == RuntimeMode.Panic || _profileProtectionState.HasAnyPanic,
+            HasActivePanic,
             () => _mainWindow?.HasUpdateBlockingEdits == true,
             () => _isShuttingDown,
             () => Task.FromResult(_mainWindow?.HasUpdateBlockingEdits != true),
@@ -192,7 +192,10 @@ public sealed class ShellCoordinator : IAsyncDisposable
             new ToolStripSeparator(),
             new ToolStripMenuItem("Exit", null, async (_, _) =>
             {
-                if (!_updateRestart.IsBusy) await ObserveShellActionAsync(_requestShutdown());
+                if (!_isShuttingDown && !_updateRestart.IsBusy)
+                    await ObserveShellActionAsync(TrayExitGuard.TryExitAsync(_operations, HasActivePanic,
+                        () => ShowProtectionTip("Unlock all active panic masks with your PIN before exiting PrivacyMask.", ToolTipIcon.Warning),
+                        _requestShutdown));
             }),
         ]);
     }
@@ -268,7 +271,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     }
 
     private UpdateRestartBlock? AutomaticRestartBlockReason() => UpdateRestartBlock.Assess(
-        _protectionStateMachine.CurrentMode == RuntimeMode.Panic || _profileProtectionState.HasAnyPanic,
+        HasActivePanic(),
         _mainWindow?.HasUpdateBlockingEdits == true, CaptureUpdateWindows);
 
     private bool HasVisibleProtectedWindows()
@@ -319,6 +322,9 @@ public sealed class ShellCoordinator : IAsyncDisposable
         if (!_isShuttingDown && !_isUpdateSuspended)
             _ = _updateInstall.StartAsync(RequiredUpdateChannel);
     }
+
+    private bool HasActivePanic() =>
+        _protectionStateMachine.CurrentMode == RuntimeMode.Panic || _profileProtectionState.HasAnyPanic;
 
     private Task ShutdownForUpdateAsync()
     {
