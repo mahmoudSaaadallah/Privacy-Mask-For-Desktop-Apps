@@ -1,6 +1,10 @@
 # Changelog
 
-## 2.0.0-beta.20 - Managed startup and Panic protection fixes (unreleased)
+## 2.0.0-beta.21 - Immediate download after a manual update check (unreleased)
+
+- Download the update found by **Check for updates** as soon as network access allows. The daily discovery schedule no longer delays an update that was already found.
+
+## 2.0.0-beta.20 - Managed startup and Panic protection fixes
 
 - Opening a beta.20 or newer copy of the App outside the managed installation starts the installed launcher when a managed installation exists. Without one, portable startup remains available.
 - Tray Exit keeps PrivacyMask running while a global or per-app Panic mask is active. Unlock active masks with the PIN before exiting.
