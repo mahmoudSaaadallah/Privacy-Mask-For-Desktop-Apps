@@ -42,6 +42,61 @@ public sealed class MandatoryUpdateTests
     }
 
     [Fact]
+    public void PanicRetryActionExistsOnlyForAVerifiedRequiredPanicWait()
+    {
+        var status = new UpdateStatusViewModel();
+        status.RequireAutomaticUpdates();
+        status.ShowRestartBlock(new(UpdateRestartBlockKind.Panic, []));
+        Assert.False(status.CanUnlockPanicForUpdate);
+        status.FinishDownload("ready", ready: true);
+        status.ShowRestartBlock(new(UpdateRestartBlockKind.Panic, []));
+        Assert.True(status.CanUnlockPanicForUpdate);
+        status.BeginInstall();
+        Assert.False(status.CanUnlockPanicForUpdate);
+        status.FinishInstall("wait");
+        status.ShowRestartBlock(new(UpdateRestartBlockKind.VisibleWindows, []));
+        Assert.False(status.CanUnlockPanicForUpdate);
+    }
+
+    [Fact]
+    public async Task ReadyUpdateRequestsPanicPinAndImmediatelyInstallsOnlyAfterRecheckingSafety()
+    {
+        var status = new UpdateStatusViewModel();
+        status.RequireAutomaticUpdates();
+        status.FinishDownload("verified", ready: true);
+        var panic = true;
+        var minimized = false;
+        var events = new List<string>();
+        var controller = new MandatoryUpdateController(status, new(() => true, () => true,
+            _ => throw new Exception("Already downloaded"), () => throw new Exception("Already downloaded"),
+            () => throw new Exception("Verified stage retained"),
+            () => { events.Add("install"); return Task.CompletedTask; }, () => null,
+            () => panic ? new(UpdateRestartBlockKind.Panic, [])
+                : !minimized ? new(UpdateRestartBlockKind.VisibleWindows, []) : null,
+            () => { events.Add("pin-and-minimize"); panic = false; minimized = true; return Task.FromResult(true); }));
+        await controller.PulseAsync();
+        Assert.Equal(new[] { "pin-and-minimize", "install" }, events);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RejectedPinOrWindowsReappearingNeverInstalls(bool accepted)
+    {
+        var status = new UpdateStatusViewModel();
+        status.RequireAutomaticUpdates();
+        status.FinishDownload("verified", ready: true);
+        var panic = true;
+        var controller = new MandatoryUpdateController(status, new(() => true, () => true,
+            _ => throw new Exception(), () => throw new Exception(), () => throw new Exception(),
+            () => throw new Exception("Unsafe install"), () => null,
+            () => new(panic ? UpdateRestartBlockKind.Panic : UpdateRestartBlockKind.VisibleWindows, []),
+            () => { panic = !accepted; return Task.FromResult(accepted); }));
+        await controller.PulseAsync();
+        Assert.True(status.HasVerifiedDownload);
+    }
+
+    [Fact]
     public async Task StartupDownloadsAndInstallsWithoutAUserAction()
     {
         var host = new Host();
