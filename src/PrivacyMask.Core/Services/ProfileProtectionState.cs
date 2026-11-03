@@ -53,6 +53,7 @@ public sealed class ProfileProtectionState
     {
         var activeProfileIds = profileIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
         _pausedProfileIds.RemoveWhere(profileId => !activeProfileIds.Contains(profileId));
-        _panicProfileIds.RemoveWhere(profileId => !activeProfileIds.Contains(profileId));
+        // A settings change cannot unlock Panic. Only the explicit PIN-gated
+        // panic toggle retires a lock, even if a caller removes its profile.
     }
 }

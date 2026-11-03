@@ -108,6 +108,7 @@ internal static class Program
                 CheckHelpAndSidebar(window, root, session);
                 CheckAboutReference(window, root, session, screenshots);
                 CheckUpdateSettings(window, root, session, screenshots);
+                CheckPanicLocks(window, root, session);
                 session.SelectedPage = DesktopPage.Security;
                 Layout(root, new Size(960, 520));
                 var globalHelp = Find<RadioButton>(root).Single(radio => AutomationProperties.GetName(radio) == "Explain global panic");
@@ -160,6 +161,54 @@ internal static class Program
         {
             Console.Error.WriteLine(exception);
             return 1;
+        }
+    }
+
+    private static void CheckPanicLocks(MainWindow window, FrameworkElement root, SettingsViewModel session)
+    {
+        var saves = 0;
+        var discards = 0;
+        var pauses = 0;
+        Task Save(AppSettings _) { saves++; return Task.CompletedTask; }
+        void Discard() => discards++;
+        void Pause() => pauses++;
+        window.SaveRequested += Save;
+        window.DiscardRequested += Discard;
+        window.GlobalProtectionRequested += Pause;
+        try
+        {
+            foreach (var mode in new[] { RuntimeMode.Standard, RuntimeMode.Panic })
+            {
+                session.UpdateRuntimeMode(mode, hasProfilePanic: mode == RuntimeMode.Standard);
+                foreach (var page in new[] { DesktopPage.Applications, DesktopPage.Shortcuts, DesktopPage.Security, DesktopPage.Settings })
+                {
+                    session.SelectedPage = page;
+                    Layout(root, new Size(960, 720));
+                }
+                foreach (var name in new[] { "ApplicationsPage", "ApplicationDetailsPage", "AdvancedZonesPage", "ShortcutsPage", "SaveButton", "DiscardButton" })
+                    Check(!((UIElement)window.FindName(name)).IsEnabled, $"Panic left {name} enabled.");
+                var pin = Find<Button>(root).Single(button => Equals(button.Content, session.PanicPinActionLabel));
+                Check(!pin.IsEnabled, "Panic left PIN replacement enabled.");
+                Invoke(window, "GlobalProtection_Click");
+                Invoke(window, "Save_Click");
+                Invoke(window, "CloseToTray_Click");
+                Invoke(window, "ConfigurePanicPin_Click");
+                Invoke(window, "AddApplication_Click");
+                Invoke(window, "RemoveApplication_Click");
+                Invoke(window, "RelinkApplication_Click");
+                Check(saves == 0 && discards == 0 && pauses == 0, "Panic admitted a protection or settings action.");
+            }
+            session.UpdateRuntimeMode(RuntimeMode.Standard);
+            session.SelectedPage = DesktopPage.Applications;
+            Layout(root, new Size(960, 720));
+            Check(((UIElement)window.FindName("ApplicationsPage")).IsEnabled, "Unlock did not restore editing.");
+            Check(session.CanToggleGlobalProtection, "Unlock did not restore Pause.");
+        }
+        finally
+        {
+            window.SaveRequested -= Save;
+            window.DiscardRequested -= Discard;
+            window.GlobalProtectionRequested -= Pause;
         }
     }
 

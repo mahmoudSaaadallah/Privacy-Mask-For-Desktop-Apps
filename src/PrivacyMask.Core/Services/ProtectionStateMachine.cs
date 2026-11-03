@@ -8,9 +8,9 @@ public sealed class ProtectionStateMachine
 
     public bool IsTemporaryRevealAllowed => CurrentMode == RuntimeMode.Standard;
 
-    public RuntimeMode ToggleProtection()
+    public RuntimeMode ToggleProtection(bool hasProfilePanic = false)
     {
-        if (CurrentMode == RuntimeMode.Panic)
+        if (CurrentMode == RuntimeMode.Panic || hasProfilePanic)
         {
             return CurrentMode;
         }
@@ -33,6 +33,7 @@ public sealed class ProtectionStateMachine
 
     public RuntimeMode EnsureProtected()
     {
+        if (CurrentMode == RuntimeMode.Panic) return CurrentMode;
         CurrentMode = RuntimeMode.Standard;
         return CurrentMode;
     }

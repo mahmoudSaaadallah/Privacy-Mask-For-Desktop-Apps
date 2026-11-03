@@ -1,6 +1,13 @@
 # Changelog
 
-## 2.0.0-beta.21 - Immediate download after a manual update check (unreleased)
+## 2.0.0-beta.22 - Enforce Panic protection across app actions (unreleased)
+
+- Block global Pause while any per-app or global Panic mask is active. Refresh tray and Overview controls immediately when a per-app lock changes.
+- Freeze settings preview, save, discard, PIN replacement and protection shortcuts while Panic is active. Unlock all active masks with the saved PIN before editing.
+- Keep Panic locks through profile cleanup and retain existing overlays if window refresh fails during Panic.
+- Cover per-app/global locks and compiled WPF action handlers, including restoration of editing after unlock.
+
+## 2.0.0-beta.21 - Immediate download after a manual update check
 
 - Download the update found by **Check for updates** as soon as network access allows. The daily discovery schedule no longer delays an update that was already found.
 

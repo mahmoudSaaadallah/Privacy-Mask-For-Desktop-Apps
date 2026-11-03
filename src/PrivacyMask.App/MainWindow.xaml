@@ -217,12 +217,18 @@
         <Grid
             Grid.Column="1">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition
                     Height="*" />
                 <RowDefinition
                     Height="Auto" />
             </Grid.RowDefinitions>
+            <TextBlock Margin="28,16,28,0" Text="Unlock all active panic masks with your PIN before pausing, editing settings or exiting."
+                       TextWrapping="Wrap" Foreground="{StaticResource InkBrush}"
+                       Visibility="{Binding IsPanicLocked,Converter={StaticResource BooleanToVisibility}}"
+                       AutomationProperties.LiveSetting="Polite"/>
             <Border
+                Grid.Row="1"
                 Background="{StaticResource CanvasBrush}">
                 <Grid>
 
@@ -236,9 +242,9 @@
                         <WrapPanel Grid.Column="2" VerticalAlignment="Center"><Button Content="{Binding GlobalPauseLabel}" IsEnabled="{Binding CanToggleGlobalProtection}" Click="GlobalProtection_Click" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0" AutomationProperties.HelpText="Immediately pause or resume all profiles; individual pauses remain unchanged."/><Button Content="{Binding GlobalPanicLabel}" IsEnabled="{Binding CanToggleGlobalPanic}" Click="GlobalPanic_Click" Style="{StaticResource DangerButton}" AutomationProperties.HelpText="Immediately mask all protected apps. Unlocking requires your saved PIN."/></WrapPanel>
                        </Grid>
                       </Border>
-                      <DockPanel Margin="0,0,0,20"><Button DockPanel.Dock="Right" Content="＋  Add application" Click="AddApplication_Click" Style="{StaticResource PrimaryButton}"/><TextBlock Text="Applications" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
+                      <DockPanel Margin="0,0,0,20"><Button DockPanel.Dock="Right" Content="＋  Add application" Click="AddApplication_Click" IsEnabled="{Binding CanEditSettings}" Style="{StaticResource PrimaryButton}"/><TextBlock Text="Applications" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
                       <TextBlock Text="No applications configured. Add one to start protecting it." Visibility="{Binding HasNoApplications,Converter={StaticResource BooleanToVisibility}}" TextWrapping="Wrap"/>
-                      <ItemsControl ItemsSource="{Binding OverviewAppProfiles}">
+                      <ItemsControl ItemsSource="{Binding OverviewAppProfiles}" IsEnabled="{Binding CanEditSettings}">
                        <ItemsControl.ItemTemplate><DataTemplate DataType="{x:Type viewModels:AppProfileViewModel}">
                         <Border Style="{StaticResource Card}" BorderBrush="#F0F1F3" Margin="0,0,0,14" Padding="22">
                          <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="82"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -261,7 +267,7 @@
                     </ScrollViewer>
                     <Grid>
 
- <Border x:Name="ApplicationsPage" Visibility="{Binding IsApplicationListPage,Converter={StaticResource BooleanToVisibility}}" Padding="28">
+ <Border x:Name="ApplicationsPage" IsEnabled="{Binding CanEditSettings}" Visibility="{Binding IsApplicationListPage,Converter={StaticResource BooleanToVisibility}}" Padding="28">
   <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
    <DockPanel Margin="0,0,0,26"><Button DockPanel.Dock="Right" Content="?" Style="{StaticResource CircleHelp}" services:InformationHelp.Text="Search configured apps, enable or disable their masks, and use Manage to adjust appearance. Changes are saved together." AutomationProperties.Name="Applications help"/><TextBlock Text="Applications" Style="{StaticResource PageHeading}"/></DockPanel>
    <Grid Grid.Row="1" Margin="0,0,0,22"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -270,7 +276,7 @@
      <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="18" Margin="12,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" IsHitTestVisible="False" Foreground="{StaticResource MutedInkBrush}"/>
      <TextBlock Text="Search applications..." Margin="38,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource MutedInkBrush}" IsHitTestVisible="False"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding ApplicationSearch}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
     </Grid>
-    <Button Grid.Column="1" Content="＋  Add application" Click="AddApplication_Click" Style="{StaticResource PrimaryButton}"/>
+    <Button Grid.Column="1" Content="＋  Add application" Click="AddApplication_Click" IsEnabled="{Binding CanEditSettings}" Style="{StaticResource PrimaryButton}"/>
    </Grid>
    <Border Grid.Row="2" Background="White" CornerRadius="10" VerticalAlignment="Top" MaxHeight="{Binding ActualHeight,RelativeSource={RelativeSource AncestorType=Grid}}">
     <ListBox ItemsSource="{Binding FilteredAppProfiles}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" AutomationProperties.Name="Configured applications">
@@ -292,8 +298,8 @@
    <TextBlock Grid.Row="2" Text="{Binding ApplicationEmptyMessage}" Visibility="{Binding HasNoMatchingApplications,Converter={StaticResource BooleanToVisibility}}" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"/>
   </Grid>
  </Border>
- <ContentControl x:Name="AdvancedZonesPage" Margin="28" Content="{Binding SelectedApplication}" ContentTemplate="{StaticResource AdvancedZonesTemplate}" Visibility="{Binding IsAdvancedZonesPage,Converter={StaticResource BooleanToVisibility}}"/>
- <ScrollViewer x:Name="ApplicationDetailsPage" Visibility="{Binding IsPrimaryApplicationDetailsPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+ <ContentControl x:Name="AdvancedZonesPage" IsEnabled="{Binding CanEditSettings}" Margin="28" Content="{Binding SelectedApplication}" ContentTemplate="{StaticResource AdvancedZonesTemplate}" Visibility="{Binding IsAdvancedZonesPage,Converter={StaticResource BooleanToVisibility}}"/>
+ <ScrollViewer x:Name="ApplicationDetailsPage" IsEnabled="{Binding CanEditSettings}" Visibility="{Binding IsPrimaryApplicationDetailsPage, Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
   <StackPanel Margin="24">
    <Button Content="←  Back to Applications" HorizontalAlignment="Left" Background="Transparent" BorderThickness="0" Foreground="#007AFF" Click="BackToApplications_Click" Margin="0,0,0,20"/>
    <ContentControl Content="{Binding SelectedApplication}" ContentTemplate="{StaticResource ApplicationDetailTemplate}" />
@@ -301,7 +307,7 @@
  </ScrollViewer>
 </Grid>
 
-                    <ScrollViewer x:Name="ShortcutsPage" Visibility="{Binding IsShortcutsPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer x:Name="ShortcutsPage" IsEnabled="{Binding CanEditSettings}" Visibility="{Binding IsShortcutsPage,Converter={StaticResource BooleanToVisibility}}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="28">
                             <TextBlock Text="Shortcuts" Style="{StaticResource PageHeading}" Margin="0,0,0,26"/>
                             <Border Style="{StaticResource Card}" Padding="0" BorderBrush="#E7EBEE">
@@ -344,7 +350,7 @@
                                             <Border Width="28" Height="28" CornerRadius="14" Background="{Binding PanicPinIndicatorColor}" Margin="0,0,14,0"><TextBlock Text="{Binding PanicPinIndicator}" Foreground="White" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                                             <TextBlock Text="{Binding PanicPinCompactStatus}" VerticalAlignment="Center" FontSize="16" AutomationProperties.Name="Panic PIN status" AutomationProperties.HelpText="{Binding PanicPinStatus}"/>
                                         </StackPanel>
-                                        <Button Grid.Column="1" Content="{Binding PanicPinActionLabel}" Click="ConfigurePanicPin_Click" Style="{StaticResource PrimaryButton}" MinWidth="150"/>
+                                        <Button Grid.Column="1" Content="{Binding PanicPinActionLabel}" Click="ConfigurePanicPin_Click" IsEnabled="{Binding CanEditSettings}" Style="{StaticResource PrimaryButton}" MinWidth="150"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -421,9 +427,9 @@
                             <Border Style="{StaticResource Card}" Padding="24">
                                 <StackPanel>
                                     <TextBlock Text="Startup" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
-                                    <DockPanel Margin="0,12,0,18"><CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsChecked="{Binding LaunchAtLogin,Mode=TwoWay}" AutomationProperties.Name="Launch when I sign in" AutomationProperties.HelpText="Starts PrivacyMask for this Windows user after saving. Existing preferences are preserved on updates."/><TextBlock Text="Launch when I sign in" VerticalAlignment="Center"/></DockPanel>
+                                    <DockPanel Margin="0,12,0,18"><CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsEnabled="{Binding CanEditSettings}" IsChecked="{Binding LaunchAtLogin,Mode=TwoWay}" AutomationProperties.Name="Launch when I sign in" AutomationProperties.HelpText="Starts PrivacyMask for this Windows user after saving. Existing preferences are preserved on updates."/><TextBlock Text="Launch when I sign in" VerticalAlignment="Center"/></DockPanel>
                                     <Border Height="1" Background="#EEF1F3"/>
-                                    <DockPanel Margin="0,18,0,4"><CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsChecked="{Binding StartMinimized,Mode=TwoWay}" AutomationProperties.Name="Start minimized to tray" AutomationProperties.HelpText="Keep the settings window hidden on startup after saving."/><TextBlock Text="Start minimized to tray" VerticalAlignment="Center"/></DockPanel>
+                                    <DockPanel Margin="0,18,0,4"><CheckBox DockPanel.Dock="Right" Style="{StaticResource Switch}" IsEnabled="{Binding CanEditSettings}" IsChecked="{Binding StartMinimized,Mode=TwoWay}" AutomationProperties.Name="Start minimized to tray" AutomationProperties.HelpText="Keep the settings window hidden on startup after saving."/><TextBlock Text="Start minimized to tray" VerticalAlignment="Center"/></DockPanel>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource Card}" Padding="24" Margin="0,22,0,0">
@@ -541,7 +547,7 @@
                 </Grid>
             </Border>
             <Border
-                Grid.Row="1"
+                Grid.Row="2"
                 Padding="28,16,28,24"
                 Visibility="{Binding IsSaveBarVisible,Converter={StaticResource BooleanToVisibility}}"
                 Background="{StaticResource CanvasBrush}">
@@ -551,7 +557,7 @@
                         DockPanel.Dock="Right"
                         Orientation="Horizontal">
                         <Button
-                            x:Name="DiscardButton"
+                            x:Name="DiscardButton" IsEnabled="{Binding CanEditSettings}"
                             Content="Discard"
                             Style="{StaticResource SecondaryButton}"
                             Click="CloseToTray_Click"

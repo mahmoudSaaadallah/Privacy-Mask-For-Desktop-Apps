@@ -167,13 +167,13 @@ public partial class MainWindow : Window
 
     private void QueuePreview()
     {
-        if (!IsLoaded || _isSaving || _previewQueued || _allowClose || _isShuttingDown || _isUpdateSuspended) return;
+        if (!IsLoaded || !ViewModel.CanEditSettings || _isSaving || _previewQueued || _allowClose || _isShuttingDown || _isUpdateSuspended) return;
         _previewQueued = true;
         var editedSession = ViewModel;
         Dispatcher.BeginInvoke(() =>
         {
             _previewQueued = false;
-            if (!ReferenceEquals(editedSession, DataContext) || !IsVisible || _isSaving || _isShuttingDown || _isUpdateSuspended) return;
+            if (!ReferenceEquals(editedSession, DataContext) || !editedSession.CanEditSettings || !IsVisible || _isSaving || _isShuttingDown || _isUpdateSuspended) return;
             var preview = editedSession.ToModel();
             if (!HasBindingErrors(this) && AppSettingsValidator.Validate(preview).Count == 0)
             {
@@ -348,7 +348,7 @@ public partial class MainWindow : Window
 
     private async Task<bool> TrySaveAsync()
     {
-        if (SaveRequested is null || _isSaving || _isShuttingDown || _isUpdateSuspended)
+        if (SaveRequested is null || !ViewModel.CanEditSettings || _isSaving || _isShuttingDown || _isUpdateSuspended)
         {
             return false;
         }
@@ -408,7 +408,7 @@ public partial class MainWindow : Window
 
     private void CloseToTray_Click(object sender, RoutedEventArgs e)
     {
-        if (_isSaving || _isShuttingDown || _isUpdateSuspended) return;
+        if (!ViewModel.CanEditSettings || _isSaving || _isShuttingDown || _isUpdateSuspended) return;
         DiscardRequested?.Invoke();
     }
 
@@ -533,6 +533,7 @@ public partial class MainWindow : Window
 
     private void ConfigurePanicPin_Click(object sender, RoutedEventArgs e)
     {
+        if (!ViewModel.CanEditSettings) return;
         var dialog = new PanicPinSetupWindow(ViewModel.PanicPin)
         {
             Owner = this,
@@ -548,6 +549,7 @@ public partial class MainWindow : Window
 
     private void AddApplication_Click(object sender, RoutedEventArgs e)
     {
+        if (!ViewModel.CanEditSettings) return;
         var picker = new AddApplicationWindow(_applicationCatalog, GetProtectedProcessNames())
         {
             Owner = this,
@@ -570,6 +572,7 @@ public partial class MainWindow : Window
 
     private void RelinkApplication_Click(object sender, RoutedEventArgs e)
     {
+        if (!ViewModel.CanEditSettings) return;
         if ((sender as FrameworkElement)?.Tag is not AppProfileViewModel { IsCustom: true } profile)
         {
             return;
@@ -595,6 +598,7 @@ public partial class MainWindow : Window
 
     private void RemoveApplication_Click(object sender, RoutedEventArgs e)
     {
+        if (!ViewModel.CanEditSettings) return;
         if ((sender as FrameworkElement)?.Tag is not AppProfileViewModel { IsCustom: true } profile)
         {
             return;

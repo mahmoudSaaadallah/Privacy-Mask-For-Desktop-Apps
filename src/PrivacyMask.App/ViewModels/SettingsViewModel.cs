@@ -22,6 +22,7 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     private string _applicationSearch = string.Empty;
     private AppProfileViewModel? _selectedApplication;
     private RuntimeMode _runtimeMode;
+    private bool _hasProfilePanic;
     private bool _isRuntimeActionBusy;
     private readonly HashSet<AppProfileViewModel> _overviewProfiles = [];
     private PanicHelpScope _panicHelpScope;
@@ -133,7 +134,9 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
     public IReadOnlyList<ShortcutKeycap> QuickShortcutKeys => QuickShortcutGesture.Split(" + ")
         .Select((text, index) => new ShortcutKeycap(text, index > 0)).ToArray();
     public string GlobalPanicLabel => _runtimeMode == RuntimeMode.Panic ? "Unlock panic mask all" : "Panic mask all";
-    public bool CanToggleGlobalProtection => !IsRuntimeActionBusy && _runtimeMode != RuntimeMode.Panic;
+    public bool IsPanicLocked => _runtimeMode == RuntimeMode.Panic || _hasProfilePanic;
+    public bool CanEditSettings => !IsPanicLocked;
+    public bool CanToggleGlobalProtection => !IsRuntimeActionBusy && !IsPanicLocked;
     public bool CanToggleGlobalPanic => !IsRuntimeActionBusy;
     private void NotifyRuntimeControls()
     {
@@ -145,6 +148,10 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
         RaisePropertyChanged(nameof(GlobalPanicLabel));
         RaisePropertyChanged(nameof(CanToggleGlobalProtection));
         RaisePropertyChanged(nameof(CanToggleGlobalPanic));
+        RaisePropertyChanged(nameof(IsPanicLocked));
+        RaisePropertyChanged(nameof(CanEditSettings));
+        RaisePropertyChanged(nameof(CanSave));
+        RaisePropertyChanged(nameof(EditStatus));
     }
 
     public ObservableCollection<AppProfileViewModel> FilteredAppProfiles { get; } = [];
@@ -214,8 +221,9 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
     public bool HasPendingChanges => _changeTracker?.HasChanges == true;
     public bool IsSaveBarVisible => HasPendingChanges || IsApplicationDetailsPage;
-    public bool CanSave => HasPendingChanges && !IsSaving;
-    public string EditStatus => IsSaving ? "Saving…"
+    public bool CanSave => CanEditSettings && HasPendingChanges && !IsSaving;
+    public string EditStatus => IsPanicLocked ? "Unlock active panic masks with your PIN before changing settings."
+        : IsSaving ? "Saving…"
         : SaveError is not null ? "Save failed — your edits are retained"
         : HasPendingChanges ? "Unsaved changes" : "All changes saved";
     public bool IsSaving
@@ -340,9 +348,10 @@ public sealed class SettingsViewModel : ObservableObject, IDisposable
 
     public string CurrentModeSummary { get; private set; } = string.Empty;
 
-    public void UpdateRuntimeMode(RuntimeMode mode)
+    public void UpdateRuntimeMode(RuntimeMode mode, bool hasProfilePanic = false)
     {
         _runtimeMode = mode;
+        _hasProfilePanic = hasProfilePanic;
         CurrentModeSummary = mode switch
         {
             RuntimeMode.Off => "Protection is paused for every application.",
