@@ -119,6 +119,39 @@ public sealed class MandatoryUpdateTests
     }
 
     [Fact]
+    public async Task ManualCheckDownloadsBeforeDailyDeadlineAndStillWaitsForSafeRestart()
+    {
+        var clock = new DiscoveryClock();
+        var checks = 0;
+        var downloads = 0;
+        await using var session = new UpdateCheckSession((_, _) => Task.FromResult(++checks == 1
+                ? new UpdateCheckResult(UpdateCheckStatus.UpToDate)
+                : new UpdateCheckResult(UpdateCheckStatus.Available, Candidate)),
+            clock, new History(), downloads: new((candidate, _, _, _) =>
+            {
+                Assert.Same(Candidate, candidate);
+                downloads++;
+                return Task.CompletedTask;
+            }, _ => Task.FromResult(true)), mandatory: true, successfulCheckInterval: TimeSpan.FromHours(24));
+        var channel = session.Status.RequiredChannel;
+        var controller = new MandatoryUpdateController(session.Status, new(() => true, () => true,
+            _ => session.CheckMandatoryAsync(() => new(true, channel)), () => session.DownloadAsync(channel),
+            session.RetireFailedDownloadAsync, () => throw new Exception("Panic must block installation."),
+            () => session.NextAutomaticAttemptUtc, () => new(UpdateRestartBlockKind.Panic, [])), clock);
+
+        await controller.PulseAsync();
+        Assert.Equal(TimeSpan.FromHours(24), controller.NextDelay);
+        clock.Now = clock.Now.AddMinutes(1);
+        await session.CheckAsync(channel);
+        await controller.PulseAsync();
+
+        Assert.Equal(2, checks);
+        Assert.Equal(1, downloads);
+        Assert.True(session.Status.HasVerifiedDownload);
+        Assert.Contains("Panic", session.Status.DownloadText);
+    }
+
+    [Fact]
     public async Task DownloadFailureRetriesAutomaticallyAfterTheCooldown()
     {
         var host = new Host { DownloadFails = true };

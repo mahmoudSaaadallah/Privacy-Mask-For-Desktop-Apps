@@ -48,7 +48,9 @@ internal sealed class MandatoryUpdateController(UpdateStatusViewModel status, Ma
                 return;
             }
             if (status.HasVerifiedDownload && !status.RequiresNewDownload) { await TryInstallAsync(); return; }
-            if (_nextNetworkAttempt > _time.GetUtcNow()) return;
+            // The cadence gates discovery. A manual check may already have found
+            // a candidate, and the download session enforces the server retry deadline.
+            if (!status.CanDownload && _nextNetworkAttempt > _time.GetUtcNow()) return;
             var freshCheck = status.RequiresNewDownload;
             if (freshCheck)
             {
