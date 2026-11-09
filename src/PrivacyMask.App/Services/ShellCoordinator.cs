@@ -72,6 +72,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private AppSettings _settings = new();
     private AppSettings _savedSettings = new();
     private WindowProcessFilter _windowProcessFilter = new([]);
+    private WindowProcessFilter _panicWindowProcessFilter = new([], TaskManagerPanicMask.ProcessName);
     private IReadOnlySet<HotkeyAction> _unavailableHotkeyActions = new HashSet<HotkeyAction>();
     private MainWindow? _mainWindow;
     private bool _isShuttingDown;
@@ -551,19 +552,21 @@ public sealed class ShellCoordinator : IAsyncDisposable
         try
         {
             var currentMode = _protectionStateMachine.CurrentMode;
+            var panicActive = HasActivePanic();
             var settingsVisible = _mainWindow?.IsVisible == true;
-            if (currentMode == RuntimeMode.Off && !_profileProtectionState.HasAnyPanic && !settingsVisible)
+            if (currentMode == RuntimeMode.Off && !panicActive && !settingsVisible)
             {
                 _overlayManager.HideAll();
                 UpdateRefreshInterval(OverlayRefreshCadence.Select(currentMode, hasCandidateWindows: false));
                 return;
             }
 
-            var discovery = _windowInspector.Capture(settingsVisible ? null : _windowProcessFilter);
+            var filter = panicActive ? _panicWindowProcessFilter : _windowProcessFilter;
+            var discovery = _windowInspector.Capture(settingsVisible ? null : filter);
             _trackedWindows.Clear();
             _activeOcclusionHandles.Clear();
 
-            if (currentMode == RuntimeMode.Off && !_profileProtectionState.HasAnyPanic)
+            if (currentMode == RuntimeMode.Off && !panicActive)
             {
                 UpdateProfileRuntimeStatuses(discovery, currentMode);
                 _overlayManager.HideAll();
@@ -573,13 +576,14 @@ public sealed class ShellCoordinator : IAsyncDisposable
 
             foreach (var snapshot in discovery.CandidateWindows)
             {
-                var trackedWindow = _windowProfileResolver.Resolve(snapshot, _settings.AppProfiles);
+                var taskManagerMask = TaskManagerPanicMask.TryCreate(snapshot, panicActive);
+                var trackedWindow = taskManagerMask ?? _windowProfileResolver.Resolve(snapshot, _settings.AppProfiles);
                 if (trackedWindow is null)
                 {
                     continue;
                 }
 
-                var profilePanic = _profileProtectionState.IsPanic(trackedWindow.Profile.ProfileId);
+                var profilePanic = taskManagerMask is not null || _profileProtectionState.IsPanic(trackedWindow.Profile.ProfileId);
                 if (currentMode == RuntimeMode.Off && !profilePanic) continue;
                 if (currentMode != RuntimeMode.Panic
                     && !profilePanic
@@ -783,6 +787,7 @@ public sealed class ShellCoordinator : IAsyncDisposable
     private void RebuildWindowProcessFilter()
     {
         _windowProcessFilter = new WindowProcessFilter(_settings.AppProfiles);
+        _panicWindowProcessFilter = new WindowProcessFilter(_settings.AppProfiles, TaskManagerPanicMask.ProcessName);
         _profileProtectionState.Prune(_settings.AppProfiles.Select(profile => profile.ProfileId));
     }
 

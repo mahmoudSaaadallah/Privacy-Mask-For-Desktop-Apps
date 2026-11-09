@@ -31,12 +31,16 @@ public sealed class OverlayManager : IDisposable
                 _overlays[window.Snapshot.Handle] = overlay;
             }
 
-            var effectiveMode = profileProtectionState.ResolveMode(window.Profile.ProfileId, mode);
+            var automaticTaskManagerMask = TaskManagerPanicMask.IsAutomaticMask(window);
+            var effectiveMode = automaticTaskManagerMask
+                ? RuntimeMode.Panic
+                : profileProtectionState.ResolveMode(window.Profile.ProfileId, mode);
             var temporaryRevealHeld = effectiveMode != RuntimeMode.Panic && string.Equals(
                 window.Profile.ProfileId,
                 temporaryRevealProfileId,
                 StringComparison.OrdinalIgnoreCase);
-            overlay.UpdateOverlay(window, effectiveMode, temporaryRevealHeld, cursorScreenPoint);
+            overlay.UpdateOverlay(window, effectiveMode, temporaryRevealHeld, cursorScreenPoint,
+                keepAboveForeground: automaticTaskManagerMask);
         }
 
         _staleHandles.Clear();

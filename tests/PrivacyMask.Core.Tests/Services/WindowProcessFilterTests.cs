@@ -60,6 +60,17 @@ public sealed class WindowProcessFilterTests
     }
 
     [Fact]
+    public void ExtraPanicProcessIsExactAndWorksWithoutAnySavedProfiles()
+    {
+        var normal = new WindowProcessFilter([]);
+        var panic = new WindowProcessFilter([], "Taskmgr");
+
+        Assert.False(normal.IsMatch("Taskmgr"));
+        Assert.True(panic.IsMatch("TASKMGR"));
+        Assert.False(panic.IsMatch("TaskmgrHelper"));
+    }
+
+    [Fact]
     public void IsMatch_CustomProfilesDoNotMatchSimilarProcessNames()
     {
         var profile = CustomAppProfileFactory.Create("Notes", "Notepad", "custom-notes");
