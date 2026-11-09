@@ -1,6 +1,10 @@
 # Changelog
 
-## 2.0.0-beta.23 - PIN-authorized updates during Panic (unreleased)
+## 2.0.0-beta.24 - Task Manager mask during Panic (unreleased)
+
+- Automatically cover visible Task Manager windows with an opaque, click-through mask while global Panic or any per-application Panic lock is active. Remove the automatic mask when the last lock is cleared.
+
+## 2.0.0-beta.23 - PIN-authorized updates during Panic
 
 - When a verified required update is ready during Panic, automatically request the saved PIN once for that staged package. Cancel retains Panic and exposes an explicit Unlock and install retry action.
 - After PIN verification, minimize protected application windows and confirm they actually minimized before unlocking all Panic masks and continuing installation.
