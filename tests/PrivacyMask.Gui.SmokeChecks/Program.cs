@@ -772,14 +772,41 @@ internal static class Program
         CheckDialogLayout(relink, "RelinkApplication", screenshots, 544, 528);
         relink.Close();
 
-        var onboarding = new OnboardingWindow(true, false);
+        var tourHotkeys = new DefaultSettingsFactory().Create().GlobalHotkeys;
+        tourHotkeys[0] = new HotkeyBinding
+        {
+            Action = HotkeyAction.ToggleProtection, DisplayName = "Toggle protection",
+            Modifiers = HotkeyModifiers.Control | HotkeyModifiers.Shift, VirtualKey = 0x51,
+        };
+        tourHotkeys.Single(binding => binding.Action == HotkeyAction.IncreaseBlurStrength).Enabled = false;
+        var onboarding = new OnboardingWindow(true, false, tourHotkeys, new HashSet<HotkeyAction> { HotkeyAction.PanicHideAll });
         Check(onboarding.LaunchAtLogin && !onboarding.StartMinimized, "Onboarding overwrote supplied preferences.");
         ((CheckBox)onboarding.FindName("LaunchAtLoginCheckBox")).IsChecked = false;
         ((CheckBox)onboarding.FindName("StartMinimizedCheckBox")).IsChecked = true;
         Check(!onboarding.LaunchAtLogin && onboarding.StartMinimized, "Onboarding switches failed.");
         ((CheckBox)onboarding.FindName("LaunchAtLoginCheckBox")).IsChecked = true;
         CheckDialogLayout(onboarding, "FirstLaunch", screenshots, 584, 568);
-        onboarding.Close();
+        Invoke(onboarding, "Continue_Click");
+        var shortcutStep = (ItemsControl)onboarding.FindName("ShortcutStep");
+        Check(shortcutStep.Visibility == Visibility.Visible && shortcutStep.Items.Count == tourHotkeys.Count,
+            "Tour did not show every configured shortcut.");
+        Check(((TextBlock)onboarding.FindName("StepIndicator")).Text == "Step 2 of 2", "Shortcut tour progress missing.");
+        CheckDialogLayout(onboarding, "FirstLaunchShortcuts", screenshots, 584, 568);
+        var shortcutText = Find<TextBlock>(shortcutStep).Where(block => block.Visibility == Visibility.Visible).Select(block => block.Text).ToArray();
+        Check(shortcutText.Contains("Ctrl + Shift + Q") && shortcutText.Contains("Hold Alt")
+            && shortcutText.Any(text => text.StartsWith("Unavailable", StringComparison.Ordinal))
+            && shortcutText.Contains("Disabled"), "Tour missed the active keys or their availability.");
+        Invoke(onboarding, "Back_Click");
+        Check(shortcutStep.Visibility == Visibility.Collapsed && onboarding.LaunchAtLogin && onboarding.StartMinimized,
+            "Going back did not preserve the startup choices.");
+        Invoke(onboarding, "Continue_Click");
+        onboarding.Dispatcher.BeginInvoke(() => Invoke(onboarding, "Continue_Click"));
+        Check(onboarding.ShowDialog() == true, "Get started did not complete onboarding.");
+
+        var skippedTour = new OnboardingWindow(false, true, tourHotkeys, new HashSet<HotkeyAction>());
+        skippedTour.Dispatcher.BeginInvoke(() => Invoke(skippedTour, "Finish_Click"));
+        Check(skippedTour.ShowDialog() == true && !skippedTour.LaunchAtLogin && skippedTour.StartMinimized,
+            "Skipping the tour lost the startup choices or failed to finish onboarding.");
 
         var create = new PanicPinSetupWindow(null);
         Check(((FrameworkElement)create.FindName("CurrentPinPanel")).Visibility == Visibility.Collapsed, "First creation shows current PIN.");

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.0-beta.25 - First-run keyboard shortcut tour (unreleased)
+
+- Guide new users through the configured keyboard shortcuts, including unavailable and disabled shortcuts, before finishing onboarding. Users can go back or skip the tour.
+
 ## 2.0.0-beta.24 - Task Manager mask during Panic (unreleased)
 
 - Automatically cover visible Task Manager windows with an opaque, click-through mask while global Panic or any per-application Panic lock is active. Remove the automatic mask when the last lock is cleared.
