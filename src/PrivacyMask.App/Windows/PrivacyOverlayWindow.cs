@@ -72,7 +72,8 @@ public sealed class PrivacyOverlayWindow : Window
         Closed += OnClosed;
     }
 
-    public void UpdateOverlay(TrackedWindow trackedWindow, RuntimeMode mode, bool temporaryRevealHeld, Point cursorScreenPoint)
+    public void UpdateOverlay(TrackedWindow trackedWindow, RuntimeMode mode, bool temporaryRevealHeld,
+        Point cursorScreenPoint, bool keepAboveForeground = false)
     {
         var renderPolicy = ProtectionRenderPolicy.ForMode(mode);
         if (!renderPolicy.ShouldRender || trackedWindow.Snapshot.IsMinimized || trackedWindow.Snapshot.Bounds.IsEmpty)
@@ -100,6 +101,14 @@ public sealed class PrivacyOverlayWindow : Window
                 cursorAffectsRender,
                 cursorScreenPoint))
         {
+            // Task Manager can raise its own topmost window when focused, even
+            // when neither its bounds nor its mask appearance has changed.
+            if (keepAboveForeground && trackedWindow.Snapshot.IsForeground
+                && PresentationSource.FromVisual(this) is HwndSource source)
+            {
+                NativeMethods.SetWindowPos(source.Handle, NativeMethods.HwndTopmost, 0, 0, 0, 0,
+                    NativeMethods.SwpNoMove | NativeMethods.SwpNoSize | NativeMethods.SwpNoActivate | NativeMethods.SwpNoOwnerZOrder);
+            }
             return;
         }
 

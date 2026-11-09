@@ -109,6 +109,7 @@ internal static class Program
                 CheckAboutReference(window, root, session, screenshots);
                 CheckUpdateSettings(window, root, session, screenshots);
                 CheckPanicLocks(window, root, session);
+                CheckTaskManagerPanicMask();
                 CheckOwnedWindowMinimization();
                 session.SelectedPage = DesktopPage.Security;
                 Layout(root, new Size(960, 520));
@@ -163,6 +164,52 @@ internal static class Program
             Console.Error.WriteLine(exception);
             return 1;
         }
+    }
+
+    private static void CheckTaskManagerPanicMask()
+    {
+        using var overlays = new OverlayManager();
+        var profiles = new ProfileProtectionState();
+        var snapshot = new WindowSnapshot
+        {
+            Handle = 1, ProcessName = "TASKMGR", IsVisible = true, IsForeground = true,
+            Bounds = new ScreenRect(100, 100, 320, 240),
+        };
+
+        void Refresh(RuntimeMode mode)
+        {
+            var tracked = TaskManagerPanicMask.TryCreate(snapshot, mode == RuntimeMode.Panic || profiles.HasAnyPanic);
+            overlays.Update(tracked is null ? [] : [tracked], mode, profiles, tracked?.Profile.ProfileId, new Point(150, 150));
+            Drain();
+        }
+
+        bool HasVisibleOverlay() => Application.Current.Windows.OfType<PrivacyOverlayWindow>().Any(window => window.IsVisible);
+        Refresh(RuntimeMode.Standard);
+        Check(!HasVisibleOverlay(), "Task Manager was automatically masked without Panic.");
+
+        profiles.TogglePanic("first");
+        profiles.TogglePanic("second");
+        Refresh(RuntimeMode.Standard);
+        var overlay = Application.Current.Windows.OfType<PrivacyOverlayWindow>().Single(window => window.IsVisible);
+        var shape = ((Canvas)overlay.Content).Children.OfType<System.Windows.Shapes.Path>().Single();
+        Check(shape.Fill is SolidColorBrush brush && brush.Color == Colors.Black && shape.Opacity == 1,
+            "Profile Panic must give Task Manager an opaque black overlay.");
+        Check(shape.Data is RectangleGeometry rectangle && rectangle.Rect.Width == overlay.Width
+            && rectangle.Rect.Height == overlay.Height, "Task Manager mask must cover the whole window without a reveal cutout.");
+        Check(!overlay.IsHitTestVisible && !overlay.Focusable, "Task Manager mask intercepted input.");
+
+        profiles.TogglePanic("first");
+        Refresh(RuntimeMode.Standard);
+        Check(HasVisibleOverlay(), "Unlocking one profile removed the mask while another remained in Panic.");
+        profiles.TogglePanic("second");
+        Refresh(RuntimeMode.Standard);
+        Check(!HasVisibleOverlay(), "The automatic mask remained after the last profile unlocked.");
+
+        Refresh(RuntimeMode.Panic);
+        Check(HasVisibleOverlay(), "Global Panic failed to mask Task Manager.");
+        Refresh(RuntimeMode.Standard);
+        Check(!HasVisibleOverlay(), "Leaving global Panic failed to remove the automatic mask.");
+        Console.WriteLine("Task Manager Panic mask passed: opaque, click-through, global/profile coverage, and cleanup.");
     }
 
     private static void CheckOwnedWindowMinimization()

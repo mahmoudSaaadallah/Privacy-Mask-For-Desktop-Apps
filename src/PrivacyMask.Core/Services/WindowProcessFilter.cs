@@ -8,7 +8,7 @@ public sealed class WindowProcessFilter
     private readonly HashSet<string> _exactProcessNames = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> _normalizedCompatibleProcessNames = [];
 
-    public WindowProcessFilter(IEnumerable<AppProfile> profiles)
+    public WindowProcessFilter(IEnumerable<AppProfile> profiles, string? additionalExactProcessName = null)
     {
         foreach (var profile in profiles)
         {
@@ -39,6 +39,8 @@ public sealed class WindowProcessFilter
                 }
             }
         }
+
+        if (additionalExactProcessName is not null) _exactProcessNames.Add(additionalExactProcessName);
     }
 
     public bool MatchesAllProcesses { get; }

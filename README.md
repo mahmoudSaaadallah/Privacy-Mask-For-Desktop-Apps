@@ -2,8 +2,8 @@
 
 PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
-The current source targets `2.0.0-beta.23`, a Preview that requests the PIN when an
-update is ready during Panic, then minimizes protected windows before installation.
+The current source targets `2.0.0-beta.24`, a Preview that automatically covers
+Task Manager with a click-through black overlay while any Panic lock is active.
 Check the releases page for
 available downloads. About and Settings show the product version; hover the
 About version for full build/source metadata and the numeric Windows file version.

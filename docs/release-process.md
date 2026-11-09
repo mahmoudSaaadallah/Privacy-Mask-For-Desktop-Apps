@@ -5,7 +5,7 @@ not committed to the source repository.
 
 ## Version policy
 
-The source currently prepares `2.0.0-beta.23`. This is a testing delivery, not a
+The source currently prepares `2.0.0-beta.24`. This is a testing delivery, not a
 stable release announcement. Publishing/tagging remains a separate authorized
 action after merge and qualification. A commit or PR is not itself a release.
 Earlier source builds displayed 2.0.0 while still unreleased; the beta suffix
@@ -35,10 +35,10 @@ on merge or by a Git hook.
 
 | Identity | Current value | Purpose |
 | --- | --- | --- |
-| Version | `2.0.0-beta.23` | UI label, archive filename and exact `v2.0.0-beta.23` tag |
+| Version | `2.0.0-beta.24` | UI label, archive filename and exact `v2.0.0-beta.24` tag |
 | InformationalVersion | `$(Version)` plus SDK Git metadata when available | Full build provenance; About shows the product before `+` and exposes the full value in its tooltip/help |
 | AssemblyVersion | `2.0.0.0` | Numeric assembly identity, stable throughout this prerelease cycle |
-| FileVersion | `2.0.0.23` | Numeric Windows file/build revision |
+| FileVersion | `2.0.0.24` | Numeric Windows file/build revision |
 
 Windows numeric fields cannot contain `beta` or `rc`. Increase FileVersion's
 fourth component for the next delivered beta/candidate/stable build of the same

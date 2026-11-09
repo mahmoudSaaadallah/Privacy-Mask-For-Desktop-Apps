@@ -19,6 +19,8 @@ public static class NativeMethods
 
     public const int SwHide = 0;
     public const int SwRestore = 9;
+    public const uint SwpNoSize = 0x0001;
+    public const uint SwpNoMove = 0x0002;
     public const uint SwpNoActivate = 0x0010;
     public const uint SwpShowWindow = 0x0040;
     public const uint SwpNoOwnerZOrder = 0x0200;
