@@ -2,8 +2,8 @@
 
 PrivacyMask is a Windows desktop privacy companion for WhatsApp Desktop, Telegram Desktop, and other applications you choose. It places a local click-through mask over protected app windows so you can hide sensitive content while still keeping the apps open on screen.
 
-The current source targets `2.0.0-beta.24`, a Preview that automatically covers
-Task Manager with a click-through black overlay while any Panic lock is active.
+The current source targets `2.0.0-beta.25`, a Preview that adds a first-run
+tour of keyboard shortcuts and includes the Task Manager mask from beta.24.
 Check the releases page for
 available downloads. About and Settings show the product version; hover the
 About version for full build/source metadata and the numeric Windows file version.
@@ -66,7 +66,7 @@ You do not need the source code or the .NET SDK to install a published release.
 2. Download the archive matching the release you selected, for example the published `PrivacyMask-2.0.0-beta.15-win-x64.zip`, and extract the whole archive. A newer source version does not mean a corresponding release is already published.
 3. Double-click `Install-PrivacyMask.cmd` in the extracted folder.
 4. Launch PrivacyMask from the Desktop or Start Menu shortcut.
-5. Complete onboarding. Use **Add application** to select a running program or browse to its `.exe` file.
+5. Complete onboarding. Review your keyboard shortcuts on the second step or select **Skip tour**. Use **Add application** to select a running program or browse to its `.exe` file.
 
 The installer does not require administrator access. It places the stable
 launcher at `%LocalAppData%\PrivacyMask.Desktop\PrivacyMask.Launcher.exe`, the
