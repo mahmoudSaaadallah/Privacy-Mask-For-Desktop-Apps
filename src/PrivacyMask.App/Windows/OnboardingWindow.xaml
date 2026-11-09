@@ -9,14 +9,18 @@
  <Window.Resources>
   <Style x:Key="StepTitle" TargetType="TextBlock"><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Margin" Value="0,10,0,6"/></Style>
   <Style x:Key="StepText" TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource MutedInkBrush}"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="FontSize" Value="12"/></Style>
-  <DataTemplate x:Key="WelcomeKey"><Border Background="#F0F2F4" BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" CornerRadius="4" Padding="12,7"><TextBlock Text="{Binding}"/></Border></DataTemplate>
  </Window.Resources>
  <Grid Margin="24" Background="{StaticResource CanvasBrush}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <Grid Margin="0,0,0,22"><Button Content="i" Style="{StaticResource CircleHelp}" HorizontalAlignment="Right" VerticalAlignment="Top" AutomationProperties.Name="Welcome privacy help" services:InformationHelp.Text="No injection, tracking, analytics, or cloud dependency. Live frames stay in memory. Window-only sharing may omit the mask. Blur can retain detail; use solid redact or panic for complete concealment. Hover reveals 600 × 70 pixels by default; hold Alt alone for 0.5 seconds to reveal only the focused app. Panic always requires your PIN to unlock."/>
-   <StackPanel Margin="0,0,32,0"><TextBlock Text="Welcome to PrivacyMask" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" TextWrapping="Wrap"/><TextBlock Text="Keep your screen private, on your terms." Foreground="{StaticResource MutedInkBrush}" FontSize="12" HorizontalAlignment="Center" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
+   <StackPanel Margin="0,0,32,0">
+    <TextBlock x:Name="StepIndicator" Text="Step 1 of 2" Style="{StaticResource StepText}"/>
+    <TextBlock x:Name="HeadingText" Text="Welcome to PrivacyMask" FontSize="24" FontWeight="Bold" Margin="0,5,0,0" TextWrapping="Wrap" Focusable="True" KeyboardNavigation.IsTabStop="False"/>
+    <TextBlock x:Name="SubtitleText" Text="Keep your screen private, on your terms." Style="{StaticResource StepText}" Margin="0,5,0,0"/>
+   </StackPanel>
   </Grid>
-  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-   <StackPanel>
+  <ScrollViewer x:Name="TourScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+   <Grid>
+   <StackPanel x:Name="WelcomeStep">
     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
      <StackPanel Margin="0,0,14,0"><Grid Height="76">
       <Border Width="28" Height="28" CornerRadius="14" Background="#BADBFF" HorizontalAlignment="Left" VerticalAlignment="Top"><TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/></Border>
@@ -32,17 +36,46 @@
      </Grid><TextBlock Text="Reveal when needed" Style="{StaticResource StepTitle}"/><TextBlock Text="Use your PIN to unlock a panic mask." Style="{StaticResource StepText}"/></StackPanel>
     </Grid>
     <Border Height="1" Background="#E0E5E8" Margin="0,20,0,12"/>
-    <TextBlock Text="Useful shortcut" FontWeight="SemiBold" Margin="0,0,0,8"/>
-    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-     <StackPanel Orientation="Horizontal"><ContentControl Content="Ctrl" ContentTemplate="{StaticResource WelcomeKey}"/><TextBlock Text="+" Margin="7,0" VerticalAlignment="Center"/><ContentControl Content="Shift" ContentTemplate="{StaticResource WelcomeKey}"/><TextBlock Text="+" Margin="7,0" VerticalAlignment="Center"/><ContentControl Content="P" ContentTemplate="{StaticResource WelcomeKey}"/></StackPanel>
-     <TextBlock Grid.Column="1" Text="Adds the focused application, or toggles its existing mask." Style="{StaticResource StepText}" Margin="18,0,0,0" VerticalAlignment="Center"/>
-    </Grid>
-    <Border Height="1" Background="#E0E5E8" Margin="0,14,0,12"/>
     <TextBlock Text="Start with Windows" FontWeight="SemiBold" Margin="0,0,0,10"/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,10"><CheckBox x:Name="LaunchAtLoginCheckBox" Style="{StaticResource Switch}" AutomationProperties.Name="Launch when I sign in"/><TextBlock Text="Launch when I sign in" Margin="12,0,0,0" VerticalAlignment="Center"/></StackPanel>
     <StackPanel Orientation="Horizontal"><CheckBox x:Name="StartMinimizedCheckBox" Style="{StaticResource Switch}" AutomationProperties.Name="Start minimized to tray"/><TextBlock Text="Start minimized to tray" Margin="12,0,0,0" VerticalAlignment="Center"/></StackPanel>
    </StackPanel>
+   <ItemsControl x:Name="ShortcutStep" Visibility="Collapsed" AutomationProperties.Name="PrivacyMask keyboard shortcuts">
+    <ItemsControl.ItemTemplate>
+     <DataTemplate>
+      <Border Style="{StaticResource Card}" Padding="12" Margin="0,0,0,8">
+       <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <StackPanel Margin="0,0,12,0">
+         <TextBlock Text="{Binding CompactTitle}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+         <TextBlock Text="{Binding ScopeSummary}" Style="{StaticResource StepText}" Margin="0,4,0,0"/>
+         <TextBlock Text="{Binding RegistrationStatus}" Margin="0,4,0,0">
+          <TextBlock.Style>
+           <Style TargetType="TextBlock" BasedOn="{StaticResource StepText}">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+             <DataTrigger Binding="{Binding Enabled}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+             <DataTrigger Binding="{Binding ShowRegistrationFailure}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+            </Style.Triggers>
+           </Style>
+          </TextBlock.Style>
+         </TextBlock>
+        </StackPanel>
+        <Border Grid.Column="1" BorderBrush="{StaticResource OutlineBrush}" BorderThickness="1" CornerRadius="5"
+                Padding="8,5" MaxWidth="150" VerticalAlignment="Top">
+         <TextBlock Text="{Binding GestureText}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+        </Border>
+       </Grid>
+      </Border>
+     </DataTemplate>
+    </ItemsControl.ItemTemplate>
+   </ItemsControl>
+   </Grid>
   </ScrollViewer>
-  <Button Grid.Row="2" Content="_Get started" IsDefault="True" Click="Continue_Click" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right" MinWidth="124" Margin="0,16,0,0"/>
+  <Grid Grid.Row="2" Margin="0,16,0,0">
+   <Button x:Name="SkipButton" Content="_Skip tour" Click="Finish_Click" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left" MinHeight="44"/>
+   <Button x:Name="BackButton" Content="_Back" Click="Back_Click" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left" MinHeight="44" Visibility="Collapsed"/>
+   <Button x:Name="ContinueButton" Content="_Next: shortcuts" IsDefault="True" Click="Continue_Click" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right" MinWidth="124" MinHeight="44"/>
+  </Grid>
  </Grid>
 </Window>
